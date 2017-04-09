@@ -6,6 +6,7 @@
 #include <commons/string.h>
 #include "estructuras.h"
 #include "configuracion.h"
+#include "socket.h"
 
 char *ruta_config;
 t_configuracion *config;

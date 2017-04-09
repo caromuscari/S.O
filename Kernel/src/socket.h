@@ -1,5 +1,5 @@
-#ifndef SOCKET_CLIENT_H_
-#define SOCKET_CLIENT_H_
+#ifndef SOCKET_H_
+#define SOCKET_H_
 
 //Esta funcion genera un socket de tipo cliente (no puede aceptar conexiones, solo se conecta)
 int iniciar_socket_cliente(char *ip, int puerto/*char *puerto*/);
@@ -15,4 +15,4 @@ char *recibir(int socket_receptor);
 void cerrar_conexion(int socket_);
 
 
-#endif /* SOCKET_CLIENT_H_ */
+#endif /* SOCKET_H_ */

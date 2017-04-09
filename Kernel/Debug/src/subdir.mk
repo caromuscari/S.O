@@ -5,15 +5,21 @@
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
 ../src/Kernel.c \
-../src/configuracion.c 
+../src/configuracion.c \
+../src/log.c \
+../src/socket.c 
 
 OBJS += \
 ./src/Kernel.o \
-./src/configuracion.o 
+./src/configuracion.o \
+./src/log.o \
+./src/socket.o 
 
 C_DEPS += \
 ./src/Kernel.d \
-./src/configuracion.d 
+./src/configuracion.d \
+./src/log.d \
+./src/socket.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes
