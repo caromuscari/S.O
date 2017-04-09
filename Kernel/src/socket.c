@@ -6,8 +6,8 @@
 #include <stdlib.h>
 #include <commons/string.h>
 
-extern int error_recepcion;
-extern int error_conectando;
+//extern int error_recepcion;
+//extern int error_conectando;
 
 int iniciar_socket_cliente(char *ip, int puerto/*char *puerto*/)
 {
@@ -20,7 +20,7 @@ int iniciar_socket_cliente(char *ip, int puerto/*char *puerto*/)
 	}
 	printf("socket creado \n");
 
-	//puerto_conexion = atoi(puerto);
+	puerto_conexion = puerto;
 
 	dest.sin_family = AF_INET;
 	dest.sin_port = htons( puerto_conexion );
@@ -29,7 +29,7 @@ int iniciar_socket_cliente(char *ip, int puerto/*char *puerto*/)
 	//Connecting socket
 	if (connect(connected_socket, (struct sockaddr*) &dest, sizeof(dest)) != 0) {
 		printf("error conectando socket\n");
-		error_conectando = 1;
+		//error_conectando = 1;
 	}else
 	printf("conectado a servidor %s:%d\n", ip, puerto_conexion);
 
@@ -69,7 +69,7 @@ char *recibir(int socket_receptor)
 				printf("error recibiendo el mensaje \n");
 
 			}
-			error_recepcion = 1;
+			//error_recepcion = 1;
 			//close(socket_receptor);
 	}
 

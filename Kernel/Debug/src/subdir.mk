@@ -7,22 +7,19 @@ C_SRCS += \
 ../src/Kernel.c \
 ../src/configuracion.c \
 ../src/log.c \
-../src/socket_cliente.c \
-../src/socket_servidor.c 
+../src/socket.c 
 
 OBJS += \
 ./src/Kernel.o \
 ./src/configuracion.o \
 ./src/log.o \
-./src/socket_cliente.o \
-./src/socket_servidor.o 
+./src/socket.o 
 
 C_DEPS += \
 ./src/Kernel.d \
 ./src/configuracion.d \
 ./src/log.d \
-./src/socket_cliente.d \
-./src/socket_servidor.d 
+./src/socket.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes
