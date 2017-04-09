@@ -23,9 +23,15 @@ void archivoDeCofiguracion(char* argv);
 int main(int argc, char *argv[]) {
 	archivoDeCofiguracion(argv[1]);
 	char *ipfs = "127.0.0.1";
-	//int socketfs =iniciar_socket_server(ipfs,puerto);
-	//escuchar_conexiones(socketfs);
-
+	int socketfs =iniciar_socket_server(ipfs,puerto);
+	int cliente = escuchar_conexiones(socketfs);
+	char *handshake = malloc(1024);
+	//while(1){
+		recibir(cliente,handshake,1024);
+		handshake[27] = '/0';
+		printf("handshake %s \n",handshake);
+	//}
+ free(handshake);
  return EXIT_SUCCESS;
 }
 					////// AUXILIARES //////

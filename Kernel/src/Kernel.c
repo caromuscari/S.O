@@ -33,7 +33,7 @@ int main(int argc, char*argv[])
 	socket_memoria = iniciar_socket_cliente(config->ip_memoria, config->puerto_memoria);
 	//enviar(socket_memoria, "El handshake debeía ir acá");
 	socket_fs = iniciar_socket_cliente(config->ip_fs, config->puerto_fs);
-	//enviar(socket_fs, "El handshake debeía ir acá");
+	enviar_cl(socket_fs, "SOY KERNEL, ME CONECTE LOKA");
 
 	liberar_memoria();
 
