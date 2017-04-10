@@ -23,9 +23,6 @@ void escribir_log_compuesto(char *mensaje, char *otro_mensaje);
 //Arma el texto de envio para mensajes
 char *armar_mensaje(char *identificador, char *mensaje);
 
-//Armado de mensaje exclusivo para el planificador
-char *armar_mensaje_con_coordenadas(char *identificador, int eje_x, int eje_y);
-
 void liberar_log();
 
 #endif /* SRC_LOG_H_ */

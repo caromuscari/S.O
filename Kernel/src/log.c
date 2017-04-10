@@ -14,7 +14,7 @@
 #include <commons/log.h>
 #include <commons/string.h>
 
-t_log *log;
+extern t_log *log;
 pthread_mutex_t mutex_log;
 
 void crear_archivo_log(char *file)
