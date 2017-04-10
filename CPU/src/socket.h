@@ -5,13 +5,12 @@
  *      Author: utnso
  */
 
-
+#include <stdint.h>
 #ifndef SOCKET_H_
 #define SOCKET_H_
 typedef struct t_DATA{
 		int tipoOper ; // TipoDeOperacion FUSE
 		char *path;
-
 		char * data_info;
 		uint32_t offset;
 	} t_DATA;
