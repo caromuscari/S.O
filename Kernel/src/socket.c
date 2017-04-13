@@ -13,43 +13,33 @@
 //Ceci dice que hay que cambiar todo!!!
 //modificar controlador y agregar indice de errores para el controlador
 
-extern t_log *log;
+//extern t_log *log;
 
-int iniciar_socket_cliente(char *ip, int puerto_conexion, t_program *program)
+int iniciar_socket_cliente(char *ip, int puerto_conexion, int *control)
 {
 	int connected_socket;
 	struct sockaddr_in dest;
-	program->control = 0;
+	*control = 0;
 
 	//Creating socket
-	if ((connected_socket = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-		//perror("error creando socket\n");
-		escribir_log_con_numero("Kernel - Error creando socket para PID: ", *program->PID);
-		*program->control = 1;
-	}
-	escribir_log_con_numero("Kernel - Socket creado para PID: ", *program->PID);
-	//printf("socket creado \n");
+	if ((connected_socket = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+	{
+		*control = 1;
+
+	}else escribir_log("Kernel - Socket creado");
 
 	dest.sin_family = AF_INET;
 	dest.sin_port = htons( puerto_conexion );
 	dest.sin_addr.s_addr = inet_addr( ip );
 
 	//Connecting socket
-	if (connect(connected_socket, (struct sockaddr*) &dest, sizeof(dest)) != 0) {
-		//printf("error conectando socket\n");
-		escribir_log_con_numero("Kernel - Error conectando socket para PID: ", *program->PID);
-		*program->control = 1;
-	//	error_conectando = 1;
-	}else
-	//printf("conectado a servidor %s:%d\n", ip, puerto_conexion);}
+	if (connect(connected_socket, (struct sockaddr*) &dest, sizeof(dest)) != 0)
 	{
-		char *aux = strdup("Kernel - Socket conectado a IP: ");
-		string_append(&aux, ip);
-		string_append(&aux, ", Puerto: ");
-		string_append(&aux, (char *)puerto_conexion);
-		string_append(&aux, " para PID: ");
-		escribir_log_con_numero(aux, *program->PID);
-		free(aux);
+		*control = 2;
+
+	}else
+	{
+
 	}
 	return connected_socket;
 }
@@ -62,10 +52,9 @@ int iniciar_socket_server(char *ip, int puerto_conexion, int *controlador)
 	controlador = 0;
 
 	//Creating socket
-	if ((socketServidor = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-		//perror("error creating socket\n");
-		escribir_log("Kernel - Error creando socket server");
-		*controlador = 1;
+	if ((socketServidor = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+	{
+		*controlador = 3;
 	}
 	//printf("created socket\n");
 
@@ -75,10 +64,9 @@ int iniciar_socket_server(char *ip, int puerto_conexion, int *controlador)
 	my_addr.sin_addr.s_addr = inet_addr( ip );
 
 	//Binding socket
-	if (bind(socketServidor, (struct sockaddr*) &my_addr, sizeof(struct sockaddr_in)) != 0) {
-		//perror("error binding socket\n");
-		escribir_log("Kernel - Error bindeando socket server");
-		*controlador = 1;
+	if (bind(socketServidor, (struct sockaddr*) &my_addr, sizeof(struct sockaddr_in)) != 0)
+	{
+		*controlador = 4;
 	}
 	else
 	{
@@ -98,74 +86,42 @@ int escuchar_conexiones(int socketServidor, int *controlador)
 	controlador = 0;
 
 	//Listening socket
-	if (listen(socketServidor, BACKLOG) != 0) {
-		//perror("error listening\n");
-		escribir_log("Kernel - Socket server, error escuchando");
-		*controlador = 1;
+	if (listen(socketServidor, BACKLOG) != 0)
+	{
+		*controlador = 5;
 	}
-	//printf("listening at port: %d\n", ntohs(my_addr.sin_port));
 
-	//puts("Waiting for incoming connections...");
 	c = sizeof(struct sockaddr_in);
 
 	//accept connection from an incoming client
 	client_sock_accepted = accept(socketServidor, (struct sockaddr *)&client, (socklen_t*)&c);
 	if (client_sock_accepted < 0)
 	{
-		//perror("error accepting failed\n");
-		escribir_log("Kernel - Error aceptando conexion");
-		*controlador = 1;
-	}
-	//printf("Connection accepted\n");
-
+		*controlador = 6;
+	}else
 	escribir_log_con_numero("Kernel - Nueva conexion aceptada para socket: ", client_sock_accepted);
+
 	return client_sock_accepted;
 }
 
-int enviar_srv(int socket_emisor, char *mensaje_a_enviar, t_program *prog)
+int enviar(int socket_emisor, char *mensaje_a_enviar, t_program *prog)
 {
 	int ret;
 	signal(SIGPIPE, SIG_IGN);
 	size_t sbuffer = sizeof(char)*1024;
 	*prog->control = 0;
-	//char* buffer = (char*)malloc(sbuffer);
 
 	char *buffer = string_substring(mensaje_a_enviar,0,sbuffer);
-	//memcpy(buffer, mensaje_a_enviar, sbuffer);
 
 	if ((ret = send(socket_emisor, buffer, sbuffer, MSG_NOSIGNAL)) < 0)
 	{
 		//close(socket_emisor);
-		*prog->control = 1;
-		escribir_log_con_numero("Kernel - Error al enviar mensaje a PID: ", *prog->PID);
-		//perror("error en el envio del mensaje");
+		*prog->control = 7;
+
 	} else
 	{
 		escribir_log_con_numero("Kernel - Exito al enviar mensaje a PID: ", *prog->PID);
 	}
-
-	free(buffer);
-	return ret;
-}
-
-int enviar_clt(int socket_emisor, char *mensaje_a_enviar, int *controlador)
-{
-	int ret;
-	signal(SIGPIPE, SIG_IGN);
-	size_t sbuffer = sizeof(char)*1024;
-	*controlador = 0;
-	//char* buffer = (char*)malloc(sbuffer);
-
-	char *buffer = string_substring(mensaje_a_enviar,0,sbuffer);
-	//memcpy(buffer, mensaje_a_enviar, sbuffer);
-
-	if ((ret = send(socket_emisor, buffer, sbuffer, MSG_NOSIGNAL)) < 0)
-	{
-		//close(socket_emisor);
-		*controlador = 1;
-		//perror("error en el envio del mensaje");
-	}
-
 
 	free(buffer);
 	return ret;
@@ -184,7 +140,7 @@ char *recibir(int socket_receptor, int *controlador)
 		//printf("error receiving or connection lost \n");
 		if (ret == 0)
 		{
-			//printf("socket %d se desconectó \n", socket_receptor);
+			*controlador = 8;
 		} else {
 			//printf("error recibiendo el mensaje \n");
 				}
@@ -192,8 +148,6 @@ char *recibir(int socket_receptor, int *controlador)
 		//close(socket_receptor);
 	}
 
-
-	//buffer[ret]='\0';
 	char *buffer_aux= strdup(buffer);
 	free(buffer);
 	return buffer_aux;

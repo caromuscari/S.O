@@ -4,9 +4,11 @@
 #include <commons/collections/list.h>
 #include <commons/config.h>
 #include <commons/string.h>
+#include <commons/log.h>
 #include "estructuras.h"
 #include "configuracion.h"
 #include "socket.h"
+#include "log.h"
 
 char *ruta_config;
 t_configuracion *config;
@@ -15,6 +17,7 @@ char *sem_in;
 char *shared;
 int socket_memoria;
 int socket_fs;
+t_log *log;
 
 void inicializar_variables();
 void liberar_memoria();
@@ -29,11 +32,13 @@ int main(int argc, char*argv[])
 	inicializar_variables();
 	leer_configuracion();
 	mostrar_configuracion();
+	crear_archivo_log("/home/utnso");
 
-	socket_memoria = iniciar_socket_cliente(config->ip_memoria, config->puerto_memoria);
+	int *controlador = 0;
+	socket_memoria = iniciar_socket_cliente(config->ip_memoria, config->puerto_memoria, controlador);
 	//enviar(socket_memoria, "El handshake debeía ir acá");
-	socket_fs = iniciar_socket_cliente(config->ip_fs, config->puerto_fs);
-	enviar_cl(socket_fs, "SOY KERNEL, ME CONECTE LOKA");
+	socket_fs = iniciar_socket_cliente(config->ip_fs, config->puerto_fs, controlador);
+	//enviar_cl(socket_fs, "SOY KERNEL, ME CONECTE LOKA");
 
 	liberar_memoria();
 
