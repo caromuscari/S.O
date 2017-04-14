@@ -26,12 +26,12 @@ void mostrar_configuracion();
 int main(int argc, char*argv[])
 {
 
-	ruta_config = strdup(/*"/home/utnso/configuracion"*/argv[1]);
+	ruta_config = strdup("/home/utnso/Archivos/Kernel/configuracion"/*argv[1]*/);
 
 	inicializar_variables();
 	leer_configuracion();
 	mostrar_configuracion();
-	crear_archivo_log("/home/utnso");
+	crear_archivo_log("/home/utnso/log_kernel");
 
 	int *controlador = 0;
 	socket_memoria = iniciar_socket_cliente(config->ip_memoria, config->puerto_memoria, controlador);
@@ -62,7 +62,7 @@ void mostrar_configuracion()
 	printf("Puerto Programa: %d \n", config->puerto_prog);
 	printf("Puerto CPU: %d \n", config->puerto_cpu);
 	printf("IP Memoria: %s \n", config->ip_memoria);
-	printf("IP Memoria: %s \n", config->ip_kernel);
+	printf("IP Kernel: %s \n", config->ip_kernel);
 	printf("Puerto Memoria: %d \n", config->puerto_memoria);
 	printf("IP File System: %s \n", config->ip_fs);
 	printf("Puerto File System: %d \n", config->puerto_fs);
