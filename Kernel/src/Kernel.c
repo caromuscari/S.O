@@ -27,7 +27,6 @@ int main(int argc, char*argv[])
 {
 
 	ruta_config = strdup(/*"/home/utnso/configuracion"*/argv[1]);
-	char *ip_kernel = "127.0.0.1";
 
 	inicializar_variables();
 	leer_configuracion();
@@ -51,6 +50,7 @@ void inicializar_variables()
 	config->algoritmo = strdup("");
 	config->ip_fs = strdup("");
 	config->ip_memoria = strdup("");
+	config->ip_kernel = strdup("");
 	/*config->sem_ids = list_create();
 	config->sem_init = list_create();
 	config->shared_vars = list_create();*/
@@ -62,6 +62,7 @@ void mostrar_configuracion()
 	printf("Puerto Programa: %d \n", config->puerto_prog);
 	printf("Puerto CPU: %d \n", config->puerto_cpu);
 	printf("IP Memoria: %s \n", config->ip_memoria);
+	printf("IP Memoria: %s \n", config->ip_kernel);
 	printf("Puerto Memoria: %d \n", config->puerto_memoria);
 	printf("IP File System: %s \n", config->ip_fs);
 	printf("Puerto File System: %d \n", config->puerto_fs);
@@ -85,6 +86,7 @@ void liberar_memoria()
 	free(config->algoritmo);
 	free(config->ip_fs);
 	free(config->ip_memoria);
+	free(config->ip_kernel);
 	free(config);
 	/*list_destroy(config->sem_ids);
 	list_destroy(config->sem_init);

@@ -40,5 +40,4 @@ void error_sockets(int *controlador, char *proceso)
 			escribir_log_compuesto("Kernel - Error recibiendo mensaje de: ", proceso);
 			break;
 	}
-
 }

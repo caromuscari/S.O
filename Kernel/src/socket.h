@@ -4,7 +4,7 @@
 int iniciar_socket_cliente(char*, int, int*);
 int iniciar_socket_server(char*, int, int*);
 int escuchar_conexiones(int, int*);
-int enviar(int, char*, t_program*);
+int enviar(int, char*, int*);
 char *recibir(int, int*);
 void cerrar_conexion(int);
 

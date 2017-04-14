@@ -104,25 +104,25 @@ int escuchar_conexiones(int socketServidor, int *controlador)
 	return client_sock_accepted;
 }
 
-int enviar(int socket_emisor, char *mensaje_a_enviar, t_program *prog)
+int enviar(int socket_emisor, char *mensaje_a_enviar, int *controlador)
 {
 	int ret;
 	signal(SIGPIPE, SIG_IGN);
 	size_t sbuffer = sizeof(char)*1024;
-	*prog->control = 0;
+	*controlador = 0;
 
 	char *buffer = string_substring(mensaje_a_enviar,0,sbuffer);
 
 	if ((ret = send(socket_emisor, buffer, sbuffer, MSG_NOSIGNAL)) < 0)
 	{
 		//close(socket_emisor);
-		*prog->control = 7;
+		*controlador = 7;
 
 	} else
 	{
-		escribir_log_con_numero("Kernel - Exito al enviar mensaje a PID: ", *prog->PID);
+		//Este mensaje debera esta en la funcion que invoque esta
+		//escribir_log_con_numero("Kernel - Exito al enviar mensaje a PID: ", *prog->PID);
 	}
-
 	free(buffer);
 	return ret;
 }

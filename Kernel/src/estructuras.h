@@ -7,6 +7,7 @@ typedef struct
 	int puerto_prog;
 	int puerto_cpu;
 	char *ip_memoria;
+	char *ip_kernel;
 	int puerto_memoria;
 	char *ip_fs;
 	int puerto_fs;

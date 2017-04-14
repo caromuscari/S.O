@@ -20,6 +20,7 @@ void leer_configuracion()
 	string_append(&config->algoritmo, config_get_string_value(configuracion,"ALGORITMO"));
 	string_append(&config->ip_fs, config_get_string_value(configuracion, "IP_FS"));
 	string_append(&config->ip_memoria, config_get_string_value(configuracion, "IP_MEMORIA"));
+	string_append(&config->ip_kernel, config_get_string_value(configuracion, "IP_KERNEL"));
 	//config->sem_ids = config_get_array_value(configuracion, "SEM_IDS");
 	//config->sem_init = config_get_array_value(configuracion, "SEM_INIT");
 	//config->shared_vars = config_get_array_value(configuracion, "SHARED_VARS");
