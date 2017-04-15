@@ -5,10 +5,12 @@
 #include <string.h>
 #include <unistd.h>
 #include "socket.h"
+#include "log.h"
 #include <commons/config.h>
 
 int puerto;
 t_config *configuracion;
+int * controlador=0;
 
 
 void leerArchivoConfig(char* argv);
@@ -17,12 +19,12 @@ void leerArchivoConfig(char* argv);
 int main(int argc, char *argv[])
 {
 	leerArchivoConfig(argv[1]);
-	int socket_Kernel = iniciar_socket_cliente("127.0.0.1",puerto);
+	int socket_Kernel = iniciar_socket_cliente("127.0.0.1",puerto, controlador);
 
 	char mensaje[3];
 	memcpy(mensaje,"CPU",3);
 	printf(mensaje,"%s");
-	int res= enviar(socket_Kernel,mensaje);
+	int res= enviar(socket_Kernel,mensaje,controlador);
 
 	printf("Mensaje enviado al Kernelcito");
 }
@@ -35,3 +37,4 @@ void leerArchivoConfig(char* argv)
 	printf("Valor puerto para conexion del KERNEL: %d \n", puerto);
 	config_destroy(configuracion);
 }
+
