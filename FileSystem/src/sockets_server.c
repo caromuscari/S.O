@@ -1,29 +1,31 @@
 #include <stdio.h>
-#include <string.h>    //strlen
+#include <string.h>
 #include <sys/socket.h>
-#include <arpa/inet.h> //inet_addr
-#include <unistd.h>    //write
+#include <arpa/inet.h>
+#include <unistd.h>
 #include <stdlib.h>
-#include "sockets_server.h"
+#include <signal.h>
+#include <commons/string.h>
+#include <commons/log.h>
 
-//#define BACKLOG 3			// Define cuantas conexiones vamos a mantener pendientes al mismo tiempo
-//#define PACKAGESIZE 1024
-//#define IP_LOCAL "127.0.0.1"
+//Ceci dice que hay que cambiar todo!!!
+//modificar controlador y agregar indice de errores para el controlador
 
-int iniciar_socket_server(char *ip, int puerto)
+//extern t_log *log;
+
+int iniciar_socket_server(char *ip, int puerto_conexion, int *controlador)
 {
 	int socketServidor;
 	struct sockaddr_in my_addr;
 	int yes = 1;
-	int puerto_conexion;
+	controlador = 0;
 
 	//Creating socket
-	if ((socketServidor = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-		perror("error creating socket\n");
+	if ((socketServidor = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+	{
+		*controlador = 3;
 	}
 	//printf("created socket\n");
-
-	puerto_conexion = puerto;
 
 	setsockopt(socketServidor, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
 	my_addr.sin_family = AF_INET;
@@ -31,60 +33,92 @@ int iniciar_socket_server(char *ip, int puerto)
 	my_addr.sin_addr.s_addr = inet_addr( ip );
 
 	//Binding socket
-	if (bind(socketServidor, (struct sockaddr*) &my_addr, sizeof(struct sockaddr_in)) != 0) {
-		perror("error binding socket\n");
+	if (bind(socketServidor, (struct sockaddr*) &my_addr, sizeof(struct sockaddr_in)) != 0)
+	{
+		*controlador = 4;
+	}
+	else
+	{
+		//escribir_log("Kernel - Socket server creado");
+		//printf("FS - Socket server creado");
 	}
 	//printf("binded socket\n");
 
 	return socketServidor;
 }
 
-int escuchar_conexiones(int socketServidor)
+int escuchar_conexiones(int socketServidor, int *controlador)
 {
 	int client_sock_accepted;
 	int c;
 	struct sockaddr_in client;
 	int BACKLOG = 20; //Cantidad de conexiones maximas
+	controlador = 0;
 
 	//Listening socket
-	if (listen(socketServidor, BACKLOG) != 0) {
-		perror("error listening\n");
+	if (listen(socketServidor, BACKLOG) != 0)
+	{
+		*controlador = 5;
 	}
-	//printf("listening at port: %d\n", ntohs(my_addr.sin_port));
 
-	//puts("Waiting for incoming connections...");
 	c = sizeof(struct sockaddr_in);
 
 	//accept connection from an incoming client
 	client_sock_accepted = accept(socketServidor, (struct sockaddr *)&client, (socklen_t*)&c);
 	if (client_sock_accepted < 0)
 	{
-		perror("error accepting failed\n");
-	    return 1;
-	}
-	//printf("Connection accepted\n");
-
+		*controlador = 6;
+	}//else
+	//escribir_log_con_numero("Kernel - Nueva conexion aceptada para socket: ", client_sock_accepted);
+	//printf("FS - Nueva conexion aceptada para socket:%d", client_sock_accepted);
 	return client_sock_accepted;
 }
 
-
-int enviar(int socket_emisor, void *mensaje_a_enviar, int tamanio)
+int enviar(int socket_emisor, char *mensaje_a_enviar, int *controlador)
 {
 	int ret;
-	if ((ret = send(socket_emisor, mensaje_a_enviar, tamanio ,MSG_WAITALL)) < 0) {
-		return -1;
+	signal(SIGPIPE, SIG_IGN);
+	size_t sbuffer = sizeof(char)*1024;
+	*controlador = 0;
+
+	char *buffer = string_substring(mensaje_a_enviar,0,sbuffer);
+
+	if ((ret = send(socket_emisor, buffer, sbuffer, MSG_NOSIGNAL)) < 0)
+	{
+		//close(socket_emisor);
+		*controlador = 7;
+
+	} else
+	{
+		//Este mensaje debera esta en la funcion que invoque esta
+		//escribir_log_con_numero("Kernel - Exito al enviar mensaje a PID: ", *prog->PID);
 	}
+	free(buffer);
 	return ret;
 }
 
-
-int recibir(int socket_receptor, void *buffer, int tamanio)
+void recibir(int socket_receptor, int *controlador, char *buffer)
 {
 	int ret;
 
-	if ((ret = recv(socket_receptor, buffer, tamanio,MSG_WAITALL)) <=0) {
-		return -1;
+	*controlador = 0;
 
+	if ((ret = recv(socket_receptor, buffer, 1024, 0)) <= 0)
+	{
+		//printf("error receiving or connection lost \n");
+		if (ret == 0)
+		{
+			*controlador = 8;
+		} else {
+			//printf("error recibiendo el mensaje \n");
+				}
+		*controlador = 1;
+		//close(socket_receptor);
 	}
-	return ret;
+
+}
+
+void cerrar_conexion(int socket_)
+{
+	close(socket_);
 }

@@ -1,17 +1,11 @@
-/*
- * sockets_server.h
- *
- *  Created on: 9/4/2017
- *      Author: utnso
- */
+#ifndef KERNEL_PRUEBAS_SRC_SOCKET_CLIENT_H_
+#define KERNEL_PRUEBAS_SRC_SOCKET_CLIENT_H_
 
-#ifndef SOCKETS_SERVER_H_
-#define SOCKETS_SERVER_H_
+int iniciar_socket_cliente(char*, int, int*);
+int iniciar_socket_server(char*, int, int*);
+int escuchar_conexiones(int, int*);
+int enviar(int, char*, int*);
+void recibir(int, int*, char *);
+void cerrar_conexion(int);
 
-
-int iniciar_socket_server(char *ip, int puerto);
-int escuchar_conexiones(int socketServidor);
-int enviar(int socket_emisor, void *mensaje_a_enviar, int tamanio);
-int recibir(int socket_receptor, void *buffer,int tamanio);
-
-#endif /* SOCKETS_SERVER_H_ */
+#endif /* KERNEL_PRUEBAS_SRC_SOCKET_CLIENT_H_ */
