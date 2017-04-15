@@ -22,22 +22,23 @@ t_log *log;
 void inicializar_variables();
 void liberar_memoria();
 void mostrar_configuracion();
+void handshakearFS(int socket_fs);
 
 int main(int argc, char*argv[])
 {
 
-	ruta_config = strdup("/home/utnso/Archivos/Kernel/configuracion"/*argv[1]*/);
+	ruta_config = strdup(/*"/home/utnso/Archivos/Kernel/configuracion"*/argv[1]);
 
 	inicializar_variables();
 	leer_configuracion();
 	mostrar_configuracion();
 	crear_archivo_log("/home/utnso/log_kernel");
 
-	int *controlador = 0;
-	socket_memoria = iniciar_socket_cliente(config->ip_memoria, config->puerto_memoria, controlador);
+	int controlador = 0;
+	socket_memoria = iniciar_socket_cliente(config->ip_memoria, config->puerto_memoria, &controlador);
 	//enviar(socket_memoria, "El handshake debeía ir acá");
-	socket_fs = iniciar_socket_cliente(config->ip_fs, config->puerto_fs, controlador);
-	//enviar_cl(socket_fs, "SOY KERNEL, ME CONECTE LOKA");
+	socket_fs = iniciar_socket_cliente(config->ip_fs, config->puerto_fs, &controlador);
+	handshakearFS(socket_fs);
 
 	liberar_memoria();
 
@@ -92,5 +93,11 @@ void liberar_memoria()
 	list_destroy(config->sem_init);
 	list_destroy(config->shared_vars);*/
 }
-
+void handshakearFS(int socket_fs){
+	int controlador = 0;
+	char *mensaje = malloc(7);
+	strcpy(mensaje,"KERNEL");
+	enviar(socket_fs, mensaje,&controlador);
+	free(mensaje);
+}
 //void liberar_lista_char()

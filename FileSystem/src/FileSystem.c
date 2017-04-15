@@ -13,26 +13,36 @@
 #include <string.h>
 #include "sockets_server.h"
 #include <commons/config.h>
-
+#include <commons/string.h>
+#include <stdbool.h>
 int puerto;
 char *montaje;
 t_config *configuracion;
+int verificarHS(char *handshake);
 
 void archivoDeCofiguracion(char* argv);
 
 int main(int argc, char *argv[]) {
 	archivoDeCofiguracion(argv[1]);
 	char *ipfs = "127.0.0.1";
-	int socketfs =iniciar_socket_server(ipfs,puerto);
-	int cliente = escuchar_conexiones(socketfs);
+	int flagsocket=0;
+	int socketfs =iniciar_socket_server(ipfs,puerto,&flagsocket);
+
 	char *handshake = malloc(1024);
-	//while(1){
-		recibir(cliente,handshake,1024);
-		handshake[27] = '/0';
-		printf("handshake %s \n",handshake);
-	//}
- free(handshake);
- return EXIT_SUCCESS;
+	int esKernel=0;
+	while(esKernel == 0){
+		int cliente = escuchar_conexiones(socketfs,&flagsocket);
+		recibir(cliente,&flagsocket,handshake);
+		if (verificarHS(handshake)== 1){
+			esKernel = 1;
+		}else{
+			cerrar_conexion(cliente);
+			printf("intruso no kernel eliminado \n");
+		}
+	}
+	printf("KERNEL CONECTADO \n");
+	free(handshake);
+	return EXIT_SUCCESS;
 }
 					////// AUXILIARES //////
 void archivoDeCofiguracion(char* argv) {
@@ -47,3 +57,12 @@ void archivoDeCofiguracion(char* argv) {
 	free(montaje);
 	config_destroy(configuracion);
 }
+int verificarHS(char *handshake){
+	int resp=0;
+	bool res = string_equals_ignore_case(handshake, "KERNEL");
+	if(res == true){
+		resp = 1;
+	}
+return resp;
+}
+
