@@ -5,7 +5,6 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <signal.h>
-#include "estructuras.h"
 #include <commons/string.h>
 #include "log.h"
 #include <commons/log.h>
@@ -95,6 +94,21 @@ int escuchar_conexiones(int socketServidor, int *controlador)
 
 	//accept connection from an incoming client
 	client_sock_accepted = accept(socketServidor, (struct sockaddr *)&client, (socklen_t*)&c);
+	if (client_sock_accepted < 0)
+	{
+		*controlador = 6;
+	}else
+	escribir_log_con_numero("Kernel - Nueva conexion aceptada para socket: ", client_sock_accepted);
+
+	return client_sock_accepted;
+}
+
+int aceptar_conexion(int socketServidor, int *controlador)
+{
+	int c;
+	struct sockaddr_in client;
+
+	int client_sock_accepted = accept(socketServidor, (struct sockaddr *)&client, (socklen_t*)&c);
 	if (client_sock_accepted < 0)
 	{
 		*controlador = 6;

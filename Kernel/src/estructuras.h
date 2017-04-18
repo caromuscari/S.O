@@ -19,6 +19,8 @@ typedef struct
 	t_list *sem_init; //numérico
 	t_list *shared_vars; //alfanumérico
 	int stack_size;
+	int server_cpu;
+	int server_consola;
 }t_configuracion;
 
 typedef struct

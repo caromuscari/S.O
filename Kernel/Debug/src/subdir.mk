@@ -6,6 +6,7 @@
 C_SRCS += \
 ../src/Kernel.c \
 ../src/configuracion.c \
+../src/cpuManager.c \
 ../src/log.c \
 ../src/manejo_errores.c \
 ../src/socket.c 
@@ -13,6 +14,7 @@ C_SRCS += \
 OBJS += \
 ./src/Kernel.o \
 ./src/configuracion.o \
+./src/cpuManager.o \
 ./src/log.o \
 ./src/manejo_errores.o \
 ./src/socket.o 
@@ -20,6 +22,7 @@ OBJS += \
 C_DEPS += \
 ./src/Kernel.d \
 ./src/configuracion.d \
+./src/cpuManager.d \
 ./src/log.d \
 ./src/manejo_errores.d \
 ./src/socket.d 

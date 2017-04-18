@@ -7,6 +7,7 @@
 #include "estructuras.h"
 #include "configuracion.h"
 #include "socket.h"
+#include "log.h"
 
 void error_sockets(int *controlador, char *proceso)
 {
