@@ -29,4 +29,44 @@ typedef struct
 	int *control;
 }t_program;
 
+typedef struct
+{
+	int *instruccion;
+	int *offset_inicio;
+	int *offset_fin;
+}t_sentencia;
+
+typedef struct
+{
+
+}t_etiqueta;
+
+typedef struct
+{
+	char ID;
+	int pag;
+	int off;
+	int size;
+}t_memoria;
+
+typedef struct
+{
+	int pos;
+	t_memoria arg;
+	t_memoria var;
+	int retPos;
+	t_memoria retVar;
+}t_stack;
+
+typedef struct
+{
+	int PID;
+	int PC;
+	int cant_pag;
+	t_sentencia *in_cod;//no estoy segura de implementarlo como una estructura
+	t_etiqueta *in_et; //no estoy segura de como implementarlo
+	t_stack *in_st;   //creo que le mandé fruta :D
+	int exit_code;
+}t_PCB;
+
 #endif /* ESTRUCTURAS_H_ */
