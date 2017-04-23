@@ -10,16 +10,19 @@
 #include "estructuras.h"
 #include "manejo_errores.h"
 #include "socket.h"
+#include <string.h>
+#include <commons/string.h>
 
 extern t_configuracion *config;
 fd_set master;
 fd_set read_fds;
 int fdmax;
+int controlador = 0;
+
+void realizar_handShake();
 
 void manejo_conexiones_cpu()
 {
-	int controlador = 0;
-
 	//Seteo en 0 el master y temporal
 	FD_ZERO(&master);
 	FD_ZERO(&read_fds);
@@ -64,7 +67,7 @@ void manejo_conexiones_cpu()
 						else
 						{
 							//funcion para realizar handshake con nueva conexion
-							puts("Se conecto alguien nuevo");
+							realizar_handShake(nuevo_socket);
 						}
 
 						//Cargo la nueva conexion a la lista y actualizo el maximo
@@ -85,6 +88,34 @@ void manejo_conexiones_cpu()
 					}
 				}
 			}
+		}
+	}
+}
+
+void realizar_handShake(int nuevo_socket)
+{
+	//Envio mensaje a CPU pidiendo sus datos
+	char *mensaje = "K00";
+	enviar(nuevo_socket, mensaje, &controlador);
+
+	if (controlador > 0)
+	{
+		error_sockets(&controlador, string_itoa(nuevo_socket));
+		//desconectar socket CPU
+	}
+	else
+	{
+		char *respuesta = recibir(nuevo_socket, &controlador);
+
+		if (controlador > 0)
+		{
+			error_sockets(&controlador, string_itoa(nuevo_socket));
+			//desconectar socket CPU
+		}
+		else
+		{
+			//Aca deberia ir la validacion si el mensaje corresponde a cpu
+			puts(respuesta);
 		}
 	}
 }

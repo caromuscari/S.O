@@ -54,45 +54,6 @@ void escribir_log_compuesto(char *mensaje, char *otro_mensaje)
 	free(final);
 }
 
-char *armar_mensaje(char *identificador, char *mensaje)
-{
-	char *resultado = strdup(identificador);
-	char *payload_char = string_itoa(string_length(mensaje));
-	int size_payload = string_length(payload_char);
-	char *completar = string_repeat('0', 4 - size_payload);
-
-	string_append(&resultado, completar);
-	string_append(&resultado, payload_char);
-	string_append(&resultado, mensaje);
-
-	free(payload_char);
-	free(completar);
-	return resultado;
-}
-
-//Exclusivo del planificador
-char *armar_mensaje_con_coordenadas(char *identificador, int eje_x, int eje_y)
-{
-	char *resultado = strdup(identificador);
-	char *eje_x_char = string_itoa(eje_x);
-	char *eje_y_char = string_itoa(eje_y);
-	int size_payload_x = string_length(eje_x_char);
-	int size_payload_y = string_length(eje_y_char);
-	char *completar_x = string_repeat('0', 3 - size_payload_x);
-	char *completar_y = string_repeat('0', 3 - size_payload_y);
-
-	string_append(&resultado, completar_x);
-	string_append(&resultado, eje_x_char);
-	string_append(&resultado, completar_y);
-	string_append(&resultado, eje_y_char);
-
-	free(eje_x_char);
-	free(eje_y_char);
-	free(completar_x);
-	free(completar_y);
-	return resultado;
-}
-
 void liberar_log()
 {
 	log_destroy(log);
