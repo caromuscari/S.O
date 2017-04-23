@@ -48,6 +48,7 @@ int iniciar_socket_server(char *ip, int puerto_conexion, int *controlador)
 	int socketServidor;
 	struct sockaddr_in my_addr;
 	int yes = 1;
+	int BACKLOG = 20; //Cantidad de conexiones maximas
 	controlador = 0;
 
 	//Creating socket
@@ -72,6 +73,12 @@ int iniciar_socket_server(char *ip, int puerto_conexion, int *controlador)
 		escribir_log("Kernel - Socket server creado");
 	}
 	//printf("binded socket\n");
+
+	//Listening socket
+	if (listen(socketServidor, BACKLOG) != 0)
+	{
+		*controlador = 5;
+	}
 
 	return socketServidor;
 }

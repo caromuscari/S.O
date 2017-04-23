@@ -18,6 +18,8 @@ int fdmax;
 
 void manejo_conexiones_cpu()
 {
+	int controlador = 0;
+
 	//Seteo en 0 el master y temporal
 	FD_ZERO(&master);
 	FD_ZERO(&read_fds);
@@ -28,16 +30,12 @@ void manejo_conexiones_cpu()
 	//Cargo el socket mas grande
 	fdmax = config->server_cpu;
 
-	struct timeval timeout;
-
 	//Bucle principal
 	while (1)
 	{
 		read_fds = master;
-		timeout.tv_sec = 10;
-		timeout.tv_usec = 0;
 
-		int selectResult = select(fdmax + 1, &read_fds, NULL, NULL, &timeout);
+		int selectResult = select(fdmax + 1, &read_fds, NULL, NULL, NULL);
 
 		if (selectResult == -1)
 		{
@@ -55,7 +53,7 @@ void manejo_conexiones_cpu()
 					if (i == config->server_cpu)
 					{
 						//Gestiono la conexion entrante
-						int controlador = 0;
+
 						int nuevo_socket = aceptar_conexion(config->server_cpu, &controlador);
 
 						//Controlo que no haya pasado nada raro y acepto al nuevo
@@ -72,9 +70,9 @@ void manejo_conexiones_cpu()
 						//Cargo la nueva conexion a la lista y actualizo el maximo
 						FD_SET(nuevo_socket, &master);
 
-						if (config->server_cpu > fdmax)
+						if (nuevo_socket > fdmax)
 						{
-							fdmax = config->server_cpu;
+							fdmax = nuevo_socket;
 						}
 					}
 					else
@@ -82,7 +80,8 @@ void manejo_conexiones_cpu()
 						//Es una conexion existente, respondo a lo que me pide
 						//aqui deberia ir la funcion que tome el socket que me hablo y hacer algo
 						//clientHandler((int) i);
-						puts("alguien conectado me hablo");
+						puts("alguien conectado me hablo y dijo:");
+						puts(recibir(i, &controlador));
 					}
 				}
 			}
