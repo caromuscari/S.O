@@ -9,7 +9,8 @@ X: Texto del mensaje a enviar 	(1017 bytes) - en caso de vacio debe ser caracter
 
 ------- DICCIONARIO DE MENSAJES -------
 KERNEL - K
-K00: Mensaje para pedir identificarse al recien conectado y sus datos en caso de corresponder
+K00: Mensaje para pedir identificarse al recien conectado
+K01: Mensaje para pedir datos (vale para cualquiera)
 
 CPU - P
 
