@@ -1,0 +1,23 @@
+Estructura de mensajes (Paquetes estandar de 1024 bytes)
+H + YY + LLLL + XXXXXXXXXXXXXXXXXXXXXXXX
+
+H: Identificador del emisor 		(1 bytes)
+Y: Identificador del mensaje 		(2 bytes)
+L: Longitud del mensaje a enviar (4 bytes)
+X: Texto del mensaje a enviar 	(1017 bytes) - en caso de vacio debe ser caracter nulo
+							TOTAL =	1024 bytes
+
+------- DICCIONARIO DE MENSAJES -------
+KERNEL - K
+K00: Mensaje para pedir identificarse al recien conectado y sus datos en caso de corresponder
+
+CPU - P
+
+MEMORIA - M
+
+CONSOLA - C
+
+FILESYSTEM - F
+
+------- Mensajes -------
+
