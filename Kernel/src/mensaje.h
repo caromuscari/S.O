@@ -20,4 +20,7 @@ int get_codigo(char *mensaje);
 //Obtiene el mensaje
 char * get_mensaje(char *mensaje);
 
+//Compara un header contra el header un mensaje
+int comparar_header(char *identificador, char *mensaje);
+
 #endif /* MENSAJE_H_ */

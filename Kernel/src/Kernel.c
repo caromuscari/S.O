@@ -10,6 +10,7 @@
 #include "socket.h"
 #include "log.h"
 #include "cpuManager.h"
+#include "consolaManager.h"
 
 char *ruta_config;
 t_configuracion *config;
@@ -27,7 +28,6 @@ void handshakearFS(int socket_fs);
 
 int main(int argc, char*argv[])
 {
-
 	ruta_config = strdup("/home/utnso/Archivos/Kernel/configuracion"/*argv[1]*/);
 
 	inicializar_variables();
@@ -38,6 +38,9 @@ int main(int argc, char*argv[])
 	int controlador = 0;
 	config->server_cpu = iniciar_socket_server(config->ip_kernel, config->puerto_cpu, &controlador);
 	manejo_conexiones_cpu();
+
+	//config->server_cpu = iniciar_socket_server(config->ip_kernel, config->, &controlador);
+	//manejo_conexiones_consola();
 
 	socket_memoria = iniciar_socket_cliente(config->ip_memoria, config->puerto_memoria, &controlador);
 	//enviar(socket_memoria, "El handshake debeía ir acá");

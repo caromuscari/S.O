@@ -32,6 +32,11 @@ char *get_header(char *mensaje)
 	return string_substring(mensaje, 1, 1);
 }
 
+int comparar_header(char *identificador, char *mensaje)
+{
+	return strcmp(string_substring(mensaje, 1, 1), identificador);
+}
+
 //devulve el codigo del mensaje
 int get_codigo(char *mensaje)
 {
