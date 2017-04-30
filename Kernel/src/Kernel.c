@@ -11,20 +11,24 @@
 #include "log.h"
 #include "cpuManager.h"
 #include "consolaManager.h"
+#include "manejo_errores.h"
 
 char *ruta_config;
 t_configuracion *config;
 char *sem_id;
 char *sem_in;
 char *shared;
-int socket_memoria;
-int socket_fs;
+t_list *cpus;
+t_list *consolas;
+t_list *programas;
 t_log *log;
 
 void inicializar_variables();
 void liberar_memoria();
 void mostrar_configuracion();
-void handshakearFS(int socket_fs);
+void handshakearFS();
+void handshakearMemory();
+void crear_conexiones();
 
 int main(int argc, char*argv[])
 {
@@ -32,20 +36,15 @@ int main(int argc, char*argv[])
 
 	inicializar_variables();
 	leer_configuracion();
-	mostrar_configuracion();
+	//mostrar_configuracion();
 	crear_archivo_log("/home/utnso/log_kernel");
 
-	int controlador = 0;
-	config->server_cpu = iniciar_socket_server(config->ip_kernel, config->puerto_cpu, &controlador);
-	manejo_conexiones_cpu();
+	crear_conexiones();
+	handshakearFS();
+	handshakearMemory();
 
-	//config->server_cpu = iniciar_socket_server(config->ip_kernel, config->, &controlador);
+	//manejo_conexiones_cpu();
 	//manejo_conexiones_consola();
-
-	socket_memoria = iniciar_socket_cliente(config->ip_memoria, config->puerto_memoria, &controlador);
-	//enviar(socket_memoria, "El handshake debeía ir acá");
-	socket_fs = iniciar_socket_cliente(config->ip_fs, config->puerto_fs, &controlador);
-	handshakearFS(socket_fs);
 
 	liberar_memoria();
 
@@ -54,7 +53,7 @@ int main(int argc, char*argv[])
 
 void inicializar_variables()
 {
-	config = malloc(sizeof(t_configuracion)); //creo que falta la ip del kernel
+	config = malloc(sizeof(t_configuracion));
 	config->algoritmo = strdup("");
 	config->ip_fs = strdup("");
 	config->ip_memoria = strdup("");
@@ -62,6 +61,9 @@ void inicializar_variables()
 	/*config->sem_ids = list_create();
 	config->sem_init = list_create();
 	config->shared_vars = list_create();*/
+	cpus = list_create();
+	consolas = list_create();
+	programas = list_create();
 }
 
 void mostrar_configuracion()
@@ -98,13 +100,44 @@ void liberar_memoria()
 	free(config);
 	/*list_destroy(config->sem_ids);
 	list_destroy(config->sem_init);
-	list_destroy(config->shared_vars);*/
+	list_destroy(config->shared_vars);
+	list_destroy_and_destroy_elements(cpus, void(*element_destroyer)(void*));
+	list_destroy_and_destroy_elements(consolas, void(*element_destroyer)(void*));
+	list_destroy_and_destroy_elements(programas, void(*element_destroyer)(void*));	*/
 }
-void handshakearFS(int socket_fs){
+
+void handshakearFS()
+{
 	int controlador = 0;
 	char *mensaje = malloc(7);
-	strcpy(mensaje,"KERNEL");
-	enviar(socket_fs, mensaje,&controlador);
+	strcpy(mensaje,"K03");
+	enviar(config->cliente_fs, mensaje, &controlador);
+	if(controlador > 0) {	error_sockets(&controlador, "FileSystem");	}
 	free(mensaje);
 }
 //void liberar_lista_char()
+void handshakearMemory()
+{
+	int controlador = 0;
+	char *mensaje = malloc(7);
+	strcpy(mensaje,"K02");
+	enviar(config->cliente_memoria, mensaje, &controlador);
+	if(controlador > 0) {	error_sockets(&controlador, "Memoria");	}
+	free(mensaje);
+}
+
+void crear_conexiones()
+{
+	int controlador = 0;
+	config->server_cpu = iniciar_socket_server(config->ip_kernel, config->puerto_cpu, &controlador);
+	if(controlador > 0) {	error_sockets(&controlador, "");	}
+
+	config->server_consola = iniciar_socket_server(config->ip_kernel, config->puerto_prog, &controlador);
+	if(controlador > 0) {	error_sockets(&controlador, "");	}
+
+	config->cliente_fs = iniciar_socket_cliente(config->ip_fs, config->puerto_fs, &controlador);
+	if(controlador > 0) {	error_sockets(&controlador, "");	}
+
+	config->cliente_memoria = iniciar_socket_cliente(config->ip_memoria, config->puerto_memoria, &controlador);
+	if(controlador > 0) {	error_sockets(&controlador, "");	}
+}

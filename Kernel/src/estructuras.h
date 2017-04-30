@@ -4,10 +4,10 @@
 
 typedef struct
 {
+	char *ip_kernel;
 	int puerto_prog;
 	int puerto_cpu;
 	char *ip_memoria;
-	char *ip_kernel;
 	int puerto_memoria;
 	char *ip_fs;
 	int puerto_fs;
@@ -21,7 +21,9 @@ typedef struct
 	int stack_size;
 	int server_cpu;
 	int server_consola;
-}t_configuracion;
+	int cliente_fs;
+	int cliente_memoria;
+} t_configuracion;
 
 typedef struct
 {

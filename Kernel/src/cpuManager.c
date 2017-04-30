@@ -21,6 +21,7 @@ int fdmax;
 int controlador_cpu = 0;
 
 void realizar_handShake_cpu(int nuevo_socket);
+void agregar_lista_cpu(int nuevo_socket, char *mensaje_con_datos);
 
 void manejo_conexiones_cpu()
 {
@@ -129,7 +130,17 @@ void realizar_handShake_cpu(int nuevo_socket)
 				}
 				else
 				{
+					char *mensaje_con_datos = recibir(nuevo_socket, &controlador_cpu);
 
+					if (controlador_cpu > 0)
+					{
+						error_sockets(&controlador_cpu, string_itoa(nuevo_socket));
+						cerrar_conexion(nuevo_socket);
+					}
+					else
+					{
+						agregar_lista_cpu(nuevo_socket, mensaje_con_datos);
+					}
 				}
 			}
 			else
@@ -143,7 +154,7 @@ void realizar_handShake_cpu(int nuevo_socket)
 	}
 }
 
-void desconectar_cpu(int socket)
+void agregar_lista_cpu(int nuevo_socket, char *mensaje_con_datos)
 {
-
+	//me paso los datos y deberia guardarlos en mi lista de cpu
 }
