@@ -14,4 +14,5 @@ typedef struct {
 }t_consola;
 
 
+
 #endif /* ESTRUCTURAS_H_ */

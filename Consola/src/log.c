@@ -14,7 +14,7 @@
 #include <commons/log.h>
 #include <commons/string.h>
 
-t_log *log;
+extern t_log *log;
 pthread_mutex_t mutex_log;
 
 void crear_archivo_log(char *file)
@@ -52,22 +52,6 @@ void escribir_log_compuesto(char *mensaje, char *otro_mensaje)
 	log_info(log, final);
 	pthread_mutex_unlock(&mutex_log);
 	free(final);
-}
-
-char *armar_mensaje(char *identificador, char *mensaje)
-{
-	char *resultado = strdup(identificador);
-	char *payload_char = string_itoa(string_length(mensaje));
-	int size_payload = string_length(payload_char);
-	char *completar = string_repeat('0', 4 - size_payload);
-
-	string_append(&resultado, completar);
-	string_append(&resultado, payload_char);
-	string_append(&resultado, mensaje);
-
-	free(payload_char);
-	free(completar);
-	return resultado;
 }
 
 void liberar_log()
