@@ -1,10 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <commons/collections/list.h>
 #include <commons/config.h>
 #include <commons/string.h>
 #include <commons/log.h>
+#include <commons/collections/list.h>
 #include "estructuras.h"
 #include "configuracion.h"
 #include "socket.h"
@@ -12,6 +12,7 @@
 #include "cpuManager.h"
 #include "consolaManager.h"
 #include "manejo_errores.h"
+#include "memoria.h"
 
 char *ruta_config;
 t_configuracion *config;
@@ -116,15 +117,7 @@ void handshakearFS()
 	free(mensaje);
 }
 //void liberar_lista_char()
-void handshakearMemory()
-{
-	int controlador = 0;
-	char *mensaje = malloc(7);
-	strcpy(mensaje,"K02");
-	enviar(config->cliente_memoria, mensaje, &controlador);
-	if(controlador > 0) {	error_sockets(&controlador, "Memoria");	}
-	free(mensaje);
-}
+
 
 void crear_conexiones()
 {

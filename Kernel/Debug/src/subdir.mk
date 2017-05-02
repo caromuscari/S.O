@@ -6,25 +6,34 @@
 C_SRCS += \
 ../src/Kernel.c \
 ../src/configuracion.c \
+../src/consolaManager.c \
 ../src/cpuManager.c \
 ../src/log.c \
 ../src/manejo_errores.c \
+../src/memoria.c \
+../src/mensaje.c \
 ../src/socket.c 
 
 OBJS += \
 ./src/Kernel.o \
 ./src/configuracion.o \
+./src/consolaManager.o \
 ./src/cpuManager.o \
 ./src/log.o \
 ./src/manejo_errores.o \
+./src/memoria.o \
+./src/mensaje.o \
 ./src/socket.o 
 
 C_DEPS += \
 ./src/Kernel.d \
 ./src/configuracion.d \
+./src/consolaManager.d \
 ./src/cpuManager.d \
 ./src/log.d \
 ./src/manejo_errores.d \
+./src/memoria.d \
+./src/mensaje.d \
 ./src/socket.d 
 
 
