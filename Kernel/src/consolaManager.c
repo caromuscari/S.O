@@ -15,12 +15,25 @@
 #include "mensaje.h"
 
 extern t_configuracion *config;
+extern t_list *consolas;
+extern t_list *programas;
 fd_set master;
 fd_set read_fds;
 int fdmax;
 int controlador = 0;
 
+typedef struct
+{
+	int *CID;
+	int *socket;
+}t_consola;
+
+
 void realizar_handShake_consola(int nuevo_socket);
+void manejo_conexiones_consolas();
+int *get_CID();
+void desconectar_consola(int socket);
+void responder_solicitud(int socket, char *mensaje);
 
 void manejo_conexiones_consolas()
 {
@@ -82,10 +95,16 @@ void manejo_conexiones_consolas()
 					else
 					{
 						//Es una conexion existente, respondo a lo que me pide
-						//aqui deberia ir la funcion que tome el socket que me hablo y hacer algo
-						//clientHandler((int) i);
-						puts("alguien conectado me hablo y dijo:");
-						puts(recibir(i, &controlador));
+						char *mensaje_recibido = recibir(i, &controlador);
+						if(controlador > 0)
+						{
+							error_sockets(&controlador, atoi(i));
+							desconectar_consola(i);
+						}
+						else
+						{
+							responder_solicitud(i, mensaje_recibido);
+						}
 					}
 				}
 			}
@@ -115,22 +134,14 @@ void realizar_handShake_consola(int nuevo_socket)
 		}
 		else
 		{
-			//Aca deberia ir la validacion si el mensaje corresponde a cpu
+			//Aca deberia ir la validacion si el mensaje corresponde a una consola
 			if(comparar_header("C", respuesta))
 			{
-				//Es una CPU, se puede hablar
-				char *mensaje = "K01";
-				enviar(nuevo_socket, mensaje, &controlador);
-
-				if (controlador > 0)
-				{
-					error_sockets(&controlador, string_itoa(nuevo_socket));
-					cerrar_conexion(nuevo_socket);
-				}
-				else
-				{
-
-				}
+				//Es una Consola, se puede agregar
+				t_consola *nueva_consola;
+				nueva_consola->socket = nuevo_socket;
+				nueva_consola->CID = get_CID();
+				list_add(consolas, nueva_consola);
 			}
 			else
 			{
@@ -143,7 +154,43 @@ void realizar_handShake_consola(int nuevo_socket)
 	}
 }
 
+int *get_CID()
+{
+	int *ultimo_id = 1;
+
+	void _mayor(t_consola *consola)
+	{
+		if(consola->CID == ultimo_id)
+		{
+			ultimo_id++;
+		}
+	}
+
+	list_iterate(consolas, (void*)_mayor);
+	return ultimo_id;
+}
+
+void responder_solicitud(int socket, char *mensaje)
+{
+	switch(get_codigo(mensaje)) {
+		case 0 :
+			//Hacer una cosa
+			break;
+		case 1 :
+			//Hacer otra cosa
+			break;
+		default :
+			//En caso de no entender el mensaje
+			printf("deberia hacer algo por defecto");
+	}
+}
+
 void desconectar_consola(int socket)
 {
-
+	bool _localizar(t_consola *con)
+	{
+		return (int)con->socket == socket;
+	}
+	t_consola *consola = list_remove_by_condition(consolas, (void*)_localizar);
+	//faltaria el tema de eliminar todos los programas dependientes de esta consola
 }
