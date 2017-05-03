@@ -30,7 +30,9 @@ typedef struct
 {
 	int *PID;
 	int *control;
-}t_program;
+	t_PCB *pcb;
+	t_list *memoria_dinamica; //lista de paginas pedidas de manera dinámica
+}t_program; //cada vez que se crea un programa, además del pcb esta estructura de control
 
 typedef struct
 {
@@ -71,15 +73,16 @@ typedef struct
 {
 	int n_pagina;
 	t_list *heaps; //de heapMetadata
+	int esp_libre;
 }t_pagina;
 
-typedef struct
+/*typedef struct
 {
 	t_pagina *pagina;
 	t_PCB *pcb;
 	int esp_libre;
 }t_heap; //con esto haríamos una lista de las paginas que se solicitó de manera dinámica
-
+*/
 typedef struct
 {
 	int size;
