@@ -28,14 +28,6 @@ typedef struct
 
 typedef struct
 {
-	int *PID;
-	int *control;
-	t_PCB *pcb;
-	t_list *memoria_dinamica; //lista de paginas pedidas de manera dinámica
-}t_program; //cada vez que se crea un programa, además del pcb esta estructura de control
-
-typedef struct
-{
 	int *instruccion;
 	int *offset_inicio;
 	int *offset_fin;
@@ -51,15 +43,6 @@ typedef struct
 
 typedef struct
 {
-	int pos;
-	t_list args; //lista de t_memoria
-	t_list vars; //idem args
-	int retPos; //posición en el indice de código, empezando de 0, donde retorna la función
-	t_memoria retVar;
-}t_stack_element;
-
-typedef struct
-{
 	int PID;
 	int PC;
 	int cant_pag;
@@ -68,6 +51,23 @@ typedef struct
 	t_list *in_stack;  //lista de t_stack_element
 	int exit_code;
 }t_PCB;
+
+typedef struct
+{
+	int *PID;
+	int *control;
+	t_PCB *pcb;
+	t_list *memoria_dinamica; //lista de paginas pedidas de manera dinámica
+}t_program; //cada vez que se crea un programa, además del pcb esta estructura de control
+
+typedef struct
+{
+	int pos;
+	t_list args; //lista de t_memoria
+	t_list vars; //idem args
+	int retPos; //posición en el indice de código, empezando de 0, donde retorna la función
+	t_memoria retVar;
+}t_stack_element;
 
 typedef struct
 {
@@ -88,5 +88,20 @@ typedef struct
 	int size;
 	bool isFree;
 }HeapMetadata;
+
+typedef struct
+{
+	int *cpu_id;
+	int *socket_cpu;
+	bool *cpu_habilitado;//1: false
+	bool *ejecutando;
+	t_PCB *pcb;
+}t_cpu;
+
+typedef struct
+{
+	int *CID;
+	int *socket;
+}t_consola;
 
 #endif /* ESTRUCTURAS_H_ */
