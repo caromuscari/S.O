@@ -17,6 +17,7 @@ K03: Identificarse a FileSystem
 CPU - P
 
 MEMORIA - M
+M00: Respuesta a la solicitud de datos (Kernel) de tamaño de página
 
 CONSOLA - C
 
