@@ -17,6 +17,8 @@ K03: Identificarse a FileSystem
 CPU - P
 
 MEMORIA - M
+M-1: Respuesta de la memoria a cualquier Cliente (K o P), indica que NO PUEDE responder el pedido.
+M00: Respuesta a la solicitud de datos (Kernel) de tamaño de página.
 
 CONSOLA - C
 

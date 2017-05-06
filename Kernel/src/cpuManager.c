@@ -15,13 +15,19 @@
 #include "mensaje.h"
 
 extern t_configuracion *config;
+t_list *cpus_activas;
+t_list *cpus_bloqueadas;
 fd_set master;
 fd_set read_fds;
 int fdmax;
 int controlador_cpu = 0;
+int id = 0;
 
-void realizar_handShake_cpu(int nuevo_socket);
-void agregar_lista_cpu(int nuevo_socket, char *mensaje_con_datos);
+void manejo_conexiones_cpu();
+void realizar_handShake_cpu(int);
+void agregar_lista_cpu(int , char *);
+void inicializar_listas_cpu();
+void actualizar_pcb();
 
 void manejo_conexiones_cpu()
 {
@@ -154,7 +160,36 @@ void realizar_handShake_cpu(int nuevo_socket)
 	}
 }
 
-void agregar_lista_cpu(int nuevo_socket, char *mensaje_con_datos)
+void inicializar_listas_cpu()
+{
+	cpus_activas = list_create();
+	cpus_bloqueadas = list_create();
+}
+
+void nueva_conexion_cpu(int nuevo_socket)
+{
+	int grado_multipr = config->grado_multiprog;
+
+	t_cpu *cpu = malloc(sizeof(t_cpu));
+	*(cpu->socket_cpu) = nuevo_socket;
+	*(cpu->cpu_id) = id ++;
+	cpu->pcb = malloc (sizeof(t_PCB));
+	id ++;
+	if (grado_multipr > list_size(cpus_activas) && list_size(cpus_bloqueadas)== 0)
+	{
+		list_add(cpus_activas, cpu);
+	} else if (grado_multipr > list_size(cpus_activas))
+	{
+		list_add(cpus_activas, list_remove(cpus_bloqueadas,0)); //acordarme de hacer el destroy para liberar memoria :D
+	} else list_add(cpus_bloqueadas, cpu);
+}
+
+void actualizar_pcb()
+{
+
+}
+
+void agregar_lista_cpu(int nuevo_socket, char *mensaje_con_datos) // ??
 {
 	//me paso los datos y deberia guardarlos en mi lista de cpu
 }

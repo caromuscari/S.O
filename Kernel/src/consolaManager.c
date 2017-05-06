@@ -22,13 +22,6 @@ fd_set read_fds;
 int fdmax;
 int controlador = 0;
 
-typedef struct
-{
-	int *CID;
-	int *socket;
-}t_consola;
-
-
 void realizar_handShake_consola(int nuevo_socket);
 void manejo_conexiones_consolas();
 int *get_CID();
@@ -98,7 +91,7 @@ void manejo_conexiones_consolas()
 						char *mensaje_recibido = recibir(i, &controlador);
 						if(controlador > 0)
 						{
-							error_sockets(&controlador, atoi(i));
+							error_sockets(&controlador, (char*) atoi(i));
 							desconectar_consola(i);
 						}
 						else
@@ -139,7 +132,7 @@ void realizar_handShake_consola(int nuevo_socket)
 			{
 				//Es una Consola, se puede agregar
 				t_consola *nueva_consola;
-				nueva_consola->socket = nuevo_socket;
+				*(nueva_consola->socket) = nuevo_socket;
 				nueva_consola->CID = get_CID();
 				list_add(consolas, nueva_consola);
 			}

@@ -12,16 +12,7 @@
 void crear_archivo_log(char *file);
 
 //Funcion que escribe en archivo de log
-void escribir_log(char *mensaje);
-
-//Recibe un texto y un numerico, muy util!
-void escribir_log_con_numero(char *mensaje, int un_numero);
-
-//Recibe y genera log recibiendo dos textos
-void escribir_log_compuesto(char *mensaje, char *otro_mensaje);
-
-//Arma el texto de envio para mensajes
-char *armar_mensaje(char *identificador, char *mensaje);
+void escribir_log(char *mensaje,int cod);
 
 void liberar_log();
 

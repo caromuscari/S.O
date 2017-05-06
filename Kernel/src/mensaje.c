@@ -37,7 +37,7 @@ int comparar_header(char *identificador, char *mensaje)
 	return strcmp(string_substring(mensaje, 1, 1), identificador);
 }
 
-//devulve el codigo del mensaje
+//devuelve el codigo del mensaje
 int get_codigo(char *mensaje)
 {
 	return atoi(string_substring(mensaje, 2, 3));
