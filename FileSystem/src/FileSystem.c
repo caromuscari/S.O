@@ -28,6 +28,7 @@ int main(int argc, char *argv[]) {
 	int flagsocket=0;
 	int socketfs =iniciar_socket_server(ipfs,puerto,&flagsocket);
 
+
 	char *handshake = malloc(1024);
 	int esKernel=0;
 	while(esKernel == 0){
