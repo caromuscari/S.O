@@ -13,6 +13,8 @@ K00: Mensaje para pedir identificarse al recien conectado
 K01: Mensaje para pedir datos (vale para cualquiera)
 K02: Identificarse a Memoria
 K03: Identificarse a FileSystem
+K04: Mensaje para informar que se puede iniciar el programa
+K05: Mensaje para informar que no se puede iniciar el programa
 
 CPU - P
 
@@ -21,8 +23,10 @@ M-1: Respuesta de la memoria a cualquier Cliente (K o P), indica que NO PUEDE re
 M00: Respuesta a la solicitud de datos (Kernel) de tamaño de página.
 
 CONSOLA - C
+C00: Identificarse como consola
+C01: Peticion de inicio de programa 
 
 FILESYSTEM - F
 
 ------- Mensajes -------
-
+C01(tamaño del archivo)(texto del archivo)
