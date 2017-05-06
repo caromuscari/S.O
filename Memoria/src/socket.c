@@ -1,18 +1,21 @@
 /*
  * socket.c
  *
- *  Created on: 06/04/2017
+ *  Created on: 10/10/2016
  *      Author: utnso
  */
 
 #include <stdio.h>
-#include <string.h>
+#include <string.h>    //strlen
 #include <sys/socket.h>
-#include <arpa/inet.h>
-#include <unistd.h>
+#include <arpa/inet.h> //inet_addr
+#include <unistd.h>    //write
 #include <stdlib.h>
-#include <signal.h>
-#include <commons/string.h>
+#include "socket.h"
+
+//#define BACKLOG 3			// Define cuantas conexiones vamos a mantener pendientes al mismo tiempo
+//#define PACKAGESIZE 1024
+//#define IP_LOCAL "127.0.0.1"
 
 int iniciar_socket_server(char *ip, char *puerto)
 {
@@ -71,57 +74,50 @@ int escuchar_conexiones(int socketServidor)
 	return client_sock_accepted;
 }
 
-int enviar(int socket_emisor, char *mensaje_a_enviar, int *control)
+
+int enviar(int socket_emisor, char *mensaje_a_enviar)
 {
 	int ret;
-	signal(SIGPIPE, SIG_IGN);
+
 	size_t sbuffer = sizeof(char)*1024;
-	//char* buffer = (char*)malloc(sbuffer);
+	char* buffer = (char*)malloc(sbuffer);
 
-	char *buffer = string_substring(mensaje_a_enviar,0,sbuffer);
-	//memcpy(buffer, mensaje_a_enviar, sbuffer);
-	*control = 0;
+	memcpy(buffer, mensaje_a_enviar, sbuffer);
 
-	if ((ret = send(socket_emisor, buffer, sbuffer, MSG_NOSIGNAL)) < 0)
-	{
-		//close(socket_emisor);
-		//escribir_log("Se desconectó un entrenador");
-		*control = 1;
-		//perror("error en el envio del mensaje");
+	if ((ret = send(socket_emisor, buffer, sbuffer, 0)) < 0) {
+		perror("error en el envio del mensaje");
 	}
 
 	free(buffer);
 	return ret;
 }
 
-char *recibir(int socket_receptor, int *controlador)
+char *recibir(int socket_receptor)
 {
 	int ret;
 
-	char *buffer = malloc(1024);
+	size_t sbuffer = sizeof(char)*1024;
+	char* buffer = (char*)malloc(1024);
 
-	*controlador = 0;
+	if ((ret = recv(socket_receptor, buffer, sbuffer,MSG_WAITALL)) <=0) {
+		//printf("error receiving or connection lost\n");
+			if (ret == 0) {
+				//printf("socket %d hung up\n", socket_receptor);
+				memcpy(buffer,"ERROR",5);
+				return buffer;
+				free(buffer);
+			} else {
+				memcpy(buffer,"ERROR",5);
+				return buffer;
+				free(buffer);
 
-	if ((ret = recv(socket_receptor, buffer, 1024, 0)) <= 0)
-	{
-		//printf("error receiving or connection lost \n");
-		if (ret == 0)
-		{
-			//printf("socket %d se desconectó \n", socket_receptor);
-		} else {
-			//printf("error recibiendo el mensaje \n");
-				}
-		*controlador = 1;
-		//close(socket_receptor);
+			}
+			close(socket_receptor);
+
 	}
 
-	//buffer[ret]='\0';
-	char *buffer_aux= strdup(buffer);
-	free(buffer);
-	return buffer_aux;
-}
+	buffer[ret]='\0';
 
-void cerrar_conexion(int socket_)
-{
-	close(socket_);
+	return buffer;
+	free(buffer);
 }

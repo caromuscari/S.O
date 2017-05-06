@@ -5,8 +5,8 @@
  *      Author: utnso
  */
 
-#ifndef SHARED_FUNC_LOG_H_
-#define SHARED_FUNC_LOG_H_
+#ifndef SRC_LOG_H_
+#define SRC_LOG_H_
 
 //Funcion para crear archivo de log
 void crear_archivo_log(char *file);
@@ -25,4 +25,4 @@ char *armar_mensaje(char *identificador, char *mensaje);
 
 void liberar_log();
 
-#endif /* SHARED_FUNC_LOG_H_ */
+#endif /* SRC_LOG_H_ */
