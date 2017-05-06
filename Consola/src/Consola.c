@@ -21,7 +21,7 @@
 
 t_consola arch_config;
 int socket_;
-char* inicio_ejecucion;
+//char* inicio_ejecucion;
 pthread_t hiloUsuario;
 pthread_t hiloEscucha;
 char * identi;
@@ -37,20 +37,17 @@ void leer_archivo_configuracion(char * ruta);
 void handshake(int socket_);
 void * escucha_mensaje();
 void * funcion ();
-void iniciar_programa(char * ruta);
-void finalizar_programa(char * pid);
+void iniciar_programa(char * ruta, int socket_);
+void finalizar_programa(char * pid, int socket_);
 void desconectar_consola();
 void limpiar_consola();
+void programa ();
 
 int main(int argc, char * argv[]) {
 
-/*if (argc == 1)
-	{
-		printf("Falta la ruta del archivo de configuración");
-		return 1;
-	}*/
 
 	inicializar_parametros();
+	crear_log("/home/utnso/log_consola.txt");
 	leer_archivo_configuracion(argv[1]);
 	socket_ = iniciar_socket_cliente(arch_config.ip, arch_config.puerto);
 	handshake(socket_);
@@ -62,7 +59,11 @@ int main(int argc, char * argv[]) {
 	liberar_memoria();
 }
 
-
+void crear_log(char* file)
+{
+	log = log_create(file,"CONSOLA",true, LOG_LEVEL_INFO);
+	log_info(log, "Se crea el archivo de log");
+}
 
 void leer_archivo_configuracion(char * ruta)
 {
@@ -77,10 +78,12 @@ void leer_archivo_configuracion(char * ruta)
 
 void handshake(int socket_){
 	char * mensaje= malloc(7);
-	recibir(socket_);
+	char * mensaje_recibido= malloc(7);
+	mensaje_recibido = recibir(socket_);
 	mensaje=armar_mensaje("C00","");
 	enviar(socket_,mensaje);
 	free(mensaje);
+	free(mensaje_recibido);
 }
 void* funcion ()
 {
@@ -89,11 +92,11 @@ void* funcion ()
 		identi=string_split(ingreso," ");
 
 		if(identi[0] == "iniciar_programa"){
-			iniciar_programa(identi[1]);
+			iniciar_programa(identi[1],socket_);
 		}
 		else{
 			if(identi[0] == "finalizar_programa"){
-				finalizar_programa(identi[1]);
+				finalizar_programa(identi[1],socket_);
 			}
 			else{
 				if(identi[0] == "desconectar_consola"){
@@ -123,17 +126,31 @@ void* funcion ()
 	}
 }
 
-void iniciar_programa(char * ruta){
+void iniciar_programa(char * ruta, int socket_){
 	FILE* archivo;
 	long int final;
+	char * mensaje;
+	char * mensaje_armado;
+	char * mensaje_recibido;
+	char * identificador;
+	pthread_t hiloPrograma;
 	archivo = fopen(ruta,"r");
 	fseek( archivo, 0L, SEEK_END );
 	final = ftell( archivo );
-	//memcpy();
+	memcpy(mensaje, archivo, final);
+	//printf(mensaje);
+	mensaje_armado= armar_mensaje("C01", mensaje);
+	enviar(socket_, mensaje_armado);
+	mensaje_recibido = recibir(socket_);
+	identificador = get_header(mensaje_recibido);
+	if (identificador == "K04"){
+		pthread_create(&hiloPrograma, NULL, (void*) programa, NULL);
+	}
+	else printf("no se pudo iniciar el programa");
 
 }
 
-void finalizar_programa(char * pid){
+void finalizar_programa(char * pid, int socket_){
 
 }
 
@@ -142,6 +159,9 @@ void desconectar_consola(){
 }
 
 void limpiar_consola(){
+
+}
+void programa (){
 
 }
 void * escucha_mensaje(){
