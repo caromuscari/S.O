@@ -8,11 +8,14 @@
 #include <stdlib.h>
 #include "estructuras.h"
 #include <commons/collections/dictionary.h>
+#include "log.h"
 
 extern t_dictionary * p_pid;
 extern t_dictionary * h_pid;
 extern t_consola arch_config;
-extern t_log log;
+t_log *log;
+extern char * ingreso;
+extern char * identi;
 
 void inicializar_parametros()
 {
