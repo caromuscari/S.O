@@ -5,18 +5,21 @@
  *      Author: utnso
  */
 #include <pthread.h>
-#include <commons/log.h>
 #include <stdlib.h>
+#include <string.h>
+#include <commons/log.h>
+#include <commons/string.h>
+#include <commons/collections/queue.h>
+#include "mensaje.h"
+#include "planificador.h"
 #include "estructuras.h"
 #include "manejo_errores.h"
 #include "socket.h"
-#include <string.h>
-#include <commons/string.h>
-#include "mensaje.h"
 
 extern t_configuracion *config;
 extern t_list *consolas;
-extern t_list *programas;
+extern t_queue *programas;
+
 fd_set master;
 fd_set read_fds;
 int fdmax;
@@ -91,7 +94,7 @@ void manejo_conexiones_consolas()
 						char *mensaje_recibido = recibir(i, &controlador);
 						if(controlador > 0)
 						{
-							error_sockets(&controlador, (char*) atoi(i));
+							error_sockets(&controlador, atoi(i));
 							desconectar_consola(i);
 						}
 						else
@@ -166,11 +169,8 @@ int *get_CID()
 void responder_solicitud(int socket, char *mensaje)
 {
 	switch(get_codigo(mensaje)) {
-		case 0 :
-			//Hacer una cosa
-			break;
 		case 1 :
-			//Hacer otra cosa
+			responder_peticion_prog(socket, mensaje);
 			break;
 		default :
 			//En caso de no entender el mensaje
@@ -186,4 +186,38 @@ void desconectar_consola(int socket)
 	}
 	t_consola *consola = list_remove_by_condition(consolas, (void*)_localizar);
 	//faltaria el tema de eliminar todos los programas dependientes de esta consola
+}
+
+void responder_peticion_prog(int socket, char *mensaje)
+{
+	char *identificador = "K06";
+	char *codigo = get_mensaje(mensaje);
+	char *mensaje_envio =  armar_mensaje(identificador, codigo);
+
+	//envio del codigo a memoria para ver si hay espacio
+	enviar(config->cliente_memoria, mensaje_envio, &controlador);
+	if (controlador > 0)
+	{
+		error_sockets(&controlador, string_itoa(config->cliente_memoria));
+	}
+
+	//recibo la respuesta de memoria
+	char *mensaje_recibido = recibir(config->cliente_memoria, &controlador);
+	if (controlador > 0)
+	{
+		error_sockets(&controlador, string_itoa(config->cliente_memoria));
+	}
+
+	if(get_codigo(mensaje_recibido) == 01)
+	{
+		enviar(socket, "K05", &controlador);
+		if (controlador > 0)
+		{
+			error_sockets(&controlador, socket);
+		}
+	}
+	else
+	{
+		agregar_nueva_prog(socket, mensaje);//deberia haber otro proceso aca
+	}
 }

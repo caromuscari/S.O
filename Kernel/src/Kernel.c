@@ -5,6 +5,7 @@
 #include <commons/string.h>
 #include <commons/log.h>
 #include <commons/collections/list.h>
+#include <commons/collections/queue.h>
 #include "estructuras.h"
 #include "configuracion.h"
 #include "socket.h"
@@ -21,7 +22,7 @@ char *sem_in;
 char *shared;
 t_list *cpus;
 t_list *consolas;
-t_list *programas;
+t_queue *programas;
 t_log *log;
 
 void inicializar_variables();
@@ -64,7 +65,7 @@ void inicializar_variables()
 	config->shared_vars = list_create();*/
 	cpus = list_create();
 	consolas = list_create();
-	programas = list_create();
+	programas = queue_create();
 }
 
 void mostrar_configuracion()
