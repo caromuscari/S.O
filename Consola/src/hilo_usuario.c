@@ -11,6 +11,8 @@
 #include "socket_client.h"
 #include "mensaje.h"
 #include <commons/string.h>
+#include "log.h"
+#include <commons/log.h>
 
 extern char * identi;
 extern char * ingreso;
@@ -19,12 +21,13 @@ extern t_dictionary * p_pid;
 extern t_dictionary * h_pid;
 
 void programa ();
+//void leer_archivo();
 void iniciar_programa(char * ruta, int socket_);
-void finalizar_programa(char * pid, int socket_);
+void finalizar_programa(pthread_t pid, int socket_);
 void desconectar_consola();
 void limpiar_consola();
 
-void* funcion ()
+void* hilousuario ()
 {
 	while(1){
 		scanf("%s",ingreso);
@@ -38,7 +41,7 @@ void* funcion ()
 			if(ingreso == "finalizar_programa"){
 				printf("ingresar el PID del programa: ");
 				scanf("%s",identi);
-				finalizar_programa(identi,socket_);
+				finalizar_programa(atol(identi),socket_);
 			}
 			else{
 				if(ingreso == "desconectar_consola"){
@@ -63,7 +66,7 @@ void iniciar_programa(char * ruta, int socket_){
 	char * mensaje_recibido=malloc(sizeof * mensaje_recibido);
 	char * identificador=malloc(3);
 	char * mensaje2;
-	char* pid=malloc(sizeof *pid);
+	int pid;
 	pthread_t hiloPrograma;
 	archivo = fopen(ruta,"r");
 	fseek( archivo, 0L, SEEK_END );
@@ -82,11 +85,17 @@ void iniciar_programa(char * ruta, int socket_){
 	string_append(identificador, get_codigo(mensaje_recibido));
 	if (identificador == "K04"){
 		pthread_create(&hiloPrograma, NULL, (void*) programa, NULL);
-		pid= get_mensaje(mensaje_recibido);
+		escribir_log("Se inicio el programa");
+		pid= atoi(get_mensaje(mensaje_recibido));
 		dictionary_put(p_pid,pid,hiloPrograma);
 		dictionary_put(h_pid,hiloPrograma,pid);
 	}
-	else printf("no se pudo iniciar el programa");
+	else {
+		if(identificador == "K05"){
+			printf("no se pudo iniciar el programa");
+			escribir_log("No se pudo iniciar el programa");
+		}
+	}
 	fclose(archivo);
 	free(mensaje);
 	free(mensaje2);
@@ -97,7 +106,11 @@ void iniciar_programa(char * ruta, int socket_){
 
 }
 
-void finalizar_programa(char * pid, int socket_){
+//void leer_archivo(){
+
+//}
+
+void finalizar_programa(pthread_t pid, int socket_){
 
 }
 

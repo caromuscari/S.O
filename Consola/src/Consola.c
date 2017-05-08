@@ -17,12 +17,11 @@
 #include "socket_client.h"
 #include "mensaje.h"
 #include "log.h"
-
+#include <signal.h>
 
 t_consola arch_config;
 int socket_;
 pthread_t hiloUsuario;
-pthread_t hiloEscucha;
 char * identi;
 char *ingreso;
 t_log * log;
@@ -34,39 +33,34 @@ void inicializar_parametros();
 void liberar_memoria();
 void leer_archivo_configuracion(char * ruta);
 void handshake(int socket_);
-void * escucha_mensaje();
-void * funcion ();
-void crear_log(char* file);
+void * hilousuario ();
+void terminar();
 
 int main(int argc, char * argv[]) {
 
 
 	inicializar_parametros();
-	crear_log("/home/utnso/log_consola.txt");
+	crear_archivo_log("/home/utnso/log_consola.txt");
 	leer_archivo_configuracion(argv[1]);
+	signal(SIGTERM,terminar);
 	socket_ = iniciar_socket_cliente(arch_config.ip, arch_config.puerto);
 	handshake(socket_);
-	pthread_create(&hiloUsuario, NULL, (void*) funcion, NULL);
-	pthread_create(&hiloEscucha, NULL, (void*) escucha_mensaje, NULL);
-	pthread_join(hiloEscucha, NULL);
+	pthread_create(&hiloUsuario, NULL, (void*) hilousuario, NULL);
 	pthread_join(hiloUsuario, NULL);
 
 	liberar_memoria();
 }
 
-void crear_log(char* file)
-{
-	log = log_create(file,"CONSOLA",true, LOG_LEVEL_INFO);
-	log_info(log, "Se crea el archivo de log");
-}
+void terminar(){
 
+}
 void leer_archivo_configuracion(char * ruta)
 {
 	t_config * configConsola = config_create(ruta);
 	arch_config.ip = config_get_string_value(configConsola,"IP_KERNEL");
 	arch_config.puerto = config_get_string_value(configConsola,"PUERTO_KERNEL");
-	log_info(log,arch_config.ip);
-	log_info(log,arch_config.puerto);
+	escribir_log(arch_config.ip);
+	escribir_log(arch_config.puerto);
 	config_destroy(configConsola);
 
 }
@@ -79,6 +73,7 @@ void handshake(int socket_){
 		mensaje=armar_mensaje("C00","");
 		enviar(socket_,mensaje,sizeof(mensaje));
 	}
+	escribir_log("Se hizo el handshake");
 	free(mensaje);
 	free(mensaje_recibido);
 }

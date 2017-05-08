@@ -22,7 +22,6 @@ void inicializar_parametros()
 {
 	arch_config.ip= malloc(sizeof * arch_config.ip);
 	arch_config.puerto= malloc(sizeof * arch_config.puerto);
-	log = malloc(sizeof *log);
 	ingreso= malloc(sizeof *ingreso);
 	identi= malloc(sizeof *identi);
 	p_pid = dictionary_create();
@@ -33,12 +32,12 @@ void liberar_memoria()
 {
 	free(arch_config.ip);
 	free(arch_config.puerto);
-	free(log);
 	free(ingreso);
 	free(identi);
 	dictionary_clean(p_pid);
 	dictionary_destroy(p_pid);
 	dictionary_clean(h_pid);
 	dictionary_destroy(h_pid);
+	liberar_log();
 }
 
