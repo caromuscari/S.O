@@ -16,13 +16,18 @@ K03: Identificarse a FileSystem
 K04: Mensaje para informar que se puede iniciar el programa
 K05: Mensaje para informar que NO se puede iniciar el programa
 K06: Mensaje a memoria para saber si se puede guardar un codigo
+K07: Mensaje con PCB para la CPU
 
 CPU - P
+P00: me presento al mundo como una CPU
+P01: Pedir bytes de una página a Memoria
+
 
 MEMORIA - M
-M00: Respuesta a la solicitud de datos (Kernel) de tamaño de página.
+M00: Respuesta a la solicitud de datos (Kernel) de tamaño de página. Va en el HandShake. Rta Ej: M|00|0128|
 M01: Respuesta de la memoria a cualquier Cliente (K o P), indica que NO PUEDE responder el pedido.
 M02: Respuesta de la memoria a K, indica que PUDO guardar el codigo.
+M03: Respuesta de la memoria a K, indica que NO PUDO guardar el codigo.
 
 CONSOLA - C
 C00: Identificarse como consola

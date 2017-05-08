@@ -8,6 +8,7 @@
 #include "estructuras.h"
 #include <commons/string.h>
 #include "log.h"
+#include "socket.h"
 #include <commons/log.h>
 
 int iniciar_socket_cliente(char *ip, int puerto_conexion, int *control)
@@ -39,16 +40,13 @@ int iniciar_socket_cliente(char *ip, int puerto_conexion, int *control)
 	return connected_socket;
 }
 
-int enviar(int socket_emisor, char *mensaje_a_enviar, int *controlador)
+int enviar(int socket_emisor, void *mensaje_a_enviar, int *controlador,int size)
 {
 	int ret;
 	signal(SIGPIPE, SIG_IGN);
-	size_t sbuffer = sizeof(char)*1024;
 	*controlador = 0;
 
-	char *buffer = string_substring(mensaje_a_enviar,0,sbuffer);
-
-	if ((ret = send(socket_emisor, buffer, sbuffer, MSG_NOSIGNAL)) < 0)
+	if ((ret = send(socket_emisor, mensaje_a_enviar,size, MSG_NOSIGNAL)) < 0)
 	{
 		//close(socket_emisor);
 		*controlador = 7;
@@ -58,19 +56,16 @@ int enviar(int socket_emisor, char *mensaje_a_enviar, int *controlador)
 		//Este mensaje debera esta en la funcion que invoque esta
 		//escribir_log_con_numero("Kernel - Exito al enviar mensaje a PID: ", *prog->PID);
 	}
-	free(buffer);
 	return ret;
 }
 
-char *recibir(int socket_receptor, int *controlador)
+void recibir(int socket_receptor, int *controlador,void *buff,int size)
 {
 	int ret;
 
-	char *buffer = malloc(1024);
-
 	*controlador = 0;
 
-	if ((ret = recv(socket_receptor, buffer, 1024, 0)) <= 0)
+	if ((ret = recv(socket_receptor, buff, size, 0)) <= 0)
 	{
 		//printf("error receiving or connection lost \n");
 		if (ret == 0)
@@ -83,9 +78,6 @@ char *recibir(int socket_receptor, int *controlador)
 		//close(socket_receptor);
 	}
 
-	char *buffer_aux= strdup(buffer);
-	free(buffer);
-	return buffer_aux;
 }
 
 void cerrar_conexion(int socket_)
