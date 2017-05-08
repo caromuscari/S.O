@@ -14,13 +14,15 @@ K01: Mensaje para pedir datos (vale para cualquiera)
 K02: Identificarse a Memoria
 K03: Identificarse a FileSystem
 K04: Mensaje para informar que se puede iniciar el programa
-K05: Mensaje para informar que no se puede iniciar el programa
+K05: Mensaje para informar que NO se puede iniciar el programa
+K06: Mensaje a memoria para saber si se puede guardar un codigo
 
 CPU - P
 
 MEMORIA - M
-M-1: Respuesta de la memoria a cualquier Cliente (K o P), indica que NO PUEDE responder el pedido.
 M00: Respuesta a la solicitud de datos (Kernel) de tamaño de página.
+M01: Respuesta de la memoria a cualquier Cliente (K o P), indica que NO PUEDE responder el pedido.
+M02: Respuesta de la memoria a K, indica que PUDO guardar el codigo.
 
 CONSOLA - C
 C00: Identificarse como consola
