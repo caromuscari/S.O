@@ -6,7 +6,7 @@ int iniciar_socket_cliente(char *ip, int puerto/*char *puerto*/);
 
 //Esta funcion envia mensajes a traves del socket conectado
 //Devuelve un entero significativo de que si el mensaje fue enviado o no
-int enviar(int socket_emisor, char *mensaje_a_enviar);
+int enviar(int socket_emisor, char *mensaje_a_enviar, int tamanio);
 
 //Esta funcion recibe mensajes a traves de un socket
 char *recibir(int socket_receptor);

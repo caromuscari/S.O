@@ -7,50 +7,50 @@
 
 #include <stdio.h>
 #include <pthread.h>
+#include <commons/collections/dictionary.h>
+#include "socket_client.h"
+#include "mensaje.h"
+#include <commons/string.h>
 
 extern char * identi;
 extern char * ingreso;
 extern int socket_;
+extern t_dictionary * p_pid;
+extern t_dictionary * h_pid;
 
 void programa ();
+void iniciar_programa(char * ruta, int socket_);
+void finalizar_programa(char * pid, int socket_);
+void desconectar_consola();
+void limpiar_consola();
 
 void* funcion ()
 {
 	while(1){
-		scanf("%d",ingreso);
-		identi=string_split(ingreso," ");
+		scanf("%s",ingreso);
 
-		if(identi[0] == "iniciar_programa"){
-			iniciar_programa(identi[1],socket_);
+		if(ingreso == "iniciar_programa"){
+			printf("ingresar la ruta del programa: ");
+			scanf("%s",identi);
+			iniciar_programa(identi,socket_);
 		}
 		else{
-			if(identi[0] == "finalizar_programa"){
-				finalizar_programa(identi[1],socket_);
+			if(ingreso == "finalizar_programa"){
+				printf("ingresar el PID del programa: ");
+				scanf("%s",identi);
+				finalizar_programa(identi,socket_);
 			}
 			else{
-				if(identi[0] == "desconectar_consola"){
+				if(ingreso == "desconectar_consola"){
 					desconectar_consola();
 				}
 				else{
-					if(identi[0] == "limpiar_consola"){
+					if(ingreso == "limpiar_consola"){
 						limpiar_consola();
 					}
 				}
 			}
 		}
-		/*switch(*identi){
-		case 1:
-			iniciar_programa();
-			break;
-		case 2:
-			finalizar_programa();
-			break;
-		case 3:
-			desconectar_consola();
-			break;
-		case 4:
-			limpiar_consola();
-			break;*/
 
 	}
 }
@@ -59,24 +59,41 @@ void iniciar_programa(char * ruta, int socket_){
 	FILE* archivo;
 	long int final;
 	char * mensaje;
-	char * mensaje_armado;
-	char * mensaje_recibido;
-	char * identificador;
+	char * mensaje_armado=malloc(sizeof * mensaje_armado);
+	char * mensaje_recibido=malloc(sizeof * mensaje_recibido);
+	char * identificador=malloc(3);
+	char * mensaje2;
+	char* pid=malloc(sizeof *pid);
 	pthread_t hiloPrograma;
 	archivo = fopen(ruta,"r");
 	fseek( archivo, 0L, SEEK_END );
 	final = ftell( archivo );
-	mensaje=malloc(final);
-	memcpy(mensaje, archivo, final);
-	//printf(mensaje);
-	mensaje_armado= armar_mensaje("C01", mensaje);
-	enviar(socket_, mensaje_armado);
+	fseek(archivo,0,0);
+	mensaje=string_new();
+	mensaje2=string_new();
+	while(!feof(archivo)){
+		fgets(mensaje,final,archivo);
+		string_append(&mensaje2,mensaje);
+	}
+	mensaje_armado= armar_mensaje("C01", mensaje2);
+	enviar(socket_, mensaje_armado,sizeof (mensaje_armado));
 	mensaje_recibido = recibir(socket_);
 	identificador = get_header(mensaje_recibido);
+	string_append(identificador, get_codigo(mensaje_recibido));
 	if (identificador == "K04"){
 		pthread_create(&hiloPrograma, NULL, (void*) programa, NULL);
+		pid= get_mensaje(mensaje_recibido);
+		dictionary_put(p_pid,pid,hiloPrograma);
+		dictionary_put(h_pid,hiloPrograma,pid);
 	}
 	else printf("no se pudo iniciar el programa");
+	fclose(archivo);
+	free(mensaje);
+	free(mensaje2);
+	free(mensaje_armado);
+	free(mensaje_recibido);
+	free(identificador);
+	free(pid);
 
 }
 

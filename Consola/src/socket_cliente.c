@@ -36,11 +36,11 @@ int iniciar_socket_cliente(char *ip, int puerto/*char *puerto*/)
 	return connected_socket;
 }
 
-int enviar(int socket_emisor, char *mensaje_a_enviar)
+int enviar(int socket_emisor, char *mensaje_a_enviar, int tamanio)
 {
 	int ret;
 
-	size_t sbuffer = sizeof(char)*1024;
+	size_t sbuffer = sizeof(char)* tamanio;
 	//char* buffer = (char*)malloc(sbuffer);
 
 	char *buffer = string_substring(mensaje_a_enviar,0,sbuffer);

@@ -21,11 +21,11 @@
 
 t_consola arch_config;
 int socket_;
-//char* inicio_ejecucion;
 pthread_t hiloUsuario;
 pthread_t hiloEscucha;
 char * identi;
-char * ingreso;
+char *ingreso;
+t_log * log;
 t_dictionary * p_pid;
 t_dictionary * h_pid;
 
@@ -36,6 +36,7 @@ void leer_archivo_configuracion(char * ruta);
 void handshake(int socket_);
 void * escucha_mensaje();
 void * funcion ();
+void crear_log(char* file);
 
 int main(int argc, char * argv[]) {
 
@@ -76,7 +77,7 @@ void handshake(int socket_){
 	mensaje_recibido = recibir(socket_);
 	if(get_header(mensaje_recibido)=="K"){
 		mensaje=armar_mensaje("C00","");
-		enviar(socket_,mensaje);
+		enviar(socket_,mensaje,sizeof(mensaje));
 	}
 	free(mensaje);
 	free(mensaje_recibido);
