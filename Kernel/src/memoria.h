@@ -12,5 +12,7 @@ void manejar_respuesta(char *);
 void handshakearMemory();
 void pedir_tamano_pag();
 void reservar_memoria_din(t_program *, int);
+int ubicar_bloque(t_pagina *,int, int *);
+/*HeapMetadata*/ void * find_first_fit(t_list *hs, int t_sol);
 
 #endif /* MEMORIA_H_ */

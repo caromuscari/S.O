@@ -19,6 +19,8 @@ void manejar_respuesta(char *);
 void handshakearMemory();
 void pedir_tamano_pag();
 void reservar_memoria_din(t_program *, int);
+int ubicar_bloque(t_pagina *,int, int *);
+/*HeapMetadata*/ void * find_first_fit(t_list *hs, int t_sol);
 
 void handshakearMemory()
 {
@@ -50,16 +52,24 @@ void reservar_memoria_din(t_program *program, int size_solicitado)
 	if (!list_is_empty(program->memoria_dinamica))
 	{
 		int size_disponible;
-		t_pagina *page = malloc(sizeof(t_pagina));
-		page = list_get(program->memoria_dinamica, (list_size(program->memoria_dinamica)-1));
-		size_disponible = page->esp_libre;
-
-		if (size_disponible >= size_solicitado)
+		int n = 0;
+		int size_lpages = list_size(program->memoria_dinamica);
+		int flag = 0;
+		while(n < size_lpages && flag == 0)
 		{
-			// acá habría que ver si el espacio está contiguo y si no lo está qué mierda hacer :)
-		} // también dudo si pedir si o sí en la ultima o fijarme si se liberó memoria en otra pagina, dudoooo
-		free(page);
-	}else ;//pedir página a memoria
+			t_pagina *page = malloc(sizeof(t_pagina));
+			page = list_get(program->memoria_dinamica, n);
+			size_disponible = page->esp_libre;
+
+			if (size_disponible >= size_solicitado)
+			{
+				ubicar_bloque(page, size_solicitado, &flag);
+
+			}
+			else n++;
+			free(page);
+		}
+	}//else ;//pedir página a memoria
 }
 
 void manejar_respuesta(char *respuesta)
@@ -67,10 +77,11 @@ void manejar_respuesta(char *respuesta)
 	int codigo = get_codigo(respuesta);
 	char *mensaje = strdup("");
 	mensaje = get_mensaje(respuesta);
+	int tam_page;
 	switch (codigo)
 	{
 		case 0:
-			int tam_page = atoi(mensaje);
+			tam_page = atoi(mensaje);
 			tam_pagina = tam_page;
 			break;
 		default:
@@ -79,3 +90,38 @@ void manejar_respuesta(char *respuesta)
 	}
 	free(mensaje);
 }
+
+int ubicar_bloque(t_pagina *pagina,int tam_sol, int *flag)//usa algoritmo first fit -> el resumen dice que es el mas kpo
+{
+//	int flag = 0;
+//	int c = 0;
+
+//	int cant_heaps = list_size(pagina->heaps);
+	HeapMetadata *heap = malloc (sizeof(HeapMetadata));
+
+	heap = find_first_fit(pagina->heaps, tam_sol);
+	//	while(flag == 0 && c < cant_heaps)
+	if (heap != NULL)
+	{
+
+		free(heap);
+		return 1;
+
+	}
+	else {
+		free(heap);
+		return 0;
+	}
+
+}
+
+/*HeapMetadata */ void *find_first_fit(t_list *hs, int t_sol)
+{
+	bool _first_fit(HeapMetadata h){
+		bool libre = h.isFree;
+		bool entra = (t_sol <= h.size);
+		return (libre && entra);
+	}
+	return list_find(hs, (void *)_first_fit);
+}
+

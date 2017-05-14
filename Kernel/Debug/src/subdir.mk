@@ -12,6 +12,7 @@ C_SRCS += \
 ../src/manejo_errores.c \
 ../src/memoria.c \
 ../src/mensaje.c \
+../src/planificador.c \
 ../src/socket.c 
 
 OBJS += \
@@ -23,6 +24,7 @@ OBJS += \
 ./src/manejo_errores.o \
 ./src/memoria.o \
 ./src/mensaje.o \
+./src/planificador.o \
 ./src/socket.o 
 
 C_DEPS += \
@@ -34,6 +36,7 @@ C_DEPS += \
 ./src/manejo_errores.d \
 ./src/memoria.d \
 ./src/mensaje.d \
+./src/planificador.d \
 ./src/socket.d 
 
 
