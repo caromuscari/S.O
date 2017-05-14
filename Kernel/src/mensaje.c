@@ -29,18 +29,18 @@ char *armar_mensaje(char *identificador, char *mensaje)
 //devuelve el header del mensaje
 char *get_header(char *mensaje)
 {
-	return string_substring(mensaje, 1, 1);
+	return string_substring(mensaje, 0, 1);
 }
 
 int comparar_header(char *identificador, char *mensaje)
 {
-	return strcmp(string_substring(mensaje, 1, 1), identificador);
+	return strcmp(string_substring(mensaje, 0, 1), identificador);
 }
 
 //devuelve el codigo del mensaje
 int get_codigo(char *mensaje)
 {
-	return atoi(string_substring(mensaje, 2, 3));
+	return atoi(string_substring(mensaje, 1, 2));
 }
 
 //obtiene el mensaje
@@ -48,5 +48,5 @@ char * get_mensaje(char *mensaje)
 {
 	char *payload = string_substring(mensaje, 2, 4);
 	int payload1 = atoi(payload);
-	return string_substring(mensaje, 7, payload1 - 1);
+	return string_substring(mensaje, 6, payload1 - 1);
 }
