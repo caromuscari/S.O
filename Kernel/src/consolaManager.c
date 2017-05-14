@@ -195,6 +195,7 @@ void responder_peticion_prog(int socket, char *mensaje)
 	char *mensaje_envio =  armar_mensaje(identificador, codigo);
 
 	//envio del codigo a memoria para ver si hay espacio
+	//hay que cambiar esta funcion
 	enviar(config->cliente_memoria, mensaje_envio, &controlador);
 	if (controlador > 0)
 	{

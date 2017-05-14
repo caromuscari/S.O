@@ -20,7 +20,7 @@ void handshakearMemory();
 void pedir_tamano_pag();
 void reservar_memoria_din(t_program *, int);
 int ubicar_bloque(t_pagina *,int, int *);
-/*HeapMetadata*/ void * find_first_fit(t_list *hs, int t_sol);
+HeapMetadata*find_first_fit(t_list *hs, int t_sol);
 
 void handshakearMemory()
 {
@@ -103,25 +103,25 @@ int ubicar_bloque(t_pagina *pagina,int tam_sol, int *flag)//usa algoritmo first 
 	//	while(flag == 0 && c < cant_heaps)
 	if (heap != NULL)
 	{
-
 		free(heap);
 		return 1;
-
 	}
-	else {
+	else
+	{
 		free(heap);
 		return 0;
 	}
 
 }
 
-/*HeapMetadata */ void *find_first_fit(t_list *hs, int t_sol)
+HeapMetadata *find_first_fit(t_list *hs, int t_sol)
 {
 	bool _first_fit(HeapMetadata h){
 		bool libre = h.isFree;
 		bool entra = (t_sol <= h.size);
 		return (libre && entra);
 	}
-	return list_find(hs, (void *)_first_fit);
+	HeapMetadata *nes = list_find(hs, (void *)_first_fit);
+	return nes;
 }
 
