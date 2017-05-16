@@ -18,6 +18,8 @@ K05: Mensaje para informar que NO se puede iniciar el programa
 K06: Mensaje a memoria para saber si se puede guardar un codigo
 
 CPU - P
+P00: me presento al mundo como una CPU
+
 
 MEMORIA - M
 M00: Respuesta a la solicitud de datos (Kernel) de tamaño de página.

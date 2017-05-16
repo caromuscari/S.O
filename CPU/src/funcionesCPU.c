@@ -7,7 +7,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <commons/string.h>
 #include "socket.h"
+#include "log.h"
 
 /*
 t_puntero definirVariable(t_nombre_variable identificador_variable) {
@@ -65,8 +67,24 @@ AnSISOP_kernel funcionesKernel = {
 		.AnSISOP_signal =signale, };
 */
 void handshakeKernel(int socketKP){
-	void *handshake = malloc(3);
-	memcpy(handshake,"P00",3);
+	char *handshake = malloc(4);
+	memset(handshake,'\0',4);
 	int control=0;
-	enviar(socketKP,handshake,&control);
+	recibir(socketKP,&control,handshake,3);
+	if (control !=0 ){
+		escribir_log("error recibiendo mensaje del Kernel",2);
+	}else {
+
+		if(strcmp(handshake,"K00") == 0){
+			escribir_log("mensaje de conexion con Kernel recibido",1);
+			memcpy(handshake,"P00",3);
+			enviar(socketKP,handshake,&control,3);
+			if(control != 0){
+				escribir_log("error enviando mensaje al Kernel",2);
+			}
+			escribir_log("handshake Kernel realizado exitosamente",1);
+		}
+	}
+	free (handshake);
+
 }

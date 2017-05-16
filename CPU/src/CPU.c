@@ -12,33 +12,41 @@
 int puertoK,puertoM;
 char *ipK;
 char *ipM;
-t_config *configuracion;
-int * controlador=0;
+int sockKerCPU;
 
 
 void leerArchivoConfiguracion(char* argv);
-
+void conexion_Kernel(int puertoK, char* ipK);
 
 int main(int argc, char *argv[])
 {
-	int controladorConexion = 0;
+
 	crear_archivo_log("/home/utnso/CPUlog");
 	leerArchivoConfiguracion(argv[1]);
-	int sockKerCPU = iniciar_socket_cliente(ipK, puertoK, &controladorConexion);
-	if(controladorConexion == 0){
-		escribir_log("Exitos conectandose al Kernel",1);
-	}else{
-		escribir_log("Error conectandose al kernel (implementar manejador de errores en brevedad)",2);
+	conexion_Kernel(puertoK, ipK);
+	//	conectarse con memoria
+	//	conexion_Memoria(puertoM,ipM);
+	int controlador = 0;
+	while(1){
+		void *buff = malloc (7);
+		escribir_log("Esperando mensajes del Kernel para ponerme a trabajar...",1);
+		recibir(sockKerCPU,&controlador,buff,7);
+		if(controlador!= 0){
+			escribir_log("error recibiendo mensaje del Kernel, bai",2);
+		}
+		printf("recibi:%s",buff);
 	}
-//	conectarse con memoria
-//	iniciar_socket_cliente(ipM, puertoM, controladorConexion);
-	handshakeKernel(sockKerCPU);
+
+
+
 
 
 }
 
 void leerArchivoConfiguracion(char* argv)
 {
+
+	t_config *configuracion;
 	configuracion = config_create(argv);
 	ipK = malloc(10);
 	ipM = malloc(10);
@@ -58,3 +66,13 @@ void leerArchivoConfiguracion(char* argv)
 	config_destroy(configuracion);
 }
 
+void conexion_Kernel(int puertoK, char* ipK) {
+	int controladorConexion = 0;
+	sockKerCPU = iniciar_socket_cliente(ipK, puertoK, &controladorConexion);
+	if (controladorConexion == 0) {
+		escribir_log("Exitos conectandose al Kernel", 1);
+	} else {
+		escribir_log(string_itoa(controladorConexion),2);
+	}
+	handshakeKernel(sockKerCPU);
+}
