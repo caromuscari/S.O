@@ -1,28 +1,12 @@
-/*
- * socket.h
- *
- *  Created on: 10/10/2016
- *      Author: utnso
- */
-#ifndef SOCKET_H_
-#define SOCKET_H_
+#ifndef KERNEL_PRUEBAS_SRC_SOCKET_CLIENT_H_
+#define KERNEL_PRUEBAS_SRC_SOCKET_CLIENT_H_
 
+int iniciar_socket_cliente(char*, int, int*);
+int iniciar_socket_server(char*, int, int*);
+int escuchar_conexiones(int, int*);
+int aceptar_conexion(int, int*);
+int enviar(int, char*, int*);
+char *recibir(int, int*);
+void cerrar_conexion(int);
 
-//Esta funcion genera un entero que representa el socket server
-int iniciar_socket_server(char *ip, char *puerto);
-
-//Esta funcion devuelve un entero del socket correspondiente al cliente aceptado
-//Se puede usar en un while ya que es una funcion bloqueante
-int escuchar_conexiones(int socketServidor);
-
-//Esta funcion genera un socket de tipo cliente (no puede aceptar conexiones, solo se conecta)
-int iniciar_socket_cliente(char *ip, char *puerto);
-
-//Esta funcion envia mensajes a traves del socket conectado
-//Devuelve un entero significativo de que si el mensaje fue enviado o no
-int enviar(int socket_emisor, char mensaje_a_enviar[1024]);
-
-//Esta funcion recibe mensajes a traves de un socket
-char *recibir(int socket_receptor);
-
-#endif /* SOCKET_H_ */
+#endif /* KERNEL_PRUEBAS_SRC_SOCKET_CLIENT_H_ */
