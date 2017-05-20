@@ -23,12 +23,10 @@ P00: me presento al mundo como una CPU
 
 
 MEMORIA - M
-M00: Respuesta a la solicitud de datos (Kernel) de tamaño de página.
+M00: Respuesta a la solicitud de datos (Kernel) de tamaño de página. Va en el HandShake. Rta Ej: M|00|0128|
 M01: Respuesta de la memoria a cualquier Cliente (K o P), indica que NO PUEDE responder el pedido.
 M02: Respuesta de la memoria a K, indica que PUDO guardar el codigo.
 M03: Respuesta de la memoria a K, indica que NO PUDO guardar el codigo.
-
-M03: Respuesta a P, lineas a ajecutar.
 
 CONSOLA - C
 C00: Identificarse como consola
