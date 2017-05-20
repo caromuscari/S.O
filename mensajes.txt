@@ -20,6 +20,7 @@ K07: Mensaje con PCB para la CPU
 
 CPU - P
 P00: me presento al mundo como una CPU
+P01: Pedir bytes de una página a Memoria
 
 
 MEMORIA - M
