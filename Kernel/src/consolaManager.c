@@ -17,8 +17,7 @@
 #include "socket.h"
 
 extern t_configuracion *config;
-extern t_list *consolas;
-extern t_queue *programas;
+extern t_list *list_consolas;
 
 fd_set master;
 fd_set read_fds;
@@ -27,9 +26,10 @@ int controlador = 0;
 
 void realizar_handShake_consola(int nuevo_socket);
 void manejo_conexiones_consolas();
-int *get_CID();
+int get_CID();
 void desconectar_consola(int socket);
 void responder_solicitud(int socket, char *mensaje);
+void responder_peticion_prog(int socket, char *mensaje);
 
 void manejo_conexiones_consolas()
 {
@@ -66,17 +66,11 @@ void manejo_conexiones_consolas()
 					if (i == config->server_consola)
 					{
 						//Gestiono la conexion entrante
-
 						int nuevo_socket = aceptar_conexion(config->server_consola, &controlador);
 
 						//Controlo que no haya pasado nada raro y acepto al nuevo
-						if (controlador > 0)
+						if (controlador == 0)
 						{
-							error_sockets(&controlador, "");
-						}
-						else
-						{
-							//funcion para realizar handshake con nueva conexion
 							realizar_handShake_consola(nuevo_socket);
 						}
 
@@ -94,7 +88,6 @@ void manejo_conexiones_consolas()
 						char *mensaje_recibido = recibir(i, &controlador);
 						if(controlador > 0)
 						{
-							error_sockets(&controlador, atoi(i));
 							desconectar_consola(i);
 						}
 						else
@@ -134,10 +127,10 @@ void realizar_handShake_consola(int nuevo_socket)
 			if(comparar_header("C", respuesta))
 			{
 				//Es una Consola, se puede agregar
-				t_consola *nueva_consola;
-				*(nueva_consola->socket) = nuevo_socket;
+				t_consola *nueva_consola = malloc(sizeof(t_consola));
+				nueva_consola->socket = nuevo_socket;
 				nueva_consola->CID = get_CID();
-				list_add(consolas, nueva_consola);
+				list_add(list_consolas, nueva_consola);
 			}
 			else
 			{
@@ -150,9 +143,9 @@ void realizar_handShake_consola(int nuevo_socket)
 	}
 }
 
-int *get_CID()
+int get_CID()
 {
-	int *ultimo_id = 1;
+	int ultimo_id = 1;
 
 	void _mayor(t_consola *consola)
 	{
@@ -162,7 +155,7 @@ int *get_CID()
 		}
 	}
 
-	list_iterate(consolas, (void*)_mayor);
+	list_iterate(list_consolas, (void*)_mayor);
 	return ultimo_id;
 }
 
@@ -184,7 +177,7 @@ void desconectar_consola(int socket)
 	{
 		return (int)con->socket == socket;
 	}
-	t_consola *consola = list_remove_by_condition(consolas, (void*)_localizar);
+	t_consola *consola = list_remove_by_condition(list_consolas, (void*)_localizar);
 	//faltaria el tema de eliminar todos los programas dependientes de esta consola
 }
 
@@ -204,18 +197,10 @@ void responder_peticion_prog(int socket, char *mensaje)
 
 	//recibo la respuesta de memoria
 	char *mensaje_recibido = recibir(config->cliente_memoria, &controlador);
-	if (controlador > 0)
-	{
-		error_sockets(&controlador, string_itoa(config->cliente_memoria));
-	}
 
 	if(get_codigo(mensaje_recibido) == 01)
 	{
 		enviar(socket, "K05", &controlador);
-		if (controlador > 0)
-		{
-			error_sockets(&controlador, socket);
-		}
 	}
 	else
 	{

@@ -31,6 +31,13 @@ void escribir_log(char *mensaje)
 	pthread_mutex_unlock(&mutex_log);
 }
 
+void escribir_error_log(char *mensaje)
+{
+	pthread_mutex_lock(&mutex_log);
+	log_error(log, mensaje);
+	pthread_mutex_unlock(&mutex_log);
+}
+
 void escribir_log_con_numero(char *mensaje, int un_numero)
 {
 	char *final = strdup(mensaje);
@@ -50,6 +57,17 @@ void escribir_log_compuesto(char *mensaje, char *otro_mensaje)
 	string_append(&final, otro_mensaje);
 	pthread_mutex_lock(&mutex_log);
 	log_info(log, final);
+	pthread_mutex_unlock(&mutex_log);
+	free(final);
+}
+
+void escribir_log_error_compuesto(char *mensaje, char *otro_mensaje)
+{
+	char *final = strdup("");
+	string_append(&final, mensaje);
+	string_append(&final, otro_mensaje);
+	pthread_mutex_lock(&mutex_log);
+	log_error(log, final);
 	pthread_mutex_unlock(&mutex_log);
 	free(final);
 }

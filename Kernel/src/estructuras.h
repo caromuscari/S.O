@@ -93,15 +93,14 @@ typedef struct
 {
 	int *cpu_id;
 	int *socket_cpu;
-	bool *cpu_habilitado;//1: false
 	bool *ejecutando;
 	t_PCB *pcb;
 }t_cpu;
 
 typedef struct
 {
-	int *CID;
-	int *socket;
+	int CID;
+	int socket;
 }t_consola;
 
 #endif /* ESTRUCTURAS_H_ */

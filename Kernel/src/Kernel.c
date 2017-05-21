@@ -14,15 +14,20 @@
 #include "consolaManager.h"
 #include "manejo_errores.h"
 #include "memoria.h"
+#include "planificador.h"
 
 char *ruta_config;
 t_configuracion *config;
 char *sem_id;
 char *sem_in;
 char *shared;
-t_list *cpus;
-t_list *consolas;
-t_queue *programas;
+t_list *list_cpus;
+t_list *list_consolas;
+t_list *list_ejecutando;
+t_list *list_finalizados;
+t_queue *cola_nuevos;
+t_queue *cola_listos;
+t_queue *cola_bloqueados;
 t_log *log;
 
 void inicializar_variables();
@@ -63,9 +68,13 @@ void inicializar_variables()
 	/*config->sem_ids = list_create();
 	config->sem_init = list_create();
 	config->shared_vars = list_create();*/
-	cpus = list_create();
-	consolas = list_create();
-	programas = queue_create();
+	list_cpus = list_create();
+	list_consolas = list_create();
+	list_ejecutando = list_create();
+	list_finalizados = list_create();
+	cola_nuevos = queue_create();
+	cola_listos = queue_create();
+	cola_bloqueados = queue_create();
 }
 
 void mostrar_configuracion()
@@ -104,8 +113,7 @@ void liberar_memoria()
 	list_destroy(config->sem_init);
 	list_destroy(config->shared_vars);
 	list_destroy_and_destroy_elements(cpus, void(*element_destroyer)(void*));
-	list_destroy_and_destroy_elements(consolas, void(*element_destroyer)(void*));
-	list_destroy_and_destroy_elements(programas, void(*element_destroyer)(void*));	*/
+	list_destroy_and_destroy_elements(consolas, void(*element_destroyer)(void*));	*/
 }
 
 void handshakearFS()
@@ -124,14 +132,7 @@ void crear_conexiones()
 {
 	int controlador = 0;
 	config->server_cpu = iniciar_socket_server(config->ip_kernel, config->puerto_cpu, &controlador);
-	if(controlador > 0) {	error_sockets(&controlador, "");	}
-
 	config->server_consola = iniciar_socket_server(config->ip_kernel, config->puerto_prog, &controlador);
-	if(controlador > 0) {	error_sockets(&controlador, "");	}
-
 	config->cliente_fs = iniciar_socket_cliente(config->ip_fs, config->puerto_fs, &controlador);
-	if(controlador > 0) {	error_sockets(&controlador, "");	}
-
 	config->cliente_memoria = iniciar_socket_cliente(config->ip_memoria, config->puerto_memoria, &controlador);
-	if(controlador > 0) {	error_sockets(&controlador, "");	}
 }
