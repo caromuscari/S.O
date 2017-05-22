@@ -109,7 +109,6 @@ void realizar_handShake_consola(int nuevo_socket)
 
 	if (controlador > 0)
 	{
-		error_sockets(&controlador, string_itoa(nuevo_socket));
 		cerrar_conexion(nuevo_socket);
 	}
 	else
@@ -118,7 +117,6 @@ void realizar_handShake_consola(int nuevo_socket)
 
 		if (controlador > 0)
 		{
-			error_sockets(&controlador, string_itoa(nuevo_socket));
 			cerrar_conexion(nuevo_socket);
 		}
 		else
@@ -154,7 +152,6 @@ int get_CID()
 			ultimo_id++;
 		}
 	}
-
 	list_iterate(list_consolas, (void*)_mayor);
 	return ultimo_id;
 }
@@ -166,8 +163,14 @@ void responder_solicitud(int socket, char *mensaje)
 			responder_peticion_prog(socket, mensaje);
 			break;
 		default :
-			//En caso de no entender el mensaje
-			printf("deberia hacer algo por defecto");
+			//No se comprende el mensaje recibido por consola
+			char *msj_unknow = "K08";
+			enviar(socket, msj_unknow, &controlador);
+
+			if (controlador > 0)
+			{
+				cerrar_conexion(socket);
+			}
 	}
 }
 
@@ -188,22 +191,18 @@ void responder_peticion_prog(int socket, char *mensaje)
 	char *mensaje_envio =  armar_mensaje(identificador, codigo);
 
 	//envio del codigo a memoria para ver si hay espacio
-	//hay que cambiar esta funcion
 	enviar(config->cliente_memoria, mensaje_envio, &controlador);
-	if (controlador > 0)
-	{
-		error_sockets(&controlador, string_itoa(config->cliente_memoria));
-	}
 
 	//recibo la respuesta de memoria
 	char *mensaje_recibido = recibir(config->cliente_memoria, &controlador);
+	int codigo_m = get_codigo(mensaje_recibido);
 
-	if(get_codigo(mensaje_recibido) == 01)
+	if(codigo_m == 01)
 	{
 		enviar(socket, "K05", &controlador);
 	}
 	else
 	{
-		agregar_nueva_prog(socket, mensaje);//deberia haber otro proceso aca
+		agregar_nueva_prog(socket, mensaje);
 	}
 }
