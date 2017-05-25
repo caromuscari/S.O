@@ -34,7 +34,6 @@ void liberar_memoria();
 void leer_archivo_configuracion(char * ruta);
 void handshake(int socket_);
 void * hilousuario ();
-void terminar();
 
 int main(int argc, char * argv[]) {
 
@@ -42,18 +41,16 @@ int main(int argc, char * argv[]) {
 	inicializar_parametros();
 	crear_archivo_log("/home/utnso/log_consola.txt");
 	leer_archivo_configuracion(argv[1]);
-	signal(SIGTERM,terminar);
 	socket_ = iniciar_socket_cliente(arch_config.ip, arch_config.puerto);
 	handshake(socket_);
 	pthread_create(&hiloUsuario, NULL, (void*) hilousuario, NULL);
 	pthread_join(hiloUsuario, NULL);
 
 	liberar_memoria();
+
+	return EXIT_SUCCESS;
 }
 
-void terminar(){
-
-}
 void leer_archivo_configuracion(char * ruta)
 {
 	t_config * configConsola = config_create(ruta);

@@ -13,6 +13,8 @@
 extern int socket_;
 
 void * programa (){
+	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE,NULL);
+	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,NULL);
 	char * mensaje=malloc(sizeof *mensaje);
 	int identificador;
 	while(1)
