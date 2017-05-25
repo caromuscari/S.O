@@ -32,6 +32,7 @@ M03: Respuesta de la memoria a K, indica que NO PUDO guardar el codigo.
 CONSOLA - C
 C00: Identificarse como consola
 C01: Peticion de inicio de programa 
+C02: Aviso de finalizacion de programa
 
 FILESYSTEM - F
 
