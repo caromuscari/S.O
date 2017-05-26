@@ -46,7 +46,7 @@ int get_codigo(char *mensaje)
 //obtiene el mensaje
 char * get_mensaje(char *mensaje)
 {
-	char *payload = string_substring(mensaje, 2, 4);
+	char *payload = string_substring(mensaje, 2, 10);
 	int payload1 = atoi(payload);
-	return string_substring(mensaje, 6, payload1 - 1);
+	return string_substring(mensaje, 13, payload1 - 1);
 }

@@ -162,7 +162,7 @@ void responder_solicitud(int socket, char *mensaje)
 		case 1 :
 			responder_peticion_prog(socket, mensaje);
 			break;
-		default :
+		default : ;
 			//No se comprende el mensaje recibido por consola
 			char *msj_unknow = "K08";
 			enviar(socket, msj_unknow, &controlador);
