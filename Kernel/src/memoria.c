@@ -5,6 +5,7 @@
 #include <commons/string.h>
 #include <commons/log.h>
 #include <commons/collections/list.h>
+#include <commons/collections/dictionary.h>
 #include "estructuras.h"
 #include "configuracion.h"
 #include "socket.h"
@@ -21,6 +22,9 @@ void pedir_tamano_pag();
 void reservar_memoria_din(t_program *, int);
 int ubicar_bloque(t_pagina *,int, int *);
 HeapMetadata*find_first_fit(t_list *hs, int t_sol);
+void pedir_pagina();
+void ubicar_en_pagina(t_dictionary *, char *, int);
+void crear_dict_pagina(t_dictionary *);
 
 void handshakearMemory()
 {
@@ -30,6 +34,21 @@ void handshakearMemory()
 	enviar(config->cliente_memoria, mensaje, &controlador);
 	if(controlador > 0) error_sockets(&controlador, "Memoria");
 	free(mensaje);
+}
+
+void pedir_pagina()
+{
+	int controlador = 0;
+	char *mensaje = "K05";
+	char *respuesta;
+	enviar(config->cliente_memoria, mensaje, &controlador);
+	if (controlador > 0) error_sockets(&controlador,"Memoria");
+	else
+	{
+		controlador = 0;
+		respuesta = recibir(config->cliente_memoria, &controlador);
+		manejar_respuesta(respuesta);
+	}
 }
 
 void pedir_tamano_pag()
@@ -63,13 +82,18 @@ void reservar_memoria_din(t_program *program, int size_solicitado)
 
 			if (size_disponible >= size_solicitado)
 			{
-				ubicar_bloque(page, size_solicitado, &flag);
+				int ubicado = ubicar_bloque(page, size_solicitado, &flag);
+
+				if (ubicado)
+				{
+					flag = 0;
+				}
 
 			}
 			else n++;
 			free(page);
 		}
-	}//else ;//pedir página a memoria
+	}else pedir_pagina();
 }
 
 void manejar_respuesta(char *respuesta)
@@ -84,6 +108,8 @@ void manejar_respuesta(char *respuesta)
 			tam_page = atoi(mensaje);
 			tam_pagina = tam_page;
 			break;
+		case 1:
+			//cómo se a que programa le estoy asignando memoria
 		default:
 			printf("Mensaje desconocido");
 			//desconectar de memoria????? o ke? que no pase esto plis
@@ -125,3 +151,20 @@ HeapMetadata *find_first_fit(t_list *hs, int t_sol)
 	return nes;
 }
 
+void crear_dict_pagina(t_dictionary *pos)
+{
+	pos = dictionary_create();
+}
+
+void ubicar_en_pagina(t_dictionary *posiciones, char *first_pos, int pos)
+{
+	dictionary_put(posiciones, first_pos, (void *)pos);
+}
+
+void compactar(t_list *paginas)
+{
+	t_list *pages_aux = paginas;
+	int size = list_size(pages_aux);
+	int n = 0;
+
+}

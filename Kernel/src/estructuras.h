@@ -74,6 +74,7 @@ typedef struct
 	int n_pagina;
 	t_list *heaps; //de heapMetadata
 	int esp_libre;
+	t_dictionary *posiciones;
 }t_pagina;
 
 /*typedef struct
