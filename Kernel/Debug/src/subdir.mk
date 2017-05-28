@@ -13,6 +13,7 @@ C_SRCS += \
 ../src/memoria.c \
 ../src/mensaje.c \
 ../src/planificador.c \
+../src/semaforos_vglobales.c \
 ../src/socket.c 
 
 OBJS += \
@@ -25,6 +26,7 @@ OBJS += \
 ./src/memoria.o \
 ./src/mensaje.o \
 ./src/planificador.o \
+./src/semaforos_vglobales.o \
 ./src/socket.o 
 
 C_DEPS += \
@@ -37,6 +39,7 @@ C_DEPS += \
 ./src/memoria.d \
 ./src/mensaje.d \
 ./src/planificador.d \
+./src/semaforos_vglobales.d \
 ./src/socket.d 
 
 

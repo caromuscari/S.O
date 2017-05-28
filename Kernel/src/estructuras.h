@@ -2,6 +2,7 @@
 #define ESTRUCTURAS_H_
 #include <commons/collections/list.h>
 #include <commons/collections/dictionary.h>
+#include <commons/collections/queue.h>
 
 typedef struct
 {
@@ -103,5 +104,11 @@ typedef struct
 	int CID;
 	int socket;
 }t_consola;
+
+typedef struct
+{
+	int value;
+	t_queue *procesos;
+}t_sem;
 
 #endif /* ESTRUCTURAS_H_ */

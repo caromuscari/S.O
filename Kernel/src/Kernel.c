@@ -6,6 +6,7 @@
 #include <commons/log.h>
 #include <commons/collections/list.h>
 #include <commons/collections/queue.h>
+#include <commons/collections/dictionary.h>
 #include "estructuras.h"
 #include "configuracion.h"
 #include "socket.h"
@@ -21,6 +22,7 @@ t_configuracion *config;
 char *sem_id;
 char *sem_in;
 char *shared;
+t_dictionary *sems;
 t_list *list_cpus;
 t_list *list_consolas;
 t_list *list_ejecutando;
