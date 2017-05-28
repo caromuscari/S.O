@@ -67,3 +67,13 @@ void agregar_nueva_prog(int socket, char *mensaje)
 {
 
 }
+
+void bloquear_proceso(int pid)
+{
+
+}
+
+void desbloquear_proceso(int pid)
+{
+
+}

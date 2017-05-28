@@ -59,7 +59,8 @@ void leer_consola()
 			free(leido2);
 		}else if (strcmp(leido, "detener_planificación"))
 		{
-			//hablar con lean para esta parte
+			//crear un semaforo para compartir con el planificador, inicializado en 1
+			//este comando lo pondria en block
 		}
 	free(leido);
 	}

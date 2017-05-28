@@ -78,6 +78,7 @@ void sem_signal(int proceso, char *sema)
 		{
 			queue_pop(sem->procesos);
 			//desbloquear el proceso
+			//el proceso que sale de la cola deberia ser insertado en la cola de ready
 		}
 	}else
 	{
