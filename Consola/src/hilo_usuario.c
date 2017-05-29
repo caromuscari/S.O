@@ -13,19 +13,25 @@
 #include <commons/string.h>
 #include "log.h"
 #include <commons/log.h>
+#include "estructuras.h"
 
 extern char * identi;
 extern char * ingreso;
 extern int socket_;
 extern t_dictionary * p_pid;
 extern t_dictionary * h_pid;
+extern pthread_t hiloMensaje;
+extern t_dictionary * sem;
+extern t_dictionary * impresiones;
+extern t_dictionary * tiempo;
 
-void programa ();
+
 char* leer_archivo(char*);
 void iniciar_programa(char * ruta, int socket_);
 void finalizar_programa(pthread_t pid, int socket_);
 void desconectar_consola();
 void cerrar_programas(char* key, void* data);
+void tiempofinal_impresiones(long int pid);
 //void limpiar_consola();
 
 void* hilousuario ()
@@ -92,35 +98,14 @@ void* hilousuario ()
 }*/
 
 void iniciar_programa(char * ruta, int socket_){
-	int pid;
-	pthread_t hiloPrograma;
-	char * identificador=malloc(3);
 	char * mensaje_armado=malloc(sizeof * mensaje_armado);
-	char * mensaje_recibido=malloc(sizeof * mensaje_recibido);
-	char * mensaje;
+	char * mensaje=malloc(sizeof *mensaje);
 	mensaje = leer_archivo(ruta);
 	mensaje_armado= armar_mensaje("C01", mensaje);
 	enviar(socket_, mensaje_armado,sizeof (mensaje_armado));
-	mensaje_recibido = recibir(socket_);
-	identificador = get_header(mensaje_recibido);
-	string_append(identificador, string_itoa(get_codigo(mensaje_recibido)));
-	if (identificador == "K04"){
-		pthread_create(&hiloPrograma, NULL, (void*) programa, NULL);
-		escribir_log("Se inicio el programa");
-		pid= atoi(get_mensaje(mensaje_recibido));
-		dictionary_put(p_pid,pid,hiloPrograma);
-		dictionary_put(h_pid,hiloPrograma,pid);
-	}
-	else {
-		if(identificador == "K05"){
-			printf("%s","no se pudo iniciar el programa");
-			escribir_log("No se pudo iniciar el programa");
-		}
-	}
+
 	free(mensaje);
 	free(mensaje_armado);
-	free(mensaje_recibido);
-	free(identificador);
 
 }
 
@@ -147,28 +132,43 @@ char * leer_archivo(char * ruta){
 
 void finalizar_programa(pthread_t pid, int socket_){
 	char * mensaje = armar_mensaje("C02",pid);
-	int pid2;
+	long int pid2;
 	enviar(socket_, mensaje, sizeof(mensaje));
 	if(pthread_cancel(pid)==0){
 		escribir_log("Se finalizo el programa");
+		tiempofinal_impresiones(pid);
 		pid2=dictionary_get(h_pid,pid);
 		dictionary_remove(h_pid,pid);
 		dictionary_remove(p_pid,pid2);
+		dictionary_remove(impresiones,pid);
+		free(dictionary_remove(sem,pid));
+		free(dictionary_remove(tiempo,pid));
 	}
 	else(escribir_log("No se pudo finalizar el programa"));
 
 }
 
 void desconectar_consola(){
-	//while(!dictionary_is_empty(h_pid)){
+	void * valor;
 	dictionary_iterator(h_pid,cerrar_programas);
-	//}
 	escribir_log("Se desconecta la consola");
-	//pthread_exit();
-
+	pthread_cancel(hiloMensaje);
+	pthread_exit(valor);
 }
 void cerrar_programas(char* key, void* data){
 	finalizar_programa(data,socket_);
+}
+
+void tiempofinal_impresiones(long int pid){
+	time_t tiempoFinal=time(NULL);
+	t_impresiones * cant = dictionary_get(impresiones,pid);
+	time_t tiempoinicial = dictionary_get(tiempo,pid);
+	double diferencia;
+	diferencia= difftime(tiempoinicial, tiempoFinal);
+	printf("Inicio de ejecución : %i /n", tiempoinicial);
+	printf("Fin de ejecución : %i /n", tiempoFinal);
+	printf("El programa realizó %i impresiones /n", cant->cantidad);
+	printf("El tiempo total de ejecución fue %i /n", diferencia);
 }
 
 /*void limpiar_consola(){

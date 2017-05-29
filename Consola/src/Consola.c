@@ -17,16 +17,23 @@
 #include "socket_client.h"
 #include "mensaje.h"
 #include "log.h"
-#include <signal.h>
+#include <semaphore.h>
+#include <time.h>
 
 t_consola arch_config;
 int socket_;
 pthread_t hiloUsuario;
+pthread_t hiloMensaje;
 char * identi;
 char *ingreso;
 t_log * log;
 t_dictionary * p_pid;
 t_dictionary * h_pid;
+t_dictionary * sem;
+t_dictionary * tiempo;
+t_dictionary * impresiones;
+sem_t *semaforo;
+int tamAimprimir;
 
 
 void inicializar_parametros();
@@ -34,6 +41,7 @@ void liberar_memoria();
 void leer_archivo_configuracion(char * ruta);
 void handshake(int socket_);
 void * hilousuario ();
+void * escuchar_mensaje();
 
 int main(int argc, char * argv[]) {
 
@@ -44,9 +52,12 @@ int main(int argc, char * argv[]) {
 	socket_ = iniciar_socket_cliente(arch_config.ip, arch_config.puerto);
 	handshake(socket_);
 	pthread_create(&hiloUsuario, NULL, (void*) hilousuario, NULL);
+	pthread_create(&hiloMensaje, NULL, (void*) escuchar_mensaje, NULL);
 	pthread_join(hiloUsuario, NULL);
+	pthread_join(hiloMensaje,NULL);
 
 	liberar_memoria();
+	cerrar_conexion(socket_);
 
 	return EXIT_SUCCESS;
 }
@@ -63,9 +74,9 @@ void leer_archivo_configuracion(char * ruta)
 }
 
 void handshake(int socket_){
-	char * mensaje= malloc(7);
-	char * mensaje_recibido= malloc(7);
-	mensaje_recibido = recibir(socket_);
+	char * mensaje= malloc(sizeof *mensaje);
+	char * mensaje_recibido= malloc(sizeof *mensaje);
+	mensaje_recibido = recibir(socket_, 3);
 	if(get_header(mensaje_recibido)=="K"){
 		mensaje=armar_mensaje("C00","");
 		enviar(socket_,mensaje,sizeof(mensaje));

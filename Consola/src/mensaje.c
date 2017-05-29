@@ -50,3 +50,13 @@ char * get_mensaje(char *mensaje)
 	int payload1 = atoi(payload);
 	return string_substring(mensaje, 13, payload1 - 1);
 }
+
+char * get_pid(char* mensaje)
+{
+	return string_substring(mensaje, 13, 2);
+}
+
+int get_payload(mensaje)
+{
+	return atoi(string_substring(mensaje, 3, 10));
+}

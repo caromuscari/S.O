@@ -13,8 +13,10 @@
 
 extern t_dictionary * p_pid;
 extern t_dictionary * h_pid;
+extern t_dictionary * sem;
+extern t_dictionary * tiempo;
+extern t_dictionary * impresiones;
 extern t_consola arch_config;
-extern t_log * log;
 extern char * ingreso;
 extern char * identi;
 
@@ -26,6 +28,9 @@ void inicializar_parametros()
 	identi= malloc(sizeof *identi);
 	p_pid = dictionary_create();
 	h_pid = dictionary_create();
+	sem = dictionary_create();
+	impresiones = dictionary_create();
+	tiempo = dictionary_create();
 }
 
 void liberar_memoria()
@@ -38,6 +43,12 @@ void liberar_memoria()
 	dictionary_destroy(p_pid);
 	dictionary_clean(h_pid);
 	dictionary_destroy(h_pid);
+	dictionary_clean(sem);
+	dictionary_destroy(sem);
+	dictionary_clean(tiempo);
+	dictionary_destroy(tiempo);
+	dictionary_clean(impresiones);
+	dictionary_destroy(impresiones);
 	liberar_log();
 }
 

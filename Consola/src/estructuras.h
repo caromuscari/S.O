@@ -13,6 +13,14 @@ typedef struct {
 	char * puerto;
 }t_consola;
 
+typedef struct{
+	int valor;
+}t_chequeo;
+
+typedef struct{
+	int cantidad;
+}t_impresiones;
+
 
 
 #endif /* ESTRUCTURAS_H_ */

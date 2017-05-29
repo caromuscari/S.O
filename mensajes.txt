@@ -18,6 +18,8 @@ K05: Mensaje para informar que NO se puede iniciar el programa
 K06: Mensaje a memoria para saber si se puede guardar un codigo
 K07: Mensaje con PCB para la CPU
 K08:Kernel no entendio el mensaje recibido
+K09:Mensaje para que el programa imprima por pantalla
+K10: Mensaje para indicar que finalice un programa
 
 CPU - P
 P00: me presento al mundo como una CPU

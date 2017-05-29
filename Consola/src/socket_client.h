@@ -9,7 +9,7 @@ int iniciar_socket_cliente(char *ip, int puerto/*char *puerto*/);
 int enviar(int socket_emisor, char *mensaje_a_enviar, int tamanio);
 
 //Esta funcion recibe mensajes a traves de un socket
-char *recibir(int socket_receptor);
+char *recibir(int socket_receptor,int tamanio);
 //Esta funcion elimina el socket
 void cerrar_conexion(int socket_);
 

@@ -23,4 +23,8 @@ char * get_mensaje(char *mensaje);
 //Compara un header contra el header un mensaje
 int comparar_header(char *identificador, char *mensaje);
 
+char * get_pid(char* mensaje);
+
+int get_payload(mensaje);
+
 #endif /* MENSAJE_H_ */
