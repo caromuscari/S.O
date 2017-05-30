@@ -15,9 +15,9 @@
 
 extern t_list *list_ejecutando;
 extern t_list *list_finalizados;
+extern t_list *list_bloqueados;
 extern t_queue *cola_nuevos;
 extern t_queue *cola_listos;
-extern t_queue *cola_bloqueados;
 extern t_configuracion *config;
 
 void generar_listados();
@@ -70,13 +70,14 @@ void generar_listados() // faltan los mutex
 {
 	t_queue *nuevos = cola_nuevos;
 	t_queue *listos = cola_listos;
-	t_queue *bloqueados = cola_bloqueados;
+
+	t_list *bloqueados = list_bloqueados;
 	t_list *ejecutando = list_ejecutando;
 	t_list *finalizados = list_finalizados;
 
 	mostrar_cola(nuevos, "Los siguientes son los procesos en la cola de Nuevos: \n");
 	mostrar_cola(listos, "Los siguientes son los procesos en la cola de Listos: \n");
-	mostrar_cola(bloqueados, "Los siguientes son los proces en la cola de Bloqueados: \n");
+	mostrar_listas(bloqueados, "Los procesos que se encuentran bloqueados son: \n");
 	mostrar_listas(ejecutando, "Los siguientes son los procesos en ejecución: \n");
 	mostrar_listas(finalizados, "Los siguientes son los procesos que ya han finalizado: \n");
 }

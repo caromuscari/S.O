@@ -27,9 +27,9 @@ t_list *list_cpus;
 t_list *list_consolas;
 t_list *list_ejecutando;
 t_list *list_finalizados;
+t_list *list_bloqueados;
 t_queue *cola_nuevos;
 t_queue *cola_listos;
-t_queue *cola_bloqueados;
 t_log *log;
 
 void inicializar_variables();
@@ -76,7 +76,7 @@ void inicializar_variables()
 	list_finalizados = list_create();
 	cola_nuevos = queue_create();
 	cola_listos = queue_create();
-	cola_bloqueados = queue_create();
+	list_bloqueados = list_create();
 }
 
 void mostrar_configuracion()

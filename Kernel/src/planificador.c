@@ -13,9 +13,9 @@ extern t_list *list_cpus;
 extern t_list *list_consolas;
 extern t_list *list_ejecutando;
 extern t_list *list_finalizados;
+extern t_list *list_bloqueados;
 extern t_queue *cola_nuevos;
 extern t_queue *cola_listos;
-extern t_queue *cola_bloqueados;
 extern t_configuracion *config;
 
 void agregar_nueva_prog(int socket, char *mensaje);
@@ -70,10 +70,22 @@ void agregar_nueva_prog(int socket, char *mensaje)
 
 void bloquear_proceso(int pid)
 {
+	int _buscar_proceso(t_PCB *un_proceso)
+	{
+		return (pid == un_proceso->PID);
+	}
 
+	t_PCB *proc = list_remove_by_condition(list_ejecutando, (void*)_buscar_proceso);
+	list_add(list_bloqueados, proc);
 }
 
 void desbloquear_proceso(int pid)
 {
+	int _buscar_proceso(t_PCB *un_proceso)
+	{
+		return (pid == un_proceso->PID);
+	}
 
+	t_PCB *proc = list_remove_by_condition(list_bloqueados, (void*)_buscar_proceso);
+	queue_push(cola_listos, proc);
 }
