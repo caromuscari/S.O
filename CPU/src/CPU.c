@@ -168,7 +168,6 @@ int main(int argc, char *argv[])
 	}
 	printf("%d",sentencias[n].offset_fin);
 	printf("Espero 12 y tengo:%d\n",n);
-	printf("Espero 8 y es :%d\n",sizeof (t_etiqueta));
 	char* et =armarIndiceEtiquetas(programa);
 	printf("etiqueta1 :%s\n",string_substring(et,8,10));
 	printf("etiqueta2:%s\n",string_substring(et,22,9));
