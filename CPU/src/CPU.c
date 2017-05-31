@@ -7,6 +7,7 @@
 #include "socket.h"
 #include "log.h"
 #include "funcionesCPU.h"
+#include "funcionesParser.h"
 #include <parser/metadata_program.h>
 #include <commons/config.h>
 #include "cosas.h"
@@ -15,6 +16,7 @@ int puertoK,puertoM;
 char *ipK;
 char *ipM;
 int sockKerCPU;
+int tam_paginas_memoria;
 static const char* facil_ansisop =
 		"begin\n"
 		"variables a, b\n"
@@ -55,7 +57,7 @@ static const char* con_funcion_ansisop =
 
 void leerArchivoConfiguracion(char* argv);
 void conexion_Kernel(int puertoK, char* ipK);
-
+void conexion_Memoria(int puertoM,char* ipM);
 int main(int argc, char *argv[])
 {
 	//char *programa =strdup(facil_ansisop);
@@ -65,11 +67,10 @@ int main(int argc, char *argv[])
 	leerArchivoConfiguracion(argv[1]);
 	conexion_Kernel(puertoK, ipK);
 	//	conectarse con memoria
-	//	conexion_Memoria(puertoM,ipM);
+	conexion_Memoria(puertoM,ipM);
 	int controlador = 0;
-/*
- *
-	while(chau){
+/*	int chau = 0;
+	while(chau!=1){
 		void *buff = malloc (7);
 		char *idmensaje = malloc(2);
 		char *sizemensaje= malloc (4); int largomensaje;
@@ -106,7 +107,7 @@ int main(int argc, char *argv[])
 	}
 
 
-	t_sentencia* sentencias =  armarIndiceCodgigo(programa);
+	t_sentencia* sentencias =  armarIndiceCodigo(programa);
 
 	int c;
 	for(c=0;sentencias[c].offset_fin != -1 && sentencias[c].offset_inicio != -1; c++){
@@ -132,8 +133,8 @@ int main(int argc, char *argv[])
 	printf("Etiquetas:%s\n",metadata->etiquetas);
 	printf("Etiquetas size:%d\n",metadata->etiquetas_size);
 
-	t_dictionary *dic = armarIndiceEtiquetas(programa);
-	printf("espero size 2 y es size:%d\n",dictionary_size(dic));
+	printf("size_t de un pcb :%d\n",sizeof(t_PCB));
+	printf("size_t de un pcb :%d\n",sizeof(int));
 
 	int k= metadata_buscar_etiqueta("doble",metadata->etiquetas,metadata->etiquetas_size);
 	printf("buscaretiqueta DOBLE tpunteroinstruccion :%d\n",k);
@@ -157,6 +158,26 @@ int main(int argc, char *argv[])
 		free(linea);
 
 	}
+	printf("size sentencias%d\n",sizeof sentencias[0]);
+	printf("size t_memoria%d\n",sizeof (t_memoria));
+	printf("size t_stack_element%d\n",sizeof (t_stack_element));
+
+	n=0;
+	while(sentencias[n].offset_inicio != -1 &&sentencias[n].offset_fin != -1 ){
+		n++;
+	}
+	printf("%d",sentencias[n].offset_fin);
+	printf("Espero 12 y tengo:%d\n",n);
+	printf("Espero 8 y es :%d\n",sizeof (t_etiqueta));
+	char* et =armarIndiceEtiquetas(programa);
+	printf("etiqueta1 :%s\n",string_substring(et,8,10));
+	printf("etiqueta2:%s\n",string_substring(et,22,9));
+	t_dictionary *dic = armarDiccionarioEtiquetas(et);
+	printf("espero size 2 y es size:%d\n",dictionary_size(dic));
+	printf("con doble me tira un pc de:%d y espero 8\n",dictionary_get(dic,"doble"));
+	printf("con inicio_for me tira un pc de:%d y espero 5\n",dictionary_get(dic,"inicio_for"));
+	free(et);
+
 
 	free(sentencias);
 free(programa);
@@ -198,4 +219,14 @@ void conexion_Kernel(int puertoK, char* ipK) {
 		escribir_log(string_itoa(controladorConexion),2);
 	}
 	handshakeKernel(sockKerCPU);
+}
+void conexion_Memoria(int puerto, char* ip) {
+	int controladorConexion = 0;
+	sockKerCPU = iniciar_socket_cliente(ip, puerto, &controladorConexion);
+	if (controladorConexion == 0) {
+		escribir_log("Exitos conectandose al Kernel", 1);
+	} else {
+		escribir_log(string_itoa(controladorConexion),2);
+	}
+	tam_paginas_memoria = handshakeMemoria(sockKerCPU);
 }
