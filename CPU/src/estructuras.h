@@ -8,10 +8,6 @@ typedef struct
 	int offset_inicio;
 	int offset_fin;
 }t_sentencia;
-typedef struct{
-	char* nombre;
-	int valor_pc;
-}t_etiqueta;
 typedef struct
 {
 	int PID;
@@ -26,7 +22,7 @@ typedef struct
 
 typedef struct
 {
-	char ID; //no estoy segura que sea necesario
+	char ID;
 	int pag;
 	int offset;
 	int size;
