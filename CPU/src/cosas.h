@@ -12,10 +12,12 @@
 #include <string.h>
 #include <unistd.h>
 #include <commons/collections/dictionary.h>
+#include <commons/collections/list.h>
 #include "estructuras.h"
 #include <parser/metadata_program.h>
 
-t_sentencia* armarIndiceCodgigo (char *codigoPrograma);
-t_dictionary* armarIndiceEtiquetas(char *codigoPrograma);
-
+t_sentencia* armarIndiceCodigo (char *codigoPrograma);
+void* armarIndiceEtiquetas(char *codigoPrograma);
+t_list* armarIndiceStack(char *codigoPrograma);
+void* serializarPCB (t_PCB );
 #endif /* SRC_COSAS_H_ */
