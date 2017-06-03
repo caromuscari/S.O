@@ -64,8 +64,8 @@ typedef struct
 typedef struct
 {
 	int pos;
-	t_list args; //lista de t_memoria
-	t_list vars; //idem args
+	t_list *args; //lista de t_memoria
+	t_list *vars; //idem args
 	int retPos; //posición en el indice de código, empezando de 0, donde retorna la función
 	t_memoria retVar;
 }t_stack_element;

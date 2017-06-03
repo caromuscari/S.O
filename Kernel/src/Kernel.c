@@ -49,6 +49,7 @@ int main(int argc, char*argv[])
 	crear_archivo_log("/home/utnso/log_kernel");
 
 	crear_conexiones();
+	manejo_conexiones_consolas();
 	handshakearFS();
 	handshakearMemory();
 
@@ -135,6 +136,6 @@ void crear_conexiones()
 	int controlador = 0;
 	config->server_cpu = iniciar_socket_server(config->ip_kernel, config->puerto_cpu, &controlador);
 	config->server_consola = iniciar_socket_server(config->ip_kernel, config->puerto_prog, &controlador);
-	config->cliente_fs = iniciar_socket_cliente(config->ip_fs, config->puerto_fs, &controlador);
-	config->cliente_memoria = iniciar_socket_cliente(config->ip_memoria, config->puerto_memoria, &controlador);
+	//config->cliente_fs = iniciar_socket_cliente(config->ip_fs, config->puerto_fs, &controlador);
+	//config->cliente_memoria = iniciar_socket_cliente(config->ip_memoria, config->puerto_memoria, &controlador);
 }

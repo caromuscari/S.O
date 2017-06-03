@@ -19,7 +19,7 @@ extern t_dictionary * h_pid;
 extern t_dictionary * sem;
 extern t_dictionary * impresiones;
 extern int tamAimprimir;
-extern sem_t *semaforo;
+extern sem_t semaforo;
 
 
 void *programa (int pid);
@@ -27,13 +27,13 @@ void *programa (int pid);
 void * escuchar_mensaje(){
 	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE,NULL);
 	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,NULL);
-	char * mensaje=malloc(sizeof *mensaje);
+	char * mensaje=strdup("");
 	int mensaje2;
 	long int pid;
-	sem_init(semaforo,0,1);
+	sem_init(&semaforo,0,1);
 	while(1)
 	{
-		sem_wait(semaforo);
+		sem_wait(&semaforo);
 		t_chequeo * sema = malloc(sizeof(t_chequeo));
 		t_chequeo * smod;
 		t_impresiones * cant = malloc(sizeof(t_impresiones));
@@ -78,7 +78,7 @@ void * escuchar_mensaje(){
 				free(cant);
 				break;
 		}
-		sem_post(semaforo);
+		sem_post(&semaforo);
 	}
 
 }

@@ -34,7 +34,7 @@ char *get_header(char *mensaje)
 
 int comparar_header(char *identificador, char *mensaje)
 {
-	return strcmp(string_substring(mensaje, 0, 1), identificador);
+	return !strcmp(string_substring(mensaje, 0, 1), identificador);
 }
 
 //devuelve el codigo del mensaje

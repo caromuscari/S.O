@@ -10,7 +10,7 @@
 
 typedef struct {
 	char * ip;
-	char * puerto;
+	int puerto;
 }t_consola;
 
 typedef struct{

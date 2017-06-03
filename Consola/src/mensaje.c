@@ -29,12 +29,12 @@ char *armar_mensaje(char *identificador, char *mensaje)
 //devuelve el header del mensaje
 char *get_header(char *mensaje)
 {
-	return string_substring(mensaje, 0, 1);
+	return string_substring(mensaje, 0, 1);//probar memcpy D: D: D: D: mabel
 }
 
 int comparar_header(char *identificador, char *mensaje)
 {
-	return strcmp(string_substring(mensaje, 0, 1), identificador);
+	return !strcmp(string_substring(mensaje, 0, 1), identificador);
 }
 
 //devuelve el codigo del mensaje

@@ -7,6 +7,7 @@
 
 #include <stdio.h>
 #include <pthread.h>
+#include <string.h>
 #include <commons/collections/dictionary.h>
 #include "socket_client.h"
 #include "mensaje.h"
@@ -62,25 +63,28 @@ void* hilousuario ()
 			}
 		 */
 
-		if(ingreso == "iniciar_programa"){
+		if(!strcmp(ingreso, "iniciar_programa")){
 			printf("ingresar la ruta del programa: ");
 			scanf("%s",identi);
 			iniciar_programa(identi,socket_);
 		}
 		else{
-			if(ingreso == "finalizar_programa"){
+			if(!strcmp(ingreso, "finalizar_programa")){
 				printf("ingresar el PID del programa: ");
 				scanf("%s",identi);
 				finalizar_programa(atol(identi),socket_);
 			}
 			else{
-				if(ingreso == "desconectar_consola"){
+				if(!strcmp(ingreso, "desconectar_consola")){
 					desconectar_consola();
 				}
 				else{
-					if(ingreso == "limpiar_consola"){
+					if(!strcmp(ingreso, "limpiar_consola")){
 						//limpiar_consola();
 						system("clear");
+					}
+					else{
+						printf("No se reconoce el pedido");
 					}
 				}
 			}
@@ -98,8 +102,8 @@ void* hilousuario ()
 }*/
 
 void iniciar_programa(char * ruta, int socket_){
-	char * mensaje_armado=malloc(sizeof * mensaje_armado);
-	char * mensaje=malloc(sizeof *mensaje);
+	char * mensaje_armado=strdup("");
+	char * mensaje=strdup("");
 	mensaje = leer_archivo(ruta);
 	mensaje_armado= armar_mensaje("C01", mensaje);
 	enviar(socket_, mensaje_armado,sizeof (mensaje_armado));

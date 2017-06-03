@@ -6,6 +6,7 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "estructuras.h"
 #include <commons/collections/dictionary.h>
 #include "log.h"
@@ -16,16 +17,16 @@ extern t_dictionary * h_pid;
 extern t_dictionary * sem;
 extern t_dictionary * tiempo;
 extern t_dictionary * impresiones;
-extern t_consola arch_config;
+extern t_consola * arch_config;
 extern char * ingreso;
 extern char * identi;
 
 void inicializar_parametros()
 {
-	arch_config.ip= malloc(sizeof * arch_config.ip);
-	arch_config.puerto= malloc(sizeof * arch_config.puerto);
-	ingreso= malloc(sizeof *ingreso);
-	identi= malloc(sizeof *identi);
+	arch_config = malloc(sizeof(t_consola));
+	arch_config->ip= strdup("");
+	ingreso= strdup("");
+	identi= strdup("");
 	p_pid = dictionary_create();
 	h_pid = dictionary_create();
 	sem = dictionary_create();
@@ -35,8 +36,7 @@ void inicializar_parametros()
 
 void liberar_memoria()
 {
-	free(arch_config.ip);
-	free(arch_config.puerto);
+	free(arch_config->ip);
 	free(ingreso);
 	free(identi);
 	dictionary_clean(p_pid);
@@ -49,6 +49,7 @@ void liberar_memoria()
 	dictionary_destroy(tiempo);
 	dictionary_clean(impresiones);
 	dictionary_destroy(impresiones);
+	free(arch_config);
 	liberar_log();
 }
 
