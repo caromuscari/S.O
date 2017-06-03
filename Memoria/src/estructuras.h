@@ -11,7 +11,7 @@
 //Estructura definida para el modulo de memoria
 typedef struct{
 	char *IP;
-	char *PUERTO;
+	int PUERTO;
 	int MARCOS;
 	int MARCO_SIZE;
 	int ENTRADAS_CACHE;

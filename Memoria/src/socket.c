@@ -2,17 +2,15 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include <commons/string.h>
+#include <commons/log.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <signal.h>
-#include <commons/string.h>
 #include "log.h"
-#include <commons/log.h>
+#include "manejo_errores.h"
 
-//Ceci dice que hay que cambiar todo!!!
-//modificar controlador y agregar indice de errores para el controlador
-
-//extern t_log *log;
+extern t_log *log;
 
 int iniciar_socket_cliente(char *ip, int puerto_conexion, int *control)
 {
@@ -24,8 +22,9 @@ int iniciar_socket_cliente(char *ip, int puerto_conexion, int *control)
 	if ((connected_socket = socket(AF_INET, SOCK_STREAM, 0)) < 0)
 	{
 		*control = 1;
-
-	}else escribir_log("Kernel - Socket creado");
+		error_sockets(control, "");
+	}
+	else escribir_log("Kernel - Socket creado");
 
 	dest.sin_family = AF_INET;
 	dest.sin_port = htons( puerto_conexion );
@@ -35,10 +34,7 @@ int iniciar_socket_cliente(char *ip, int puerto_conexion, int *control)
 	if (connect(connected_socket, (struct sockaddr*) &dest, sizeof(dest)) != 0)
 	{
 		*control = 2;
-
-	}else
-	{
-
+		error_sockets(control, "");
 	}
 	return connected_socket;
 }
@@ -55,6 +51,7 @@ int iniciar_socket_server(char *ip, int puerto_conexion, int *controlador)
 	if ((socketServidor = socket(AF_INET, SOCK_STREAM, 0)) < 0)
 	{
 		*controlador = 3;
+		error_sockets(controlador, "");
 	}
 	//printf("created socket\n");
 
@@ -67,17 +64,18 @@ int iniciar_socket_server(char *ip, int puerto_conexion, int *controlador)
 	if (bind(socketServidor, (struct sockaddr*) &my_addr, sizeof(struct sockaddr_in)) != 0)
 	{
 		*controlador = 4;
+		error_sockets(controlador, "");
 	}
 	else
 	{
 		escribir_log("Kernel - Socket server creado");
 	}
-	//printf("binded socket\n");
 
 	//Listening socket
 	if (listen(socketServidor, BACKLOG) != 0)
 	{
 		*controlador = 5;
+		error_sockets(controlador, "");
 	}
 
 	return socketServidor;
@@ -95,8 +93,8 @@ int escuchar_conexiones(int socketServidor, int *controlador)
 	if (listen(socketServidor, BACKLOG) != 0)
 	{
 		*controlador = 5;
+		error_sockets(controlador, "");
 	}
-
 	c = sizeof(struct sockaddr_in);
 
 	//accept connection from an incoming client
@@ -104,7 +102,9 @@ int escuchar_conexiones(int socketServidor, int *controlador)
 	if (client_sock_accepted < 0)
 	{
 		*controlador = 6;
-	}else
+		error_sockets(controlador, "");
+	}
+	else
 	escribir_log_con_numero("Kernel - Nueva conexion aceptada para socket: ", client_sock_accepted);
 
 	return client_sock_accepted;
@@ -119,7 +119,9 @@ int aceptar_conexion(int socketServidor, int *controlador)
 	if (client_sock_accepted < 0)
 	{
 		*controlador = 6;
-	}else
+		error_sockets(controlador, "");
+	}
+	else
 	escribir_log_con_numero("Kernel - Nueva conexion aceptada para socket: ", client_sock_accepted);
 
 	return client_sock_accepted;
@@ -129,21 +131,17 @@ int enviar(int socket_emisor, char *mensaje_a_enviar, int *controlador)
 {
 	int ret;
 	signal(SIGPIPE, SIG_IGN);
-	size_t sbuffer = sizeof(char)*1024;
+	size_t sbuffer = sizeof(char)*sizeof(mensaje_a_enviar);
 	*controlador = 0;
 
 	char *buffer = string_substring(mensaje_a_enviar,0,sbuffer);
 
 	if ((ret = send(socket_emisor, buffer, sbuffer, MSG_NOSIGNAL)) < 0)
 	{
-		//close(socket_emisor);
 		*controlador = 7;
-
-	} else
-	{
-		//Este mensaje debera esta en la funcion que invoque esta
-		//escribir_log_con_numero("Kernel - Exito al enviar mensaje a PID: ", *prog->PID);
+		error_sockets(controlador, atoi(socket_emisor));
 	}
+
 	free(buffer);
 	return ret;
 }
@@ -162,11 +160,10 @@ char *recibir(int socket_receptor, int *controlador)
 		if (ret == 0)
 		{
 			*controlador = 8;
-		} else {
-			//printf("error recibiendo el mensaje \n");
-				}
+			error_sockets(controlador, atoi(socket_receptor));
+		}
 		*controlador = 1;
-		//close(socket_receptor);
+		error_sockets(controlador, "");
 	}
 
 	char *buffer_aux= strdup(buffer);

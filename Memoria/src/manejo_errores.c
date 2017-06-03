@@ -5,7 +5,6 @@
 #include <commons/config.h>
 #include <commons/string.h>
 #include "estructuras.h"
-#include "configuracion.h"
 #include "socket.h"
 #include "log.h"
 
@@ -14,31 +13,31 @@ void error_sockets(int *controlador, char *proceso)
 	switch (*controlador)
 	{
 		case 1:
-			escribir_log("Kernel - Error creando socket");
+			escribir_error_log("Kernel - Error creando socket");
 			break;
 		case 2:
-			escribir_log("Kernel - Error conectando socket:");
+			escribir_error_log("Kernel - Error conectando socket");
 			break;
 		case 3:
-			escribir_log("Kernel - Error creando socket server");
+			escribir_error_log("Kernel - Error creando socket server");
 			break;
 		case 4:
-			escribir_log("Kernel - Error bindeando socket server");
+			escribir_error_log("Kernel - Error bindeando socket server");
 			break;
 		case 5:
-			escribir_log("Kernel - Socket server, error escuchando");
+			escribir_error_log("Kernel - Socket server, error escuchando");
 			break;
 		case 6:
-			escribir_log("Kernel - Error aceptando conexion");
+			escribir_error_log("Kernel - Error aceptando conexion");
 			break;
 		case 7:
-			escribir_log_compuesto("Kernel - Error al enviar mensaje a: ", proceso);
+			escribir_log_error_compuesto("Kernel - Error al enviar mensaje a: ", proceso);
 			break;
 		case 8:
-			escribir_log_compuesto("Kernel - Error, socket desconectado", proceso);
+			escribir_log_error_compuesto("Kernel - Error, socket desconectado", proceso);
 			break;
 		case 9:
-			escribir_log_compuesto("Kernel - Error recibiendo mensaje de: ", proceso);
+			escribir_log_error_compuesto("Kernel - Error recibiendo mensaje de: ", proceso);
 			break;
 	}
 }
