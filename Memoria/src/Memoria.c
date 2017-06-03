@@ -3,10 +3,10 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/socket.h>
-//#include "socket.h"
 #include "log.h"
 #include <commons/config.h>
 #include "estructuras.h"
+#include "funciones_memoria.h"
 #include "socket.h"
 #include "manejo_errores.h"
 
@@ -15,7 +15,6 @@
 int cliente[20];
 int puerto;
 int controlador = 0;
-
 
 t_memoria DATA_Memoria;
 
@@ -35,15 +34,41 @@ int main(int argc, char *argv[])
 	crear_archivo_log("/home/utnso/Escritorio/MEMORIA-DEBUGGING-LOG");
 	DATA_Memoria=leerArchivoConfig(argv[1]); // Parametro: Ruta De Archivo de Configuracion.
 	printf("IP SERVER: %s:%s \n", DATA_Memoria.IP, DATA_Memoria.PUERTO);
+	printf("MARCOS: %d \n", DATA_Memoria.MARCOS);
 
-	int	socketServidorMemoria = iniciar_socket_server(DATA_Memoria.IP, (int)DATA_Memoria.PUERTO,&controlador);
+	//int SIZE_PAGE_TABLE = REG_PAGE_TABLE * DATA_Memoria.MARCOS;
 
-	printf("El FileDescriptor del Servidor es: %d",socketServidorMemoria);
+	//printf("SIZE_PAGE_TABLE : %d \n", SIZE_PAGE_TABLE);
 
+	printf("SIZE_MEMORIA: %d \n", DATA_Memoria.MARCO_SIZE + DATA_Memoria.MARCO_SIZE);
+
+
+	char *ip_nuevo = "127.0.0.1";
+	int nuevo_puerto = 5003;
+
+	int	socketServidorMemoria = iniciar_socket_server(ip_nuevo, nuevo_puerto,&controlador);
+	//int	socketServidorMemoria = iniciar_socket_server(DATA_Memoria.IP, (int)DATA_Memoria.PUERTO,&controlador);
 
 	fd_set master;
 	fd_set read_fds;
 	int fdmax;
+
+	escribir_log(string_from_format("El FileDescriptor del Servidor es: %d",socketServidorMemoria));
+
+
+	//Crea estructura administrativa
+
+	//unsigned char frame[20] * MEMORIA;
+	//frame;
+	//MEMORIA = malloc (DATA_Memoria.MARCO_SIZE * DATA_Memoria.MARCOS);
+
+	//bzero(MEMORIA, 0);
+
+
+
+
+	//Crea estructura administrativa
+
 	//Seteo en 0 el master y temporal
 	FD_ZERO(&master);
 	FD_ZERO(&read_fds);
@@ -54,15 +79,20 @@ int main(int argc, char *argv[])
 	//Cargo el socket mas grande
 	fdmax = socketServidorMemoria;
 
+	escribir_log(string_from_format("FDMAX: %d",fdmax));
+
 	//Bucle principal
 	while (1)
 	{
 		read_fds = master;
 
+		escribir_log(string_from_format("ANTES DEL SELECT: %d",fdmax));
+
 		int selectResult = select(fdmax + 1, &read_fds, NULL, NULL, NULL);
 
-		if (selectResult == -1)
-		{
+		escribir_log(string_from_format("Despues del Select: %d",selectResult));
+
+		if (selectResult == -1) {
 			break; // Error en el SELECT.
 		}
 		else
@@ -79,8 +109,9 @@ int main(int argc, char *argv[])
 						//Gestiono la conexion entrante
 						//Los clientes te envian tambien su identificador para responder en consecuencia.
 
-						int nuevo_socket = aceptar_conexion(socketServidorMemoria, &controlador);
+						int nuevo_socket = aceptar_conexion(i, &controlador);
 
+						escribir_log(string_from_format("Realizando HANDSHAKE %d",nuevo_socket ));
 						//Controlo que no haya pasado nada raro y acepto al nuevo
 						if (controlador > 0)
 						{
@@ -89,7 +120,9 @@ int main(int argc, char *argv[])
 						else
 						{
 						//funcion para realizar handshake con nueva conexion
-							realizar_handShake(nuevo_socket);
+
+
+						//	realizar_handShake(nuevo_socket);
 							///
 						}
 
