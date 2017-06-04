@@ -5,11 +5,14 @@
  *      Author: utnso
  */
 #include <stdio.h>
+#include <stdlib.h>
 #include <pthread.h>
 #include <string.h>
 #include <commons/collections/dictionary.h>
+#include <commons/log.h>
 #include "socket_client.h"
 #include "mensaje.h"
+#include "log.h"
 #include <semaphore.h>
 #include <time.h>
 #include "estructuras.h"
@@ -18,20 +21,20 @@ extern int socket_;
 extern int tamAimprimir;
 extern t_dictionary * sem;
 extern sem_t semaforo;
-time_t tiempoInicial;
+time_t *tiempoInicial;
 extern t_dictionary * tiempo;
 extern t_dictionary * impresiones;
 
 void * programa (long int pid){
-	tiempoInicial=time(NULL);
 	dictionary_put(tiempo,pid,tiempoInicial);
 	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE,NULL);
 	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,NULL);
 	char * mensaje=strdup("");
-	int identificador;
-	t_chequeo * semp;
-	t_impresiones * impresiones;
-	impresiones=dictionary_get(impresiones,pid);
+	t_chequeo * semp = malloc(sizeof(t_chequeo));
+	t_impresiones * impresiones2 = malloc(sizeof(t_impresiones));
+	tiempoInicial=malloc(sizeof(time_t));
+	tiempoInicial=time(NULL);
+	impresiones2=dictionary_get(impresiones,pid);
 	semp=dictionary_get(sem,pid);
 	while(1)
 	{
@@ -39,8 +42,12 @@ void * programa (long int pid){
 		{	sem_wait(&semaforo);
 			mensaje=recibir(socket_,tamAimprimir);
 			printf("%s", mensaje);
-			impresiones->cantidad++;
+			impresiones2->cantidad++;
 		}
 
 	}
+	free(mensaje);
+	free(semp);
+	free(impresiones2);
+	free(tiempoInicial);
 }

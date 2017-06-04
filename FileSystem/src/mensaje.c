@@ -29,10 +29,7 @@ char *armar_mensaje(char *identificador, char *mensaje)
 //devuelve el header del mensaje
 char *get_header(char *mensaje)
 {
-	//return string_substring(mensaje, 0, 1);//probar memcpy D: D: D: D: mabel
-	char* mensaje2 = strdup("");
-	memcpy(mensaje2,mensaje,1);
-	return mensaje2;
+	return string_substring(mensaje, 0, 1);
 }
 
 int comparar_header(char *identificador, char *mensaje)
@@ -52,14 +49,4 @@ char * get_mensaje(char *mensaje)
 	char *payload = string_substring(mensaje, 3, 10);
 	int payload1 = atoi(payload);
 	return string_substring(mensaje, 13, payload1);
-}
-
-char * get_pid(char* mensaje)
-{
-	return string_substring(mensaje, 13, 2);
-}
-
-int get_payload(mensaje)
-{
-	return atoi(string_substring(mensaje, 3, 10));
 }
