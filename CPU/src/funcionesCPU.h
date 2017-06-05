@@ -11,7 +11,7 @@
 
 void handshakeKernel(int sok);
 int handshakeMemoria(int );
-t_dictionary* armarDiccionarioEtiquetas(void *etiquetas_serializadas);
+t_dictionary* armarDiccionarioEtiquetas(char *etiquetas_serializadas);
 
 
 #endif /* SRC_FUNCIONESCPU_ */
