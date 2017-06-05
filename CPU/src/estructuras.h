@@ -15,10 +15,26 @@ typedef struct
 	int cant_pag;
 	int SP;
 	t_sentencia* in_cod;
-	void* in_et;
+	char* in_et;
 	t_list* in_stack;  //lista de t_stack_element
 	int exit_code;
 }t_PCB;
+typedef struct
+{
+	int PID;
+	int PC;
+	int cant_pag;
+	int SP;
+	t_sentencia* in_cod;
+	t_dictionary* dicc_et;
+	char* in_et;
+	t_list* in_stack;  //lista de t_stack_element
+	int exit_code;
+	char algoritmo[2];
+	int quantum;
+	int quantum_sleep;
+
+}t_PCB_CPU;
 
 typedef struct
 {
@@ -35,4 +51,5 @@ typedef struct
 	int retPos; //posición en el indice de código, empezando de 0, donde retorna la función
 	t_memoria retVar;
 }t_stack_element;
+
 #endif /* ESTRUCTURAS_H_ */

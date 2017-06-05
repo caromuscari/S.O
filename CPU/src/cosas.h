@@ -17,7 +17,10 @@
 #include <parser/metadata_program.h>
 
 t_sentencia* armarIndiceCodigo (char *codigoPrograma);
-void* armarIndiceEtiquetas(char *codigoPrograma);
+char* armarIndiceEtiquetas(char *codigoPrograma);
 t_list* armarIndiceStack(char *codigoPrograma);
-void* serializarPCB (t_PCB );
+char* serializarPCB_KerCPU (t_PCB,char *,int,int );
+char* serializarPCB_CPUKer (t_PCB_CPU);
+t_PCB deserializarPCB_CPUKer (char* );
+t_PCB_CPU deserializarPCB_KerCPU (char* );
 #endif /* SRC_COSAS_H_ */
