@@ -7,7 +7,6 @@
 #include <commons/string.h>
 #include <commons/log.h>
 #include "estructuras.h"
-//#include "funciones_memoria.h"	NI IDEA QUE ES ESTO!!!
 #include "socket.h"
 #include "log.h"
 #include "manejo_errores.h"
@@ -19,20 +18,74 @@ int controlador = 0;
 t_memoria *data_Memoria;
 t_log *log;
 
+// Para multi-hilos
+int cliente[20];
+pthread_t hiloEsperarMensaje[20];
 void leerArchivoConfig(char* rutaArchivoConfig);
-void realizar_handShake(int nuevo_socket);
-void ejecutar_server();
+
+//Clientes
+
+void esperar_mensaje(void *i);
 
 int main(int argc, char *argv[])
 {
-	crear_archivo_log("/home/utnso/Escritorio/memoria_log");
+	crear_archivo_log("/home/utnso/Escritorio/MEMORIA-DEBUGGING-LOG.txt");
 	leerArchivoConfig(argv[1]);
 	//Creacion de Socket Server
-	data_Memoria->SOCKET = iniciar_socket_server(data_Memoria->IP,data_Memoria->PUERTO,&controlador);
+	printf("\n MARCOS %d  \n",data_Memoria->MARCOS);
+	printf("PUERTO %d  \n",data_Memoria->PUERTO);
+	//data_Memoria->SOCKET =
 
-	//El select esta aca dentro
-	ejecutar_server();
+	int socketServerMemoria = iniciar_socket_server(data_Memoria->IP,data_Memoria->PUERTO,&controlador);
 
+	escribir_log(string_from_format("Se inicia Servidor de Memoria en Socket: %d ",socketServerMemoria));
+
+
+	int i = 0;
+
+		while (1) {
+
+			cliente[i] = escuchar_conexiones(socketServerMemoria,&controlador);
+
+			escribir_log(string_from_format("Nueva Conexión entrante: %d ",cliente[i]));
+
+	// Realizar HS y enviar Tamaño MARCO.
+			char *mensaje_recibido = recibir(cliente[i], &controlador);
+			char *header = get_header(mensaje_recibido);
+
+			if(strcmp(header,"K")==0 || strcmp(header,"P")==0 )
+				{
+				//Cliente VALIDO
+					if (strcmp(header,"K")==0 )
+						{
+							char* HS_OK = armar_mensaje("M00","128"); // M|00|0000000003|128|
+							enviar(cliente[i],HS_OK, &controlador);
+						}
+						else
+						{
+							char* HS_OK = armar_mensaje("M00",""); // M|00|0000000000|
+							enviar(cliente[i],HS_OK, &controlador);
+						}
+
+
+				}
+				else
+				{
+					escribir_log(string_from_format("Se cierra la conexión con el Cliente luego del HandShake - Socket: %d ",cliente[i]));
+					cerrar_conexion(cliente[i]);
+					goto salir_handshake;
+				}
+	//Si es Cliente valido entra a interactuar con la MEMORIA. // Hilo
+
+			pthread_create(&hiloEsperarMensaje[i], NULL, (void*) esperar_mensaje,(void *) cliente[i]);
+			escribir_log(string_from_format("El Cliente %d tiene Hilo nro :%d ",cliente[i],i));
+
+			// RECIBIR
+			salir_handshake:
+			i++;
+		}
+
+	//El select esta aca dentro --- ejecutar_server();
 	return EXIT_SUCCESS;
 }
 
@@ -54,111 +107,67 @@ void leerArchivoConfig(char* rutaArchivoConfig)
 	config_destroy(configuracion);
 }
 
-void ejecutar_server()
-{
-	FD_ZERO(&master);
-	FD_ZERO(&read_fds);
+void esperar_mensaje(void *i) {
 
-	//Cargo el socket server
-	FD_SET(data_Memoria->SOCKET, &master);
-
-	//Cargo el socket mas grande
-	fdmax = data_Memoria->SOCKET;
-
-	//Bucle principal
-	while (1)
+	int cliente = (int) i;
+	int chau = 0;
+	while (chau != 1 )
 	{
-		read_fds = master;
 
-		int selectResult = select(fdmax + 1, &read_fds, NULL, NULL, NULL);
+	char *mensRec = malloc(1024);
+	memset(mensRec,'\0', 1024);
 
-		if (selectResult == -1)
-		{
-			break;
-		}
-		else
-		{
-			//Recorro los descriptores para ver quien llamo
-			int i;
-			for (i = 0; i <= fdmax; i++)
-			{
-				if (FD_ISSET(i, &read_fds))
-				{
-					//Se detecta alguien nuevo llamando?
-					if (i == data_Memoria->SOCKET)
-					{
-						//Gestiono la conexion entrante
-						//Los clientes te envian tambien su identificador para responder en consecuencia.
-						int nuevo_socket = aceptar_conexion(i, &controlador);
-						escribir_log_con_numero("Realizando HANDSHAKE con ",nuevo_socket);
+	mensRec = recibir(cliente, &controlador);
 
-						//Controlo que no haya pasado nada raro y acepto al nuevo
-
-						if(controlador == 0)
-						{
-							//realizar_handShake(nuevo_socket);
-						}
-
-						//Cargo la nueva conexion a la lista y actualizo el maximo
-						FD_SET(nuevo_socket, &master);
-
-						if (nuevo_socket > fdmax)
-						{
-							fdmax = nuevo_socket;
-						}
-					}
-					else
-					{
-						//Es una conexion existente, respondo a lo que me pide
-						char *mensaje_recibido = recibir(i, &controlador);
-
-						if(controlador == 0)
-						{
-							// Empezar a responder los codigos
-						}
-					}
-				}
-			}
-		}
+	if(controlador > 0)
+	{
+		cerrar_conexion(cliente);
+		chau =1;
+		goto chau;
 	}
-}
 
-void realizar_handShake(int nuevo_socket)
-{
-	char *mensajeRecibido = malloc(1024);
-	memset(mensajeRecibido, '\0', 1024);
-	char *emisor=malloc(1);
-	char *codigoOP= malloc(2);
-	memset(emisor,'\0',1);
-	memset(codigoOP,'\0',2);
+	char *header = get_header(mensRec);
+	int codigo = get_codigo(mensRec);
 
-	mensajeRecibido = recibir(nuevo_socket, &controlador);
-		if (controlador > 0)
-		{
-			error_sockets(&controlador, string_itoa(nuevo_socket));
-			cerrar_conexion(nuevo_socket);
-		}
-		else
-		{
-			memcpy(emisor, mensajeRecibido,1);
+	printf("\n header: %s \n",header);
+	printf("\n codigo: %d \n",codigo);
 
-			if (strcmp(emisor,"K")==0 || strcmp(emisor,"P")==0 ) {
-				// es K o P envía el OK y el tamanio de pagina.
-				//PENDIENTE DE REVISAR!!!
-					char *mensajeRespuesta = malloc(1024); memset(mensajeRespuesta,'\0',1024);
-					memcpy(mensajeRespuesta,"M00",3);
-					memcpy(mensajeRespuesta+3,string_itoa(data_Memoria->MARCO_SIZE),4);
-					//Cuando valida el cliente, le da OK enviandole el tamaño de pagina
-					enviar(nuevo_socket, mensajeRespuesta, &controlador);
-			}
-			else
-			{
-				//no es ni K ni P.
-				char *mensajeRespuesta = malloc(1024);
-				memset(mensajeRespuesta,'\0',1024);
-				memcpy(mensajeRespuesta,"M01",3);
-				enviar(nuevo_socket, mensajeRespuesta,&controlador);
-				escribir_log_con_numero("Rechaza HandShake: No es K ni P para Socket: ",nuevo_socket);
-			}
-		}
-}
+	switch (codigo) {
+					case 1:
+						{
+							escribir_log(string_from_format("CASE 1: %d ",cliente));
+
+						}
+					break;
+					case 2:
+						{
+							escribir_log(string_from_format("CASE 2: %d ",cliente));
+						}
+					break;
+					case 3:
+						{
+							escribir_log(string_from_format("CASE 3: %d ",cliente));
+
+						}
+					break;
+					case 4:
+						{
+							escribir_log(string_from_format("CASE 4: %d ",cliente));
+
+						}
+					break;
+					case 5:
+						{
+							escribir_log(string_from_format("CASE 5: %d ",cliente));
+
+						}
+					break;
+
+						}
+
+					chau:
+				printf("HOLA");
+	}
+	}
+
+

@@ -10,7 +10,7 @@
 #include "log.h"
 #include "manejo_errores.h"
 
-extern t_log *log;
+//extern t_log *log;
 
 int iniciar_socket_cliente(char *ip, int puerto_conexion, int *control)
 {
@@ -68,7 +68,7 @@ int iniciar_socket_server(char *ip, int puerto_conexion, int *controlador)
 	}
 	else
 	{
-		escribir_log("Kernel - Socket server creado");
+		escribir_log("Se inicia Servidor de Memoria");
 	}
 
 	//Listening socket
@@ -131,7 +131,7 @@ int enviar(int socket_emisor, char *mensaje_a_enviar, int *controlador)
 {
 	int ret;
 	signal(SIGPIPE, SIG_IGN);
-	size_t sbuffer = sizeof(char)*sizeof(mensaje_a_enviar);
+	size_t sbuffer = sizeof(char)*string_length(mensaje_a_enviar);
 	*controlador = 0;
 
 	char *buffer = string_substring(mensaje_a_enviar,0,sbuffer);
