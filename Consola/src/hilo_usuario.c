@@ -41,8 +41,8 @@ void* hilousuario ()
 	//t_dictionary* switch_;
 	//cargar_switch(switch_);
 	while(1){
-		//scanf("%s",ingreso);
-		fgets(ingreso,20,stdin);
+		scanf("%s",ingreso);
+		//fgets(ingreso,20,stdin);
 
 		/*int data=dictionary_get(switch_,ingreso);
 		  switch(data){
@@ -110,7 +110,7 @@ void iniciar_programa(char * ruta, int socket_){
 	char * mensaje=strdup("");
 	mensaje = leer_archivo(ruta);
 	mensaje_armado= armar_mensaje("C01", mensaje);
-	enviar(socket_, mensaje_armado,sizeof (mensaje_armado));
+	enviar(socket_, mensaje_armado,string_length(mensaje_armado));
 
 	free(mensaje);
 	free(mensaje_armado);
@@ -133,7 +133,6 @@ char * leer_archivo(char * ruta){
 		string_append(&mensaje2,mensaje);
 	}
 	free(mensaje);
-	free(mensaje2);
 	fclose(archivo);
 	return mensaje2;
 }
