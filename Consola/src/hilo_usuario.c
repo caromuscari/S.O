@@ -160,7 +160,10 @@ void finalizar_programa(pthread_t pid, int socket_){
 
 void desconectar_consola(){
 	void * valor;
+	char *mensaje = strdup("");
 	dictionary_iterator(h_pid,cerrar_programas);
+	mensaje = armar_mensaje("C03", "");
+	enviar(socket_, mensaje, string_length(mensaje));
 	escribir_log("Se desconecta la consola");
 	pthread_cancel(hiloMensaje);
 	pthread_exit(valor);
