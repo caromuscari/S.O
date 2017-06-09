@@ -17,6 +17,7 @@
 #include <commons/string.h>
 #include "estructuras.h"
 #include "socket_client.h"
+#include "parametros.h"
 #include "mensaje.h"
 #include "log.h"
 #include <semaphore.h>
@@ -38,8 +39,8 @@ sem_t semaforo;
 int tamAimprimir;
 
 
-void inicializar_parametros();
-void liberar_memoria();
+//void inicializar_parametros();
+//void liberar_memoria();
 void leer_archivo_configuracion(char * ruta);
 void handshake(int socket_);
 void * hilousuario ();
@@ -89,4 +90,5 @@ void handshake(int socket_){
 	escribir_log("Se hizo el handshake");
 	free(mensaje);
 	free(mensaje_recibido);
+	free(otro_aux);
 }

@@ -18,7 +18,6 @@ int tam_pagina = 0;
 
 void manejar_respuesta(char *);
 void handshakearMemory();
-void pedir_tamano_pag();
 void reservar_memoria_din(t_program *, int);
 int ubicar_bloque(t_pagina *,int, int *);
 HeapMetadata*find_first_fit(t_list *hs, int t_sol);
@@ -29,32 +28,18 @@ void crear_dict_pagina(t_dictionary *);
 void handshakearMemory()
 {
 	int controlador = 0;
-	char *mensaje = malloc(7);
-	strcpy(mensaje,"K02");
+	char *mensaje = "K02";
+	char *respuesta;
+
 	enviar(config->cliente_memoria, mensaje, &controlador);
-	if(controlador > 0) error_sockets(&controlador, "Memoria");
-	free(mensaje);
+	respuesta = recibir(config->cliente_memoria, &controlador);
+	manejar_respuesta(respuesta);
 }
 
 void pedir_pagina()
 {
 	int controlador = 0;
 	char *mensaje = "K05";
-	char *respuesta;
-	enviar(config->cliente_memoria, mensaje, &controlador);
-	if (controlador > 0) error_sockets(&controlador,"Memoria");
-	else
-	{
-		controlador = 0;
-		respuesta = recibir(config->cliente_memoria, &controlador);
-		manejar_respuesta(respuesta);
-	}
-}
-
-void pedir_tamano_pag()
-{
-	int controlador = 0;
-	char *mensaje = "K01";
 	char *respuesta;
 	enviar(config->cliente_memoria, mensaje, &controlador);
 	if (controlador > 0) error_sockets(&controlador,"Memoria");
@@ -74,6 +59,7 @@ void reservar_memoria_din(t_program *program, int size_solicitado)
 		int n = 0;
 		int size_lpages = list_size(program->memoria_dinamica);
 		int flag = 0;
+
 		while(n < size_lpages && flag == 0)
 		{
 			t_pagina *page = malloc(sizeof(t_pagina));
@@ -101,12 +87,11 @@ void manejar_respuesta(char *respuesta)
 	int codigo = get_codigo(respuesta);
 	char *mensaje = strdup("");
 	mensaje = get_mensaje(respuesta);
-	int tam_page;
+
 	switch (codigo)
 	{
 		case 0:
-			tam_page = atoi(mensaje);
-			tam_pagina = tam_page;
+			tam_pagina = atoi(mensaje);
 			break;
 		case 1:
 			//cómo se a que programa le estoy asignando memoria

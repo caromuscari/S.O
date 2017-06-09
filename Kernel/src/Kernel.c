@@ -28,6 +28,7 @@ t_list *list_consolas;
 t_list *list_ejecutando;
 t_list *list_finalizados;
 t_list *list_bloqueados;
+t_list *global_fd;
 t_queue *cola_nuevos;
 t_queue *cola_listos;
 t_log *log;
@@ -49,9 +50,9 @@ int main(int argc, char*argv[])
 	crear_archivo_log("/home/utnso/log_kernel");
 
 	crear_conexiones();
+	handshakearMemory();
 	manejo_conexiones_consolas();
 	handshakearFS();
-	handshakearMemory();
 
 	//manejo_conexiones_cpu();
 	//manejo_conexiones_consola();
@@ -137,5 +138,5 @@ void crear_conexiones()
 	config->server_cpu = iniciar_socket_server(config->ip_kernel, config->puerto_cpu, &controlador);
 	config->server_consola = iniciar_socket_server(config->ip_kernel, config->puerto_prog, &controlador);
 	//config->cliente_fs = iniciar_socket_cliente(config->ip_fs, config->puerto_fs, &controlador);
-	//config->cliente_memoria = iniciar_socket_cliente(config->ip_memoria, config->puerto_memoria, &controlador);
+	config->cliente_memoria = iniciar_socket_cliente(config->ip_memoria, config->puerto_memoria, &controlador);
 }

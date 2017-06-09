@@ -36,6 +36,7 @@ CONSOLA - C
 C00: Identificarse como consola
 C01: Peticion de inicio de programa 
 C02: Aviso de finalizacion de programa
+C03: Aviso de desconexion de consola
 
 FILESYSTEM - F
 

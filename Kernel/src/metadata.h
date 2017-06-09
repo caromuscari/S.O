@@ -9,8 +9,9 @@
 #define METADATA_H_
 
 t_sentencia* armarIndiceCodigo (char *codigoPrograma);
-void* armarIndiceEtiquetas(char *codigoPrograma);
-t_list* armarIndiceStack (char *codigoPrograma);
-void* serializarPCB(t_PCB pcb);
+char* armarIndiceEtiquetas(char *codigoPrograma);
+t_list* armarIndiceStack(char *codigoPrograma);
+char* serializarPCB_KerCPU (t_PCB,char *,int,int );
+t_PCB deserializarPCB_CPUKer (char* );
 
 #endif /* METADATA_H_ */

@@ -12,20 +12,28 @@
 #include "socket.h"
 #include "log.h"
 
-t_dictionary* armarDiccionarioEtiquetas(void *etiquetas_serializadas){
+t_dictionary* armarDiccionarioEtiquetas(char* etiquetas_serializadas){
 	t_dictionary* dicc = dictionary_create();
 	int n=0;
 	int cantEtiquetas=0;
-	memcpy(&cantEtiquetas,etiquetas_serializadas+4,2);
-	int inicio= 6;
-	while(n!=cantEtiquetas){
+	int desplazamiento = sizeof(int);
+	memcpy(&cantEtiquetas,etiquetas_serializadas+desplazamiento,sizeof(int));
+	desplazamiento += sizeof(int);
+
+
+	while(n<cantEtiquetas){
+
 	int lengkey=0;char *key_aux;int pasar_pc=0;
-	memcpy(&lengkey,etiquetas_serializadas+inicio,2);
-	key_aux= string_substring(etiquetas_serializadas,inicio+2,lengkey);
-	memcpy(&pasar_pc,etiquetas_serializadas+inicio+2+lengkey,2);
+	memcpy(&lengkey,etiquetas_serializadas+desplazamiento,sizeof(int));
+	desplazamiento += sizeof(int);
+	key_aux= string_substring(etiquetas_serializadas,desplazamiento,lengkey);
+	desplazamiento += lengkey;
+	memcpy(&pasar_pc,etiquetas_serializadas+desplazamiento,sizeof(int));
 	dictionary_put(dicc,key_aux,(void *)pasar_pc);
-	inicio = inicio+4+lengkey;
+	desplazamiento += sizeof(int);
+	free(key_aux);
 	n++;
+
 	}
 	return dicc;
 

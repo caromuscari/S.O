@@ -4,13 +4,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include "socket.h"
+#include <commons/config.h>
+#include <commons/collections/list.h>
+#include <parser/metadata_program.h>
 #include "log.h"
+#include "cosas.h"
+#include "socket.h"
 #include "funcionesCPU.h"
 #include "funcionesParser.h"
-#include <parser/metadata_program.h>
-#include <commons/config.h>
-#include "cosas.h"
 
 int puertoK,puertoM;
 char *ipK;
@@ -95,7 +96,7 @@ int main(int argc, char *argv[])
 
 
 	}
-*/
+
 	int pc = 0;
 	t_metadata_program *metadata= metadata_desde_literal(programa);
 
@@ -158,29 +159,73 @@ int main(int argc, char *argv[])
 		free(linea);
 
 	}
-	printf("size sentencias%d\n",sizeof sentencias[0]);
-	printf("size t_memoria%d\n",sizeof (t_memoria));
-	printf("size t_stack_element%d\n",sizeof (t_stack_element));
+*/
 
-	n=0;
-	while(sentencias[n].offset_inicio != -1 &&sentencias[n].offset_fin != -1 ){
-		n++;
+	t_PCB pcb;
+	pcb.PC =1;
+	pcb.PID =2;
+	pcb.SP = 3;
+	pcb.cant_pag = 25;
+	pcb.exit_code = 0;
+	pcb.in_cod = armarIndiceCodigo(programa);
+	pcb.in_et = armarIndiceEtiquetas(programa);
+	pcb.in_stack = armarIndiceStack(programa);
+	t_memoria* aux = malloc(sizeof(t_memoria));
+	aux->ID = 'a'; aux->offset = 5; aux->pag=1; aux->size=15;
+	t_stack_element* j=list_get(pcb.in_stack,0);
+	list_add(j->args,aux);list_add(j->vars,aux);
+	char *plan = strdup("RR");
+	char *pcbserializado2=serializarPCB_KerCPU(pcb,plan,5,100);
+	t_PCB_CPU pcbdecpu2= deserializarPCB_KerCPU(pcbserializado2);
+	char *pcbserializado=serializarPCB_CPUKer(pcbdecpu2);
+	t_PCB pcbdecpu= deserializarPCB_CPUKer(pcbserializado);
+	printf("PCB-PC antes:%d-después:%d\n",pcb.PC,pcbdecpu.PC);
+	printf("PCB-ID antes:%d-después:%d\n",pcb.PID,pcbdecpu.PID);
+	printf("PCB-SP antes:%d-después:%d\n",pcb.SP,pcbdecpu.SP);
+	printf("PCB-CANT_PAG antes:%d-después:%d\n",pcb.cant_pag,pcbdecpu.cant_pag);
+	printf("PCB-EXIT_CODE antes:%d-después:%d\n",pcb.exit_code,pcbdecpu.exit_code);
+	//printf("PCB-ALGORITMO antes:%s-después:%s\n",plan,pcbdecpu.algoritmo);
+	//printf("PCB-QUANTUM antes:5-después:%d\n",pcbdecpu.quantum);
+	//printf("PCB-QUANTUM_SLEEP antes:100-después:%d\n",pcbdecpu.quantum_sleep);
+	printf("--- comparando sentencias ---\n");
+	int c;
+	for(c=0;pcb.in_cod[c].offset_fin != -1 && pcb.in_cod[c].offset_inicio != -1; c++){
+		printf("sentencias de pcb numero %d\n",c);
+		char *linea=string_substring(programa,pcb.in_cod[c].offset_inicio,pcb.in_cod[c].offset_fin);
+		printf("%s\n",linea);
+		free(linea);
+
 	}
-	printf("%d",sentencias[n].offset_fin);
-	printf("Espero 12 y tengo:%d\n",n);
-	char* et =armarIndiceEtiquetas(programa);
-	printf("etiqueta1 :%s\n",string_substring(et,8,10));
-	printf("etiqueta2:%s\n",string_substring(et,22,9));
-	t_dictionary *dic = armarDiccionarioEtiquetas(et);
-	printf("espero size 2 y es size:%d\n",dictionary_size(dic));
-	printf("con doble me tira un pc de:%d y espero 8\n",dictionary_get(dic,"doble"));
-	printf("con inicio_for me tira un pc de:%d y espero 5\n",dictionary_get(dic,"inicio_for"));
-	free(et);
+	c=0;
+	for(c=0;pcbdecpu.in_cod[c].offset_fin != -1 && pcbdecpu.in_cod[c].offset_inicio != -1; c++){
+		printf("sentencias de pcb de cpu numero %d\n",c);
+		char *linea=string_substring(programa,pcbdecpu.in_cod[c].offset_inicio,pcbdecpu.in_cod[c].offset_fin);
+		printf("%s\n",linea);
+		free(linea);
+
+	}
+	printf("%d|%d\n",pcbdecpu.in_cod[c].offset_inicio,pcbdecpu.in_cod[c].offset_fin);
+	printf("--- comparando etiquetas ---\n");
+	/*pcbdecpu.dicc_et= armarDiccionarioEtiquetas(pcbdecpu.in_et);
+	printf("Valor Key:doble:%d\n",dictionary_get(pcbdecpu.dicc_et,"doble"));
+	printf("Valor Key:inicio_for:%d\n",dictionary_get(pcbdecpu.dicc_et,"inicio_for"));*/
+
+	printf("--- comparando stack ---\n");
+	printf("size of stack en pcb:%d-en pcbdecpu:%d\n",list_size(pcb.in_stack),list_size(pcbdecpu.in_stack));
+	t_stack_element *h=list_get(pcb.in_stack,0); t_stack_element *h2=list_get(pcbdecpu.in_stack,0);
+	printf("size of args en pcb:%d-en pcbdecpu:%d\n",list_size(h->args),list_size(h2->args));
+	printf("size of vars en pcb:%d-en pcbdecpu:%d\n",list_size(h->vars),list_size(h2->vars));
 
 
-	free(sentencias);
+
+	free(pcb.in_cod);free(pcb.in_et);list_destroy(pcb.in_stack);
+	free(pcbdecpu.in_cod);free(pcbdecpu.in_et);list_destroy(pcbdecpu.in_stack);//dictionary_destroy(pcbdecpu.dicc_et);
+
+
+
+
 free(programa);
-metadata_destruir(metadata);
+//metadata_destruir(metadata);
 free(ipK);free(ipM);
 
 
