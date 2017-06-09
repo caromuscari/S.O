@@ -28,6 +28,7 @@ t_list *list_consolas;
 t_list *list_ejecutando;
 t_list *list_finalizados;
 t_list *list_bloqueados;
+t_list *global_fd;
 t_queue *cola_nuevos;
 t_queue *cola_listos;
 t_log *log;
