@@ -16,6 +16,11 @@
 #include <commons/string.h>
 #include <stdbool.h>
 #include "funciones.h"
+#include "archivos.h"
+#include "log.h"
+#include <commons/log.h>
+#include "mensaje.h"
+#include <commons/bitarray.h>
 
 
 int puerto;
@@ -24,10 +29,14 @@ char *montaje;
 int flagsocket;
 int socketfs;
 t_log * log;
+int tBloques;
+int cantBloques;
+char *magic_number;
+t_bitarray * bitmap;
 
 int verificarHS(char *handshake);
-void archivoDeCofiguracion(char* argv);
-void handshake();
+//void archivoDeCofiguracion(char* argv);
+void handshake1();
 void reservar_memoria();
 void liberar_memoria();
 
@@ -36,46 +45,43 @@ int main(int argc, char *argv[])
 {
 	reservar_memoria();
 	archivoDeCofiguracion(argv[1]);
+	leer_metadata();
+	abrir_bitmap();
 	flagsocket=0;
 	socketfs =iniciar_socket_server(ip,puerto,&flagsocket);
-	handshake();
+	handshake1();
 	while(1)
 	{
 		char *mensaje = strdup("");
 		int codigo;
+		char * mensaje2 = strdup("");
+		char **parametros;
 		mensaje = recibir(socketfs,&flagsocket);
 		codigo = get_codigo(mensaje);
 		switch(codigo)
 		{
 			case 11:
-				char * mensaje2 = strdup("");
 				mensaje2 = get_mensaje(mensaje);
 				validar_archivo(mensaje2);
 				free(mensaje2);
 				break;
 			case 12:
-				char * mensaje2 = strdup("");
 				mensaje2 = get_mensaje(mensaje);
-				crear_archivo();
+				crear_archivo(mensaje2);
 				free(mensaje2);
 				break;
 			case 13:
-				char * mensaje2 = strdup("");
 				mensaje2 = get_mensaje(mensaje);
-				borrar_archivo();
+				borrar_archivo(mensaje2);
 				free(mensaje2);
 				break;
 			case 14:
-				char *mensaje2 = strdup("");
-				char **parametros;
 				mensaje2 = get_mensaje(mensaje);
 				parametros = string_split(mensaje2,",");
 				obtener_datos(parametros[0],atoi(parametros[1]),atoi(parametros[2]));
 				free(mensaje2);
 				break;
 			case 15:
-				char *mensaje2 = strdup("");
-				char **parametros;
 				mensaje2 = get_mensaje(mensaje);
 				parametros = string_split(mensaje2,",");
 				guardar_datos(parametros[0],atoi(parametros[1]),atoi(parametros[2]),parametros[3]);
@@ -92,25 +98,8 @@ int main(int argc, char *argv[])
 	return EXIT_SUCCESS;
 }
 					////// AUXILIARES //////
-void archivoDeCofiguracion(char* argv)
-{
-	t_config *configuracion;
-	printf("ruta archivo de configuacion: %s \n", argv);
-	configuracion = config_create(argv);
-	puerto = config_get_int_value(configuracion, "PUERTO");
-	string_append(montaje, config_get_string_value(configuracion, "PUNTO_MONTAJE"));
-	string_append(ip, config_get_string_value(configuracion, "IP"));
-	printf("Valor Ip para conexion del KERNEL: %d \n", ip);
-	printf("Valor puerto para conexion del KERNEL: %d \n", puerto);
-	printf("Valor punto montaje FS: %s \n", montaje);
-	escribir_log_compuesto("Valor IP para conexion con Kernel: ", ip);
-	escribir_log_con_numero("Valor puerto para conexion del Kernel: ", puerto);
-	escribir_log_compuesto("Valor punto montaje FS: ",montaje);
 
-	config_destroy(configuracion);
-}
-
-void handshake()
+void handshake1()
 {
 	char *handshake = strdup("");
 	int esKernel=0;
@@ -136,13 +125,15 @@ void reservar_memoria()
 {
 	montaje = strdup("");
 	ip = strdup("");
-	log =crear_archivo_log("/home/utnso/log_fs.txt");
+	magic_number = strdup("");
+	//log = crear_archivo_log("/home/utnso/log_fs.txt");
 }
 
 void liberar_memoria()
 {
 	free(montaje);
 	free(ip);
+	free(magic_number);
 	liberar_log();
 }
 

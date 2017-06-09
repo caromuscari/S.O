@@ -4,8 +4,8 @@
 #include <commons/collections/list.h>
 #include <commons/config.h>
 #include <commons/string.h>
-#include "estructuras.h"
-#include "configuracion.h"
+//#include "estructuras.h"
+//#include "configuracion.h"
 #include "socket.h"
 #include "log.h"
 
