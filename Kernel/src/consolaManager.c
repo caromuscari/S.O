@@ -22,10 +22,10 @@ extern t_list *list_consolas;
 fd_set master;
 fd_set read_fds;
 int fdmax;
-int controlador = 0;
+int controlador;
+extern int ultimo_pid;
 
 void realizar_handShake_consola(int nuevo_socket);
-void manejo_conexiones_consolas();
 int get_CID();
 void desconectar_consola(int socket);
 void responder_solicitud(int socket, char *mensaje);
@@ -104,7 +104,7 @@ void manejo_conexiones_consolas()
 void realizar_handShake_consola(int nuevo_socket)
 {
 	//Envio mensaje a consola pidiendo sus datos
-	char *mensaje = "K00";
+	char *mensaje = armar_mensaje("K00","");
 	enviar(nuevo_socket, mensaje, &controlador);
 
 	if (controlador > 0)
@@ -162,6 +162,15 @@ void responder_solicitud(int socket, char *mensaje)
 		case 1 :
 			responder_peticion_prog(socket, mensaje);
 			break;
+		case 2 : ;
+			int pid = atoi(get_mensaje(mensaje));
+			forzar_finalizacion(pid);
+			break;
+		case 3 : ;
+			int consola_id = atoi(get_mensaje(mensaje));
+			forzar_finalizacion_consola(consola_id);
+			desconectar_consola(consola_id);
+			break;
 		default : ;
 			//No se comprende el mensaje recibido por consola
 			char *msj_unknow = "K08";
@@ -174,14 +183,19 @@ void responder_solicitud(int socket, char *mensaje)
 	}
 }
 
-void desconectar_consola(int socket)
+void desconectar_consola(int consola_id)
 {
 	bool _localizar(t_consola *con)
 	{
-		return (int)con->socket == socket;
+		return (int)con->CID == consola_id;
 	}
-	t_consola *consola = list_remove_by_condition(list_consolas, (void*)_localizar);
-	//faltaria el tema de eliminar todos los programas dependientes de esta consola
+
+	void liberar_consola(t_consola *consola)
+	{
+		free(consola);
+	}
+
+	list_remove_and_destroy_by_condition(list_consolas, (void*)_localizar, (void*)liberar_consola);
 }
 
 void responder_peticion_prog(int socket, char *mensaje)
@@ -197,12 +211,28 @@ void responder_peticion_prog(int socket, char *mensaje)
 	char *mensaje_recibido = recibir(config->cliente_memoria, &controlador);
 	int codigo_m = get_codigo(mensaje_recibido);
 
-	if(codigo_m == 01)
+	if(codigo_m == 3)
 	{
 		enviar(socket, "K05", &controlador);
 	}
 	else
 	{
-		agregar_nueva_prog(socket, mensaje);
+		ultimo_pid =+ 1;
+		int consola = buscar_consola(socket);
+		agregar_nueva_prog(consola, ultimo_pid, mensaje);
+
+		char *mensaje_conf =  armar_mensaje("K04", string_itoa(ultimo_pid));
+		enviar(socket, mensaje_conf, &controlador);
 	}
+}
+
+int buscar_consola(socket)
+{
+	bool _buscar_consola(t_consola *consola)
+	{
+		return !consola->socket == socket;
+	}
+
+	t_consola *cons = list_find(list_consolas, (void*)_buscar_consola);
+	return cons->CID;
 }

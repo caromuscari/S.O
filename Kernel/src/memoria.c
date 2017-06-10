@@ -14,7 +14,7 @@
 #include "mensaje.h"
 
 extern t_configuracion *config;
-int tam_pagina = 0;
+extern int tam_pagina;
 
 void manejar_respuesta(char *);
 void handshakearMemory();
