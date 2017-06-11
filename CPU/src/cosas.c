@@ -221,7 +221,7 @@ char* serializarPCB_KerCPU(t_PCB pcb,char * algoritmo,int quantum,int quantum_sl
 
 	return retorno;
 }
-t_PCB_CPU deserializarPCB_KerCPU (char * pcbserializado){
+t_PCB_CPU deserializarPCB_KerCPU2 (char * pcbserializado){
 	int size_mensaje =0; int desplazamiento =0;
 	int size_in_cod = 0; int size_in_et = 0;
 	int size_in_stack = 0; int cant_stack = 0;
@@ -325,7 +325,7 @@ t_PCB_CPU deserializarPCB_KerCPU (char * pcbserializado){
 	return pcb;
 }
 
-char* serializarPCB_CPUKer (t_PCB_CPU pcb){
+char* serializarPCB_CPUKer2 (t_PCB_CPU pcb){
 		char *retorno;
 		//int sizeretorno = tamaño_PCB(pcb);
 		int size_retorno = sizeof(int)*6; //(int) SIZEOF MENSAJE,PID,PC,CANT_PAGINAS,SP,EXIT_CODE

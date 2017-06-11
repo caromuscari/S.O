@@ -24,6 +24,12 @@ K10: Mensaje para indicar que finalice un programa
 CPU - P
 P00: me presento al mundo como una CPU
 P01: Pedir bytes de una página a Memoria
+P02|0000000016|0004|HOLA|3|w|r|c
+P03 MOVER CURSOR
+P04 LEER
+P05 ESCRIBIR
+P06 CERRAR
+P07 BORRAR
 
 
 MEMORIA - M

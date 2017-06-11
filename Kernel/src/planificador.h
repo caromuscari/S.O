@@ -9,6 +9,7 @@
 #define PLANIFICADOR_H_
 
 //Agrega a la cola un nuevo programa para ser atendido
-void agregar_nueva_prog(int socket, char *mensaje);
+void agregar_nueva_prog(int id_consola, int pid, char *mensaje);
+void forzar_finalizacion(int pid, int cid, int codigo_finalizacion);
 
 #endif /* PLANIFICADOR_H_ */

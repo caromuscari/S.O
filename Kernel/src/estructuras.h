@@ -45,6 +45,7 @@ typedef struct
 	t_list* in_stack;  //lista de t_stack_element
 	int exit_code;
 }t_PCB;
+
 typedef struct
 {
 	char ID;
@@ -89,7 +90,10 @@ typedef struct
 typedef struct
 {
 	int *PID;
-	int *control;
+	int *CID;
+	int *syscall;
+	int *allocs;
+	int *frees;
 	t_PCB *pcb;
 	t_list *TAP; //tabla de archivo por proceso
 	t_list *memoria_dinamica; //lista de paginas pedidas de manera dinámica
@@ -128,9 +132,9 @@ typedef struct
 typedef struct
 {
 	int *cpu_id;
-	int *socket_cpu;
+	int socket_cpu;
 	bool *ejecutando;
-	t_PCB *pcb;
+	t_program *program;
 }t_cpu;
 
 typedef struct

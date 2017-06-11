@@ -171,9 +171,10 @@ void nueva_conexion_cpu(int nuevo_socket)
 	int grado_multipr = config->grado_multiprog;
 
 	t_cpu *cpu = malloc(sizeof(t_cpu));
-	*(cpu->socket_cpu) = nuevo_socket;
+	cpu->socket_cpu = nuevo_socket;
 	*(cpu->cpu_id) = id ++;
-	cpu->pcb = malloc (sizeof(t_PCB));
+	cpu->program = malloc (sizeof(t_program));
+	cpu->program->pcb = malloc (sizeof(t_PCB));
 	id ++;
 	if (grado_multipr > list_size(cpus_activas) && list_size(cpus_bloqueadas)== 0)
 	{

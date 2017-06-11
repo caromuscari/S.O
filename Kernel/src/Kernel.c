@@ -32,6 +32,8 @@ t_list *global_fd;
 t_queue *cola_nuevos;
 t_queue *cola_listos;
 t_log *log;
+int ultimo_pid = 0;
+int tam_pagina = 0;
 
 void inicializar_variables();
 void liberar_memoria();

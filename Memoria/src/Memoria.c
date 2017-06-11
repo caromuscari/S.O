@@ -9,6 +9,7 @@
 #include "estructuras.h"
 #include "socket.h"
 #include "log.h"
+#include "mensaje.h"
 #include "manejo_errores.h"
 
 fd_set master;
