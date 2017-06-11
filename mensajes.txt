@@ -45,6 +45,12 @@ C02: Aviso de finalizacion de programa
 C03: Aviso de desconexion de consola
 
 FILESYSTEM - F
+F00: handshake
+F01: validar archivo (ok o no)
+F02: crear archivo (ok o no)
+F03: borrar archivo 
+F04: leer archivo (con la lectura)
+F05: guardar en archivo
 
 ------- Mensajes -------
 C01(tamaño del archivo)(texto del archivo)
