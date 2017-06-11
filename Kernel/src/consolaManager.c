@@ -164,11 +164,11 @@ void responder_solicitud(int socket, char *mensaje)
 			break;
 		case 2 : ;
 			int pid = atoi(get_mensaje(mensaje));
-			forzar_finalizacion(pid);
+			forzar_finalizacion(pid, 0, 0);
 			break;
 		case 3 : ;
 			int consola_id = atoi(get_mensaje(mensaje));
-			forzar_finalizacion_consola(consola_id);
+			forzar_finalizacion(0, consola_id, 0);
 			desconectar_consola(consola_id);
 			break;
 		default : ;
@@ -217,7 +217,7 @@ void responder_peticion_prog(int socket, char *mensaje)
 	}
 	else
 	{
-		ultimo_pid =+ 1;
+		ultimo_pid ++;
 		int consola = buscar_consola(socket);
 		agregar_nueva_prog(consola, ultimo_pid, mensaje);
 
