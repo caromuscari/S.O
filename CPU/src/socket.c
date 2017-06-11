@@ -65,7 +65,7 @@ void recibir(int socket_receptor, int *controlador,void *buff,int size)
 
 	*controlador = 0;
 
-	if ((ret = recv(socket_receptor, buff, size, 0)) <= 0)
+	if ((ret = recv(socket_receptor, buff, size,0)) <= 0)
 	{
 		//printf("error receiving or connection lost \n");
 		if (ret == 0)
