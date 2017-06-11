@@ -9,8 +9,8 @@
 #define ARCHIVOS_H_
 
 
-void leer_metadata();
+int leer_metadata();
 void archivoDeCofiguracion(char* argv);
-void abrir_bitmap();
+int abrir_bitmap();
 
 #endif /* ARCHIVOS_H_ */

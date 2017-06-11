@@ -21,7 +21,9 @@
 #include <commons/log.h>
 #include "mensaje.h"
 #include <commons/bitarray.h>
-
+#include <sys/stat.h>
+#include <sys/mman.h>
+//#include <commons/collections/dictionary.h>
 
 int puerto;
 char *ip;
@@ -33,6 +35,9 @@ int tBloques;
 int cantBloques;
 char *magic_number;
 t_bitarray * bitmap;
+//t_dictionary *archivos;
+
+struct stat mystat;
 
 int verificarHS(char *handshake);
 //void archivoDeCofiguracion(char* argv);
@@ -43,10 +48,14 @@ void liberar_memoria();
 
 int main(int argc, char *argv[])
 {
+	int metadata;
+	int bitmap;
 	reservar_memoria();
 	archivoDeCofiguracion(argv[1]);
-	leer_metadata();
-	abrir_bitmap();
+	metadata = leer_metadata();
+	if (metadata == -1) goto finalizar;
+	bitmap = abrir_bitmap();
+	if(bitmap == -1) goto finalizar;
 	flagsocket=0;
 	socketfs =iniciar_socket_server(ip,puerto,&flagsocket);
 	handshake1();
@@ -94,6 +103,7 @@ int main(int argc, char *argv[])
 		free(mensaje);
 
 	}
+	finalizar: escribir_log("Error leyendo archivos iniciales");
 	liberar_memoria();
 	return EXIT_SUCCESS;
 }
@@ -103,6 +113,7 @@ void handshake1()
 {
 	char *handshake = strdup("");
 	int esKernel=0;
+	char *mensaje = strdup("");
 	while(esKernel == 0)
 	{
 		int cliente = escuchar_conexiones(socketfs,&flagsocket);
@@ -110,6 +121,8 @@ void handshake1()
 		if (verificarHS(handshake)== 1)
 		{
 			esKernel = 1;
+			mensaje = armar_mensaje("F00","");
+			enviar(socketfs,mensaje,&flagsocket);
 		}else{
 			cerrar_conexion(cliente);
 			printf("intruso no kernel eliminado \n");
@@ -126,7 +139,8 @@ void reservar_memoria()
 	montaje = strdup("");
 	ip = strdup("");
 	magic_number = strdup("");
-	//log = crear_archivo_log("/home/utnso/log_fs.txt");
+	crear_archivo_log("/home/utnso/log_fs.txt");
+	//archivos = dictionary_create();
 }
 
 void liberar_memoria()
@@ -134,6 +148,9 @@ void liberar_memoria()
 	free(montaje);
 	free(ip);
 	free(magic_number);
+	munmap(&mystat,mystat.st_size);
+	//dictionary_clean(archivos);
+	//dictionary_destroy(archivos);
 	liberar_log();
 }
 
