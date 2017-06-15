@@ -1,20 +1,21 @@
-/*
- * fileSystem.h
- *
- *  Created on: 4/6/2017
- *      Author: utnso
- */
-
 #ifndef FILESYSTEM_H_
 #define FILESYSTEM_H_
 
+#include <stdbool.h>
+
 void crear_tabla_global();
-void abrir_archivo(char *path);
-t_TAG *buscar_archivo_TAG(t_list *tag, char *p_sol);
+void abrir_archivo(char *path, char* flag, t_program *prog);
+t_TAG *buscar_archivo_TAG(char *p_sol);
 void crear_archivo(char *p);
 void pedido_lectura(t_program *prog, int fd, int offs, int size);
 t_TAP *buscar_archivo_TAP(t_list *tap, int fd);
 char *get_path(int fd);
-t_TAG *buscar_archivo_TAG_fd(t_list *tag, int fd);
+t_TAG *buscar_archivo_TAG_fd(int fd);
+void mover_puntero(int socket_prog, int offset);
+char *leer_escribir(int socket_prog);
+bool existe_archivo(t_list *tap, int fd);
+void destruir_file(t_TAP *ap);
+void destruir_file_TAG(t_TAG *tg);
+void cerrar_file(t_list *tap, int fd);
 
 #endif /* FILESYSTEM_H_ */
