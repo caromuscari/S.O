@@ -37,18 +37,16 @@ int tam_pagina = 0;
 
 void inicializar_variables();
 void liberar_memoria();
-void mostrar_configuracion();
 void handshakearFS();
 void handshakearMemory();
 void crear_conexiones();
 
 int main(int argc, char*argv[])
 {
-	ruta_config = strdup("/home/utnso/Archivos/Kernel/configuracion"/*argv[1]*/);
+	ruta_config = strdup(argv[1]);
 
 	inicializar_variables();
 	leer_configuracion();
-	//mostrar_configuracion();
 	crear_archivo_log("/home/utnso/log_kernel");
 
 	crear_conexiones();
@@ -81,31 +79,6 @@ void inicializar_variables()
 	cola_nuevos = queue_create();
 	cola_listos = queue_create();
 	list_bloqueados = list_create();
-}
-
-void mostrar_configuracion()
-{
-	printf("Configuracion del proceso Kernel: \n");
-	printf("Puerto Programa: %d \n", config->puerto_prog);
-	printf("Puerto CPU: %d \n", config->puerto_cpu);
-	printf("IP Memoria: %s \n", config->ip_memoria);
-	printf("IP Kernel: %s \n", config->ip_kernel);
-	printf("Puerto Memoria: %d \n", config->puerto_memoria);
-	printf("IP File System: %s \n", config->ip_fs);
-	printf("Puerto File System: %d \n", config->puerto_fs);
-	printf("Quantum para RR: %d \n", config->quantum);
-	printf("Quantum para ejecutar cada sentencia: %d \n",config->quantum_sleep);
-	printf("Algoritmo: %s \n", config->algoritmo);
-	printf("Grado de Multiprogramacion: %d \n", config->grado_multiprog);
-	printf("SEM ID's: %s \n", sem_id);
-	printf("Valor Inicial de Semaforos: %s \n", sem_in);
-	printf("Variables compartidas: %s \n", shared);
-	printf("Stack Size: %d \n", config->stack_size);
-
-	free(sem_id);
-	free(sem_in);
-	free(shared);
-	free(ruta_config);
 }
 
 void liberar_memoria()

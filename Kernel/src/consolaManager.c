@@ -30,6 +30,7 @@ int get_CID();
 void desconectar_consola(int socket);
 void responder_solicitud(int socket, char *mensaje);
 void responder_peticion_prog(int socket, char *mensaje);
+int buscar_consola(int socket);
 
 void manejo_conexiones_consolas()
 {
@@ -86,10 +87,9 @@ void manejo_conexiones_consolas()
 					{
 						//Es una conexion existente, respondo a lo que me pide
 						char *mensaje_recibido = recibir(i, &controlador);
+
 						if(controlador > 0)
-						{
 							desconectar_consola(i);
-						}
 						else
 						{
 							responder_solicitud(i, mensaje_recibido);
@@ -108,17 +108,13 @@ void realizar_handShake_consola(int nuevo_socket)
 	enviar(nuevo_socket, mensaje, &controlador);
 
 	if (controlador > 0)
-	{
 		cerrar_conexion(nuevo_socket);
-	}
 	else
 	{
 		char *respuesta = recibir(nuevo_socket, &controlador);
 
 		if (controlador > 0)
-		{
 			cerrar_conexion(nuevo_socket);
-		}
 		else
 		{
 			//Aca deberia ir la validacion si el mensaje corresponde a una consola
@@ -169,21 +165,17 @@ void responder_solicitud(int socket, char *mensaje)
 		case 3 : ;
 			int consola_id = atoi(get_mensaje(mensaje));
 			forzar_finalizacion(0, consola_id, 0);
-			desconectar_consola(consola_id);
+			desconectar_consola(socket);
 			break;
 		default : ;
 			//No se comprende el mensaje recibido por consola
 			char *msj_unknow = "K08";
 			enviar(socket, msj_unknow, &controlador);
-
-			if (controlador > 0)
-			{
-				cerrar_conexion(socket);
-			}
+			if (controlador > 0) desconectar_consola(socket);
 	}
 }
 
-void desconectar_consola(int consola_id)
+void eliminar_consola(int consola_id)
 {
 	bool _localizar(t_consola *con)
 	{
@@ -224,15 +216,29 @@ void responder_peticion_prog(int socket, char *mensaje)
 		char *mensaje_conf =  armar_mensaje("K04", string_itoa(ultimo_pid));
 		enviar(socket, mensaje_conf, &controlador);
 	}
+	if(controlador > 0) cerrar_conexion(socket);
 }
 
-int buscar_consola(socket)
+int buscar_consola(int socket)
 {
-	bool _buscar_consola(t_consola *consola)
+	bool _buscar_consola_lst(t_consola *consola)
 	{
-		return !consola->socket == socket;
+		printf("%i", socket);
+		printf("%i", consola->socket);
+		return (consola->socket == socket);
 	}
 
-	t_consola *cons = list_find(list_consolas, (void*)_buscar_consola);
+	t_consola *cons = list_find(list_consolas, (void*)_buscar_consola_lst);
 	return cons->CID;
+}
+
+void desconectar_consola(int socket)
+{
+	int consola_muere = buscar_consola(socket);
+	if(consola_muere)
+	{
+		forzar_finalizacion(0, consola_muere, 0);
+		eliminar_consola(consola_muere);
+	}
+	cerrar_conexion(socket);
 }

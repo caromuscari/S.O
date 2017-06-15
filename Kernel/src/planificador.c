@@ -32,13 +32,7 @@ void desbloquear_proceso(int pid);
 void bloquear_proceso(int pid);
 void programas_nuevos_A_listos();
 void programas_listos_A_ejecutar();
-void iniciar_planificador();
 int calcular_pag(char *mensaje);
-
-void iniciar_planificador()
-{
-
-}
 
 void programas_listos_A_ejecutar()
 {
@@ -155,6 +149,7 @@ void finalizar_proceso(int pid, int codigo_finalizacion)
 	programa->pcb->exit_code = codigo_finalizacion;
 	list_add(list_finalizados, programa);
 	//falta invocar funciones para limpiar asignacion de memoria dinamica y el TAP
+	//falta funcion para liberar toma de semaforos y darselos a otros
 
 }
 
@@ -179,13 +174,9 @@ void forzar_finalizacion(int pid, int cid, int codigo_finalizacion)
 	bool _buscar_program(t_program *pr)
 	{
 		if(pid)
-		{
 			return !pr->PID == pid;
-		}
 		else
-		{
 			return !pr->CID == cid;
-		}
 	}
 
 	void _procesar_program(t_program *pr)
@@ -205,6 +196,7 @@ void forzar_finalizacion(int pid, int cid, int codigo_finalizacion)
 	while(contador)
 	{
 		list_add(encontrados, list_remove_by_condition(list_bloqueados, (void*)_buscar_program));
+		//deberia meter una funcion aca que habilite el semaforo que este estaba tomando
 		contador --;
 	}
 

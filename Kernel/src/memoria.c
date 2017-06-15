@@ -28,7 +28,7 @@ void crear_dict_pagina(t_dictionary *);
 void handshakearMemory()
 {
 	int controlador = 0;
-	char *mensaje = "K02";
+	char *mensaje = armar_mensaje("K02","");
 	char *respuesta;
 
 	enviar(config->cliente_memoria, mensaje, &controlador);
