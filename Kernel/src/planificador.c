@@ -37,10 +37,11 @@ int calcular_pag(char *mensaje);
 void programas_listos_A_ejecutar()
 {
 	int listos, cpus_disponibles;
+	int *tam_prog;
 
 	int _cpuLibre(t_cpu *una_cpu)
 	{
-		return (!(una_cpu->ejecutando));
+		return !(una_cpu->ejecutando);
 	}
 
 	while(1)
@@ -53,9 +54,7 @@ void programas_listos_A_ejecutar()
 			t_program *program = queue_pop(cola_listos);
 			t_cpu *cpu_disponible = list_remove_by_condition(list_cpus, (void*)_cpuLibre);
 
-			//avisar que tiene que ejecutar
-			int tam;//usar
-			char *pcb_serializado = serializarPCB_KerCPU(*program->pcb,config->algoritmo,config->quantum,config->quantum_sleep);
+			char *pcb_serializado = serializarPCB_KerCPU(program->pcb,config->algoritmo,config->quantum,config->quantum_sleep,&tam_prog);
 			char *mensaje_env = armar_mensaje("K07", pcb_serializado);
 			enviar(cpu_disponible->socket_cpu, mensaje_env, &controlador);
 
@@ -120,7 +119,7 @@ void bloquear_proceso(int pid)
 {
 	int _buscar_proceso(t_PCB *un_proceso)
 	{
-		return (pid == un_proceso->PID);
+		return !(pid == un_proceso->PID);
 	}
 
 	t_PCB *proc = list_remove_by_condition(list_ejecutando, (void*)_buscar_proceso);
@@ -131,7 +130,7 @@ void desbloquear_proceso(int pid)
 {
 	int _buscar_proceso(t_PCB *un_proceso)
 	{
-		return (pid == un_proceso->PID);
+		return !(pid == un_proceso->PID);
 	}
 
 	t_PCB *proc = list_remove_by_condition(list_bloqueados, (void*)_buscar_proceso);
@@ -142,7 +141,7 @@ void finalizar_proceso(int pid, int codigo_finalizacion)
 {
 	int _buscar_proceso(t_PCB *un_proceso)
 	{
-		return (pid == un_proceso->PID);
+		return !(pid == un_proceso->PID);
 	}
 
 	t_program *programa = list_remove_by_condition(list_ejecutando, (void*)_buscar_proceso);
@@ -150,7 +149,6 @@ void finalizar_proceso(int pid, int codigo_finalizacion)
 	list_add(list_finalizados, programa);
 	//falta invocar funciones para limpiar asignacion de memoria dinamica y el TAP
 	//falta funcion para liberar toma de semaforos y darselos a otros
-
 }
 
 int calcular_pag(char *mensaje)
@@ -234,4 +232,15 @@ void forzar_finalizacion(int pid, int cid, int codigo_finalizacion)
 
 	list_iterate(encontrados, (void*)_procesar_program);
 	list_destroy(encontrados);
+}
+
+void finalizar_quantum(int pid)
+{
+	int _buscar_proceso(t_PCB *un_proceso)
+	{
+		return !(pid == un_proceso->PID);
+	}
+
+	t_program *programa = list_remove_by_condition(list_ejecutando, (void*)_buscar_proceso);
+	queue_push(cola_listos, programa);
 }

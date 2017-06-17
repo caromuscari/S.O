@@ -179,7 +179,7 @@ void eliminar_consola(int consola_id)
 {
 	bool _localizar(t_consola *con)
 	{
-		return (int)con->CID == consola_id;
+		return (con->CID == consola_id);
 	}
 
 	void liberar_consola(t_consola *consola)
@@ -223,8 +223,6 @@ int buscar_consola(int socket)
 {
 	bool _buscar_consola_lst(t_consola *consola)
 	{
-		printf("%i", socket);
-		printf("%i", consola->socket);
 		return (consola->socket == socket);
 	}
 
