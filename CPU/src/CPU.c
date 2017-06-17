@@ -150,6 +150,7 @@ void procesar(){
 			analizadorLinea(linea,&funcionesTodaviaSirve,&funcionesKernelTodaviaSirve);
 			free(linea);
 			ins_realizada ++;
+			pcb->PC++;
 			//sleep(pcb->quantum_sleep);
 		}
 	}if(string_equals_ignore_case(pcb->algoritmo,FIFO) == 0){
