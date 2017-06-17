@@ -8,7 +8,6 @@
 #include <commons/collections/list.h>
 #include <parser/metadata_program.h>
 #include "log.h"
-//#include "cosas.h"
 #include "socket.h"
 #include "funcionesCPU.h"
 #include "funcionesParser.h"
@@ -19,7 +18,9 @@ int puertoK,puertoM;
 char *ipK;
 char *ipM;
 int sockKerCPU;
-int tam_paginas_memoria;
+int tam_pagina_memoria;
+t_PCB_CPU* pcb;
+char* programa;
 
 static const char* facil_ansisop =
 		"begin\n"
@@ -62,14 +63,15 @@ static const char* con_funcion_ansisop =
 void leerArchivoConfiguracion(char* argv);
 int conexion_Kernel(int puertoK, char* ipK);
 void conexion_Memoria(int puertoM,char* ipM);
-void procesar(t_PCB_CPU pcb);
-char* pedirbytesaMemoria(int inicio,int offset);
+void procesar();
+char* pedir_linea_memoria();
+
 int main(int argc, char *argv[])
 {
 	int chau = 0;
 	//char *programa =strdup(facil_ansisop);
 	//char *programa =strdup(otro_ansisop);
-	char *programa =strdup(con_funcion_ansisop);
+	programa =strdup(con_funcion_ansisop);
 	crear_archivo_log("/home/utnso/CPUlog");
 	leerArchivoConfiguracion(argv[1]);
 	int res = conexion_Kernel(puertoK, ipK);
@@ -84,14 +86,14 @@ int main(int argc, char *argv[])
 	while(chau!=1){
 		char *buff = malloc (13);
 		char *idmensaje = malloc(2);
-		char *sizemensaje= malloc (10); int largomensaje  = 0;
+		char *sizemensaje= malloc (10);
+		int largomensaje  = 0;
 		escribir_log("Esperando mensajes del Kernel para ponerme a trabajar...",1);
 		recibir(sockKerCPU,&controlador,buff,13);
 		if(controlador != 0){
 			escribir_log("error recibiendo mensaje del Kernel, bai",2);
 			chau = 1;
 		}
-		printf("recibi:%s\n",buff);
 		memcpy(idmensaje,buff+1,2);
 
 		switch (atoi(idmensaje)){
@@ -101,8 +103,8 @@ int main(int argc, char *argv[])
 			char *mensajeEntero = malloc(largomensaje);
 			recibir(sockKerCPU,&controlador,mensajeEntero,largomensaje);
 			printf("hola\n");
-			//t_PCB_CPU pcb = deserializar_pcb(mensajeEntero);
-			//procesar(pcb);
+			pcb = deserializarPCB_KerCPU(mensajeEntero);
+			procesar();
 
 		}
 
@@ -139,11 +141,26 @@ void leerArchivoConfiguracion(char* argv)
 	}
 	config_destroy(configuracion);
 }
-void procesar(t_PCB_CPU pcb){
-	if(string_equals_ignore_case(pcb.algoritmo,ROUNDROBIN) == 0){
+void procesar(){
+	if(string_equals_ignore_case(pcb->algoritmo,ROUNDROBIN) == 0){
 		//PROCESAR SEGUN QUANTUM/QUANTUM_SLEEP EL PCB
-	}if(string_equals_ignore_case(pcb.algoritmo,FIFO) == 0){
+		int ins_realizada=0;
+		while(ins_realizada < pcb->quantum){
+			char * linea= pedir_linea_memoria();
+			analizadorLinea(linea,&funcionesTodaviaSirve,&funcionesKernelTodaviaSirve);
+			free(linea);
+			ins_realizada ++;
+			//sleep(pcb->quantum_sleep);
+		}
+	}if(string_equals_ignore_case(pcb->algoritmo,FIFO) == 0){
+
 		// PROCESAR SEGUN FIFO
+		int n=0;
+		while(n == 0){
+			char *linea = pedir_linea_memoria();
+			analizadorLinea(linea,&funcionesTodaviaSirve,&funcionesKernelTodaviaSirve);
+			free(linea);
+		}
 	}
 }
 int conexion_Kernel(int puertoK, char* ipK) {
@@ -165,12 +182,21 @@ void conexion_Memoria(int puerto, char* ip) {
 	} else {
 		escribir_log(string_itoa(controladorConexion),2);
 	}
-	tam_paginas_memoria = handshakeMemoria(sockKerCPU);
+	tam_pagina_memoria = handshakeMemoria(sockKerCPU);
 }
-char* pedirbytesaMemoria(int inicio,int offset){
-	char * inst=strdup("HOLA, SOY UNA INSTRUCCION");
-	//calcular la pagina de la instruccion, y si esta dividida en dos o no
-	//una vez que tengo la pagina mndarle mensaje a memoria
-	//devolver lo que me mande memoria
-	return inst;
+char* pedir_linea_memoria(){
+	//if (linea_esta_dividida() == TRUE){
+	// calcular pagina 1 -> enviar mensaje memoria;
+	// calcular pagina 2 -> enviar mensaje memoria;
+	// return append resultado1|resultado2;
+	//}else{
+	//	calcular pagina -> enviar mensaje memoria;
+	// return resultado;
+	// }
+
+	// todo: ARMAR MENSAJE PEDIR BYTES A MEMORIA: P|01|0000000000|PID|PAGINA|INICIO|FIN
+
+	char *linea = string_substring(programa,pcb->in_cod[pcb->PC].offset_inicio,pcb->in_cod[pcb->PC].offset_fin);
+
+	return linea;
 }

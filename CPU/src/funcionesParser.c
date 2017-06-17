@@ -9,19 +9,79 @@
 #include <string.h>
 #include <commons/string.h>
 #include "funcionesParser.h"
+#include "funcionesCPU.h"
+#include "estructuras.h"
 #include "socket.h"
 #include "log.h"
 
+extern t_PCB_CPU* pcb;
+extern int tam_pagina_memoria;
+int FD;
 
 t_puntero definirVariable(t_nombre_variable identificador_variable) {
-	escribir_log("Ejecute definirVariable",1);
-	return 0;
+
+	t_stack_element* stack_actual = list_get(pcb->in_stack,pcb->SP);
+	t_puntero posicion_retorno;
+	if(identificador_variable >= '0' && identificador_variable <= '9'){
+		// definir nuevo argumento
+		t_memoria* nuevo_arg = malloc(sizeof(t_memoria));
+			nuevo_arg->ID = identificador_variable;
+			nuevo_arg->offset = calcular_offset(stack_actual->args,stack_actual->vars);
+			nuevo_arg->size = 4;
+			nuevo_arg->pag = 0;
+		list_add(stack_actual->vars,nuevo_arg);
+		list_replace(pcb->in_stack,pcb->SP,nuevo_arg);
+		posicion_retorno = nuevo_arg->offset;
+
+	}else if ((identificador_variable >= 'A' && identificador_variable <= 'Z') || (identificador_variable >= 'a' && identificador_variable <= 'z')){
+		// definir nueva variable
+		t_memoria* nueva_var = malloc(sizeof(t_memoria));
+			nueva_var->ID = identificador_variable;
+			nueva_var->offset = calcular_offset(stack_actual->args,stack_actual->vars);
+			nueva_var->size = 4;
+			nueva_var->pag = 0;
+		list_add(stack_actual->vars,nueva_var);
+		list_replace(pcb->in_stack,pcb->SP,nueva_var);
+		posicion_retorno = nueva_var->offset;
+		//list_replace_and_destroy_element(pcb->in_stack, pcb->SP,stack_actual,(void*) stack_destroy);
+	}else{
+		char * aux= string_from_format("definirVariable:%c identificador no aceptado",identificador_variable);
+		escribir_log(aux,2);
+		free(aux);
+		return NO_EXISTE_VARIABLE;
+	}
+	char *aux= string_from_format("Se ejecutó definirVariable - identificador:%c - retorno:%d",identificador_variable,posicion_retorno);
+	escribir_log(aux,1);
+	free(aux);
+	return posicion_retorno;
 
 }
 
 t_puntero obtenerPosicionVariable(t_nombre_variable identificador_variable) {
-	escribir_log("Ejecute obtenerPosicionVariable",1);
-	return 0;
+	t_stack_element* stack_actual = list_get(pcb->in_stack,pcb->SP);
+	t_puntero posicion_retorno;
+		if(identificador_variable >= '0' && identificador_variable <= '9'){
+
+			int pos = identificador_variable - '0';
+			t_memoria* arg=list_get(stack_actual->args,pos);
+			posicion_retorno= arg->offset;
+
+		}else if ((identificador_variable >= 'A' && identificador_variable <= 'Z') || (identificador_variable >= 'a' && identificador_variable <= 'z')){
+
+			posicion_retorno = buscar_offset_variable(stack_actual->vars,identificador_variable);
+
+		}
+		if(posicion_retorno == -1){
+			char * aux= string_from_format("obtenerPosicionVariable:%c no existe variable",identificador_variable);
+			escribir_log(aux,2);
+			free(aux);
+			return posicion_retorno;
+
+		}
+		char *aux= string_from_format("Se ejecutó definirVariable - identificador:%c - retorno:%d",identificador_variable,posicion_retorno);
+		escribir_log(aux,1);
+		free(aux);
+		return posicion_retorno;
 }
 
 t_valor_variable dereferenciar(t_puntero direccion_variable) {
