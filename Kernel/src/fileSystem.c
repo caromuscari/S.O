@@ -23,16 +23,35 @@ void pedido_lectura(t_program *prog, int fd, int offs, int size);
 t_TAP *buscar_archivo_TAP(t_list *tap, int fd);
 char *get_path(int fd);
 t_TAG *buscar_archivo_TAG_fd(int fd);
-void mover_puntero(int socket_prog, int offset);
+void mover_puntero(int socket_prog, int offset, int fd, t_program *prog);
 char *leer_escribir(int socket_prog);
 bool existe_archivo(t_list *tap, int fd);
 void destruir_file(t_TAP *ap);
 void destruir_file_TAG(t_TAG *tg);
 void cerrar_file(t_list *tap, int fd);
+char *get_path_msg(char *mensaje, int *payload1);
+char *get_info(char *mensaje, int payload1, int tam_info);
+void abrir_crear(char *mensaje, t_program *prog);
+void escribir_archivo(int offset, char *info, char *flags);
+
 
 void crear_tabla_global()
 {
 	global_fd = list_create();
+}
+
+void abrir_crear(char *mensaje, t_program *prog)
+{
+	int payload;
+	char *path = get_path_msg(mensaje, &payload);
+	char *flag = get_info(mensaje, payload, 1);
+
+	if(string_contains(flag, "c"))
+	{
+		crear_archivo(path);
+		//enviar path a file mandando a crear
+	}// else enviar path a file para abrir
+	abrir_archivo(path, flag, prog);
 }
 
 void abrir_archivo(char *path, char* flag, t_program *prog)
@@ -58,6 +77,8 @@ void abrir_archivo(char *path, char* flag, t_program *prog)
 	ar_p->FD = list_size(prog->TAP) + 3;
 
 	list_add(prog->TAP, ar_p);
+	free(path);
+	free(flag);
 }
 
 t_TAG *buscar_archivo_TAG(char *path)
@@ -74,6 +95,7 @@ t_TAG *buscar_archivo_TAG(char *path)
 void crear_archivo(char *p)
 {
 	//enviar mensaje a fs
+	//esperar respuesta
 }
 
 void pedido_lectura(t_program *prog, int fd, int offs, int size)
@@ -118,10 +140,35 @@ t_TAG *buscar_archivo_TAG_fd(int fd)
 	return ag_aux;
 }
 
-void mover_puntero(int socket_prog, int offset)
+void mover_puntero(int socket_prog, int offset, int fd, t_program *prog)
 {
 	//recibir para saber si hay que leer o escribir
+	int control;
+	char *mensaje = recibir(socket_prog, &control);
+	if (comparar_header("P",mensaje))
+	{
+		switch (get_codigo(mensaje))
+		{
+			case 5 : ;//pedido de escritura
+				char *info = strdup("");
+				info = get_mensaje(mensaje);
+				t_TAP *arch = buscar_archivo_TAP(prog->TAP, fd);
+				if (arch == NULL)
+				{
+					//hablar con lean
+				}else escribir_archivo(offset, info, arch->flag);
+				free(info);
+		}
+	}
+}
 
+void escribir_archivo(int offset, char *info, char *flags)
+{
+	if (string_contains(flags, "w"))
+	{
+		//enviar a file para que escriba archivo
+		//esperar respuesta de ok
+	}else ; //hablar con Lean
 }
 
 char *leer_escribir(int socket_prog)
@@ -200,4 +247,20 @@ void cerrar_file(t_list *tap, int fd)
 		list_remove_and_destroy_by_condition(tap,(void *) _archivo_TAP, (void *) destruir_file);
 
 	}//else avisar a cpu que hay error
+}
+
+char *get_path_msg(char *mensaje, int *payload1)
+{
+	char *payload = string_substring(mensaje, 0, 3);
+	*payload1 = atoi(payload);
+	free(payload);
+	return string_substring(mensaje, 4, *payload1);
+}
+
+char *get_info(char *mensaje, int payload1, int tam_info)
+{
+	char *payload = string_substring(mensaje, (4+payload1), tam_info);
+	int payload2 = atoi(payload);
+	free(payload);
+	return string_substring(mensaje, (4+payload1+tam_info), payload2);
 }
