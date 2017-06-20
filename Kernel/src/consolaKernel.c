@@ -34,40 +34,58 @@ void leer_consola()
 {
 	while (1)
 	{
-		char *leido = strdup("");
-		scanf("%s",leido);
+		char *input = strdup("");
+		char *input2 = strdup("");
 
-		if(strcmp(leido, "listado_procesos")) //muestra los procesos agrupados según el estado
+		scanf("%s", input);
+
+		if(!strcmp(input, "listado_procesos"))
 		{
+			//muestra los procesos agrupados según el estado
 			generar_listados();
-		}else if(strcmp(leido, "obtener_info_proceso"))
+		}
+		else if(!strcmp(input, "obtener_info_proceso"))
 		{
-			char *leido2 = strdup("");
-			scanf("%s",leido2);
+			printf("Indique el PID del proceso a consultar");
+			scanf("%s", input2);
+
+			if(!string_is_empty(input2))
+				printf("Deberia devolver informacion del proceso");//Debria obtener informacion de un proceso especifico
+			else
+				printf("Precise el id de proceso a consultar");
 			//se podría tener una lista general así es más facil buscar el proceso
-			free(leido2);
-		}else if (strcmp(leido, "obtener_tabla_global_archivos"))
+		}
+		else if(!strcmp(input, "obtener_tabla_global_archivos"))
 		{
 			//todavía no está la estructura
-		}else if (strcmp(leido, "modificar_grado_multiprogramacion"))
+		}
+		else if(!strcmp(input, "modificar_grado_multiprogramacion"))
 		{
-			char *leido2 = strdup("");
-			scanf("%s", leido2);
-			int grado = atoi(leido2);
+			printf("Indique el nuevo grado de multiprogramacion");
+			scanf("%s", input2);
+			int grado = atoi(input2);
 			config->grado_multiprog = grado;
-			free(leido2);
-		}else if (strcmp(leido, "finalizar_proceso"))
+			free(input2);
+		}
+		else if(!strcmp(input, "finalizar_proceso"))
 		{
 			char *leido2 = strdup("");
 			scanf("%s", leido2);
 			//pensar lo de la lista general, si no, usar las actuales
 			free(leido2);
-		}else if (strcmp(leido, "detener_planificación"))
+		}
+		else if(!strcmp(input, "detener_planificación"))
 		{
 			//crear un semaforo para compartir con el planificador, inicializado en 1
 			//este comando lo pondria en block
 		}
-	free(leido);
+		else
+		{
+			printf("No se reconocio el mensaje ingresado");
+		}
+
+	free(input);
+	free(input2);
 	}
 }
 
@@ -117,16 +135,12 @@ void mostrar_listas(t_list *lista, char *procesos)
 {
 	printf("###########################################");
 	printf("%s", procesos);
-	int size = list_size(lista);
-	int c = 0;
 
-	while(c < size)
+	while(!list_is_empty(lista))
 	{
 		t_program *pr = malloc(sizeof(t_program));
-		pr = list_get(lista, c);
+		pr = list_remove(lista, 1);
 		printf("%d \n", pr->PID);
 		free(pr);
-		c++;
 	}
 }
-

@@ -15,8 +15,8 @@
 #include "socket.h"
 
 extern t_configuracion *config;
-t_list *cpus_activas;
-t_list *cpus_bloqueadas;
+extern t_list *list_cpus;
+extern pthread_mutex_t mutex_lista_cpus;
 fd_set master;
 fd_set read_fds;
 int fdmax;
@@ -24,8 +24,8 @@ int controlador_cpu = 0;
 int id = 0;
 
 void realizar_handShake_cpu(int);
-void agregar_lista_cpu(int , char *);
-void inicializar_listas_cpu();
+void agregar_lista_cpu(int);
+int get_cpuId();
 void actualizar_pcb();
 
 void manejo_conexiones_cpu()
@@ -112,31 +112,7 @@ void realizar_handShake_cpu(int nuevo_socket)
 		{
 			//Aca deberia ir la validacion si el mensaje corresponde a cpu
 			if(comparar_header("P", respuesta))
-			{
-				//Es una CPU, se puede hablar
-				char *mensaje = "K01";
-				enviar(nuevo_socket, mensaje, &controlador_cpu);
-
-				if (controlador_cpu > 0)
-				{
-					error_sockets(&controlador_cpu, string_itoa(nuevo_socket));
-					cerrar_conexion(nuevo_socket);
-				}
-				else
-				{
-					char *mensaje_con_datos = recibir(nuevo_socket, &controlador_cpu);
-
-					if (controlador_cpu > 0)
-					{
-						error_sockets(&controlador_cpu, string_itoa(nuevo_socket));
-						cerrar_conexion(nuevo_socket);
-					}
-					else
-					{
-						agregar_lista_cpu(nuevo_socket, mensaje_con_datos);
-					}
-				}
-			}
+				agregar_lista_cpu(nuevo_socket);
 			else
 			{
 				//El recien conectado NO corresponde a una CPU
@@ -148,37 +124,35 @@ void realizar_handShake_cpu(int nuevo_socket)
 	}
 }
 
-void inicializar_listas_cpu()
-{
-	cpus_activas = list_create();
-	cpus_bloqueadas = list_create();
-}
-
-void nueva_conexion_cpu(int nuevo_socket)
-{
-	int grado_multipr = config->grado_multiprog;
-
-	t_cpu *cpu = malloc(sizeof(t_cpu));
-	cpu->socket_cpu = nuevo_socket;
-	*(cpu->cpu_id) = id ++;
-	cpu->program = malloc (sizeof(t_program));
-	cpu->program->pcb = malloc (sizeof(t_PCB));
-	id ++;
-	if (grado_multipr > list_size(cpus_activas) && list_size(cpus_bloqueadas)== 0)
-	{
-		list_add(cpus_activas, cpu);
-	} else if (grado_multipr > list_size(cpus_activas))
-	{
-		list_add(cpus_activas, list_remove(cpus_bloqueadas,0)); //acordarme de hacer el destroy para liberar memoria :D
-	} else list_add(cpus_bloqueadas, cpu);
-}
-
 void actualizar_pcb()
 {
 
 }
 
-void agregar_lista_cpu(int nuevo_socket, char *mensaje_con_datos) // ??
+void agregar_lista_cpu(int nuevo_socket)
 {
-	//me paso los datos y deberia guardarlos en mi lista de cpu
+	t_cpu *nueva_cpu = malloc(sizeof(t_cpu));
+	nueva_cpu->socket_cpu = nuevo_socket;
+	nueva_cpu->program = malloc(sizeof(t_program));
+	nueva_cpu->ejecutando = false;
+	nueva_cpu->cpu_id = get_cpuId();
+
+	pthread_mutex_lock(&mutex_lista_cpus);
+	list_add(list_cpus, nueva_cpu);
+	pthread_mutex_unlock(&mutex_lista_cpus);
+}
+
+int get_cpuId()
+{
+	int ultimo_id = 1;
+
+	void _mayor(t_cpu *cpu)
+	{
+		if(cpu->cpu_id == ultimo_id)
+		{
+			ultimo_id++;
+		}
+	}
+	list_iterate(list_cpus, (void*)_mayor);
+	return ultimo_id;
 }

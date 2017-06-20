@@ -131,7 +131,7 @@ typedef struct
 
 typedef struct
 {
-	int *cpu_id;
+	int cpu_id;
 	int socket_cpu;
 	bool *ejecutando;
 	t_program *program;

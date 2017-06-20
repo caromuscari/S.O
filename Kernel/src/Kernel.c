@@ -13,6 +13,7 @@
 #include "configuracion.h"
 #include "consolaManager.h"
 #include "manejo_errores.h"
+#include "consolaKernel.h"
 #include "planificador.h"
 #include "estructuras.h"
 #include "cpuManager.h"
@@ -57,6 +58,8 @@ void inciar_manejo_cpus();
 
 int main(int argc, char*argv[])
 {
+	leer_consola();
+
 	pthread_t hiloConsolaConsola;
 	pthread_t hiloConsolaCPU;
 
