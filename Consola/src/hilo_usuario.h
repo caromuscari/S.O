@@ -11,9 +11,9 @@
 void* hilousuario ();
 char* leer_archivo(char*);
 void iniciar_programa(char * ruta, int socket_);
-void finalizar_programa(pthread_t pid, int socket_);
+void finalizar_programa(char* pid, int socket_);
 void desconectar_consola();
 void cerrar_programas(char* key, void* data);
-void tiempofinal_impresiones(long int pid);
+void tiempofinal_impresiones(char* pid);
 
 #endif /* HILO_USUARIO_H_ */

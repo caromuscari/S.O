@@ -30,11 +30,10 @@ extern t_dictionary * tiempo;
 
 char* leer_archivo(char*);
 void iniciar_programa(char * ruta, int socket_);
-void finalizar_programa(pthread_t pid, int socket_);
+void finalizar_programa(char* pid, int socket_);
 void desconectar_consola();
 void cerrar_programas(char* key, void* data);
-void tiempofinal_impresiones(long int pid);
-//void limpiar_consola();
+void tiempofinal_impresiones(char* pid);
 
 void* hilousuario ()
 {
@@ -76,7 +75,7 @@ void* hilousuario ()
 			if(!strcmp(ingreso, "finalizar_programa")){
 				printf("ingresar el PID del programa: ");
 				scanf("%s",identi);
-				finalizar_programa(atol(identi),socket_);
+				finalizar_programa(identi,socket_);
 			}
 			else{
 				if(!strcmp(ingreso, "desconectar_consola")){
@@ -84,7 +83,6 @@ void* hilousuario ()
 				}
 				else{
 					if(!strcmp(ingreso, "limpiar_consola")){
-						//limpiar_consola();
 						system("clear");
 					}
 					else{
@@ -137,14 +135,14 @@ char * leer_archivo(char * ruta){
 	return mensaje2;
 }
 
-void finalizar_programa(pthread_t pid, int socket_){
+void finalizar_programa(char* pid, int socket_){
 	char * mensaje = strdup("");
-	long int pid2;
-	char* pid3=string_itoa(pid);
-	mensaje = armar_mensaje("C02",pid3);
+	char* pid2;
+	long int pid3=atoi(pid);
+	mensaje = armar_mensaje("C02",pid);
 	enviar(socket_, mensaje, sizeof(mensaje));
-	if(pthread_cancel(pid)==0){
-		escribir_log_con_numero("Se finalizo el programa", pid);
+	if(pthread_cancel(pid3)==0){
+		escribir_log_con_numero("Se finalizo el programa", pid3);
 		tiempofinal_impresiones(pid);
 		pid2=dictionary_get(h_pid,pid);
 		dictionary_remove(h_pid,pid);
@@ -159,41 +157,33 @@ void finalizar_programa(pthread_t pid, int socket_){
 }
 
 void desconectar_consola(){
-	void * valor;
 	char *mensaje = strdup("");
 	dictionary_iterator(h_pid,cerrar_programas);
 	mensaje = armar_mensaje("C03", "");
 	enviar(socket_, mensaje, string_length(mensaje));
 	escribir_log("Se desconecta la consola");
 	pthread_cancel(hiloMensaje);
-	pthread_exit(valor);
+	pthread_exit(NULL);
 }
 void cerrar_programas(char* key, void* data){
 	finalizar_programa(data,socket_);
 }
 
-void tiempofinal_impresiones(long int pid){
-	time_t tiempoFinal= malloc(sizeof(time_t));
+void tiempofinal_impresiones(char* pid){
+	time_t *tiempoFinal= malloc(sizeof(time_t));
 	t_impresiones * cant = malloc(sizeof(t_impresiones));
-	time_t tiempoinicial = malloc(sizeof(time_t));
+	time_t *tiempoinicial = malloc(sizeof(time_t));
 	double diferencia;
-	tiempoFinal = time(NULL);
+	*tiempoFinal = time(NULL);
 	cant = dictionary_get(impresiones,pid);
 	tiempoinicial = dictionary_get(tiempo,pid);
-	diferencia= difftime(tiempoinicial, tiempoFinal);
-	escribir_log_con_numero("Inicio de ejecución : ", tiempoinicial);
-	escribir_log_con_numero("Fin de ejecución : ", tiempoFinal);
+	diferencia= difftime(*tiempoinicial, *tiempoFinal);
+	escribir_log_con_numero("Inicio de ejecución : ", *tiempoinicial);
+	escribir_log_con_numero("Fin de ejecución : ", *tiempoFinal);
 	escribir_log_con_numero("Cantidad de impresiones: ", cant->cantidad);
 	escribir_log_con_numero("Tiempo total de ejecución : ", diferencia);
-	//printf("Inicio de ejecución : %i /n", tiempoinicial);
-	//printf("Fin de ejecución : %i /n", tiempoFinal);
-	//printf("El programa realizó %i impresiones /n", cant->cantidad);
-	//printf("El tiempo total de ejecución fue %lf /n", diferencia);
 	free(cant);
 	free(tiempoinicial);
 	free(tiempoFinal);
 }
 
-/*void limpiar_consola(){
-
-}*/

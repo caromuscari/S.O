@@ -21,6 +21,10 @@ typedef struct{
 	int cantidad;
 }t_impresiones;
 
+typedef struct{
+	pthread_t hilo;
+}t_hilo;
+
 
 
 #endif /* ESTRUCTURAS_H_ */

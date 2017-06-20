@@ -20,13 +20,11 @@
 #include "estructuras.h"
 #include "fsecundarias.h"
 
-extern t_bitarray * bitmap;
-extern char *montaje;
+
 extern int tBloques;
-extern int cantBloques;
 extern int socketfs;
 extern int flagsocket;
-//extern t_dictionary * archivos;
+extern t_dictionary * archivos;
 
 
 void validar_archivo(char *mensaje)
@@ -34,8 +32,10 @@ void validar_archivo(char *mensaje)
 	FILE * archivo;
 	char * mensaje2 = strdup("");
 	char *pathArmado;
+
 	pathArmado = armar_path(mensaje);
 	archivo = fopen(pathArmado,"r+");
+
 	if(archivo == NULL){
 		mensaje2 = armar_mensaje("F01","no");
 		enviar(socketfs,mensaje2,&flagsocket);
@@ -43,9 +43,9 @@ void validar_archivo(char *mensaje)
 	else {
 		mensaje2 = armar_mensaje("F01","ok");
 		enviar(socketfs,mensaje2,&flagsocket);
-		//dictionary_put(archivos,mensaje,archivo);
-
+		dictionary_put(archivos,pathArmado,archivo);
 	}
+
 	free(mensaje2);
 	free(pathArmado);
 }
@@ -55,8 +55,10 @@ void crear_archivo(char *mensaje)
 	FILE *archivo;
 	char *mensaje2 = strdup("");
 	char *pathArmado;
+
 	pathArmado = armar_path(mensaje);
 	archivo = fopen(pathArmado,"a+");
+
 	if(archivo == NULL){
 			mensaje2 = armar_mensaje("F02","no");
 			enviar(socketfs,mensaje2,&flagsocket);
@@ -64,10 +66,10 @@ void crear_archivo(char *mensaje)
 		else {
 			mensaje2 = armar_mensaje("F02","ok");
 			enviar(socketfs,mensaje2,&flagsocket);
-			//dictionary_put(archivos,mensaje,archivo);
 			armar_archivo(archivo);
 
 		}
+
 	free(mensaje2);
 	free(pathArmado);
 }
@@ -76,11 +78,14 @@ void borrar_archivo(char *mensaje)
 {
 	char *pathArmado;
 	char *mensaje2 =strdup("");
+
 	pathArmado = armar_path(mensaje);
+
 	remove(pathArmado);
+
 	mensaje2 = armar_mensaje("F03","");
 	enviar(socketfs,mensaje2,&flagsocket);
-	//dictionary_remove(archivos,mensaje);
+
 	free(pathArmado);
 	free(mensaje2);
 }
@@ -88,7 +93,6 @@ void borrar_archivo(char *mensaje)
 void obtener_datos(char *path, int offset, int size)
 {
 	char *mensaje =strdup(""); // para enviar los datos
-	//FILE *archivo = dictionary_get(archivos,path);
 	char *path2 = "/mnt/FS_SADICA/Bloques/"; //para sacar cada path de bloques
 	char *pathBloque;// para guardar los path hechos
 	FILE *bloques; //para abrir cada archivo de bloques
@@ -104,8 +108,6 @@ void obtener_datos(char *path, int offset, int size)
 	bloqueSig = bloque.quot;
 
 	pathBloque = armar_pathBloque(path2,bloqueSig,archivo);
-	//string_append(&pathBloque,string_itoa(archivo.bloques[bloqueSig]));
-	//string_append(&pathBloque,".bin");
 
 	bloques = fopen(pathBloque,"r");
 	fseek(bloques,bloque.rem,SEEK_SET);
@@ -123,7 +125,7 @@ void obtener_datos(char *path, int offset, int size)
 
 		} // preguntar estructura de los bloques.bin
 		else{
-			while(!feof(archivo))
+			while(!feof(bloques))
 			{
 				fgets(lectura2,64-bloque.rem,bloques);
 				string_append(&lectura,lectura2);
@@ -142,15 +144,79 @@ void obtener_datos(char *path, int offset, int size)
 	mensaje = armar_mensaje("F04",lectura);
 	enviar(socketfs,mensaje,&flagsocket);
 
+	fclose(bloques);
 	free(mensaje);
 	free(pathBloque);
 	free(lectura);
 	free(lectura2);
-	free(archivo); //pregunta a ceci
+	free(archivo);
 
 }
 
 void guardar_datos(char *path, int offset, int size, char *buffer)
 {
+	char *mensaje =strdup(""); // para enviar los datos
+	char *path2 = "/mnt/FS_SADICA/Bloques/"; //para sacar cada path de bloques
+	char *pathBloque;// para guardar los path hechos
+	FILE *bloques; //para abrir cada archivo de bloques
+	t_arch *archivo; //guarda la info del archivo en gral
+	div_t bloque; //guarda los datos de la division para sacar los bloques y el offset
+	int bloqueSig; // guarda el bloque al que hay que ir
+	int guardado = 0;
+	char * bloques_agregados = strdup("");
+
+	archivo = leer_archivo(path);
+	bloque = div(offset,tBloques);
+	bloqueSig = bloque.quot;
+
+	pathBloque = armar_pathBloque(path2,bloqueSig,archivo);
+
+	bloques = fopen(pathBloque,"w");
+	fseek(bloques,bloque.rem,SEEK_SET);
+
+	if(offset < archivo->tamanio)
+	{
+
+	}
+
+	else{
+		while(guardado < size)
+		{
+			if((size - guardado) <= (64-bloque.rem))
+			{
+				fputs(string_substring(buffer,guardado,64-bloque.rem),bloques);
+				guardado = size - guardado;
+
+			} // preguntar estructura de los bloques.bin
+			else
+			{
+				fputs(string_substring(buffer,guardado,64-bloque.rem),bloques);
+				guardado += 64-bloque.rem;
+
+				fclose(bloques);
+
+				bloqueSig = agregar_bloque();
+				pathBloque = armar_pathBloque(path2,bloqueSig,archivo);
+				bloques =fopen(pathBloque,"w");
+				bloque.rem = 0;
+				string_append(&bloques_agregados,",");
+				string_append(&bloques_agregados,string_itoa(bloqueSig));
+
+			}
+
+		}
+		archivo->tamanio += size;
+		modificar_archivo(path,archivo->tamanio,bloques_agregados);
+
+	}
+
+
+	mensaje = armar_mensaje("F05","");
+	enviar(socketfs,mensaje,&flagsocket);
+
+	fclose(bloques);
+	free(mensaje);
+	free(pathBloque);
+	free(archivo);
 
 }
