@@ -25,7 +25,7 @@ time_t *tiempoInicial;
 extern t_dictionary * tiempo;
 extern t_dictionary * impresiones;
 
-void * programa (long int pid){
+void * programa (char* pid){
 	dictionary_put(tiempo,pid,tiempoInicial);
 	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE,NULL);
 	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,NULL);
@@ -33,7 +33,7 @@ void * programa (long int pid){
 	t_chequeo * semp = malloc(sizeof(t_chequeo));
 	t_impresiones * impresiones2 = malloc(sizeof(t_impresiones));
 	tiempoInicial=malloc(sizeof(time_t));
-	tiempoInicial=time(NULL);
+	*tiempoInicial=time(NULL);
 	impresiones2=dictionary_get(impresiones,pid);
 	semp=dictionary_get(sem,pid);
 	while(1)

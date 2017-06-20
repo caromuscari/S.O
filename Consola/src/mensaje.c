@@ -59,7 +59,7 @@ char * get_pid(char* mensaje)
 	return string_substring(mensaje, 13, 2);
 }
 
-int get_payload(mensaje)
+int get_payload(char *mensaje)
 {
 	return atoi(string_substring(mensaje, 3, 10));
 }

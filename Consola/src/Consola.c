@@ -39,8 +39,6 @@ sem_t semaforo;
 int tamAimprimir;
 
 
-//void inicializar_parametros();
-//void liberar_memoria();
 void leer_archivo_configuracion(char * ruta);
 void handshake(int socket_);
 void * hilousuario ();

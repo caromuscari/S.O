@@ -41,7 +41,7 @@ char * armar_pathBloque(char *path,int bloqueSig,t_arch *archivo)
 {
 	char *path2 =strdup("");
 	string_append(&path2,path);
-	string_append(&path2,string_itoa(archivo->bloques[bloqueSig]));
+	string_append(&path2,string_itoa(*archivo->bloques[bloqueSig]));
 	string_append(&path2,".bin");
 	return path2;
 }
@@ -50,7 +50,7 @@ t_arch *leer_archivo(char * path)
 {
 	t_arch *archivo;
 	t_config *config=config_create(path);
-	//archivo = malloc( t_arch ); //preguntar a ceci
+	archivo = malloc( sizeof(t_arch) );
 	archivo->tamanio = config_get_int_value(config,"TAMANIO");
 	archivo->bloques = config_get_array_value(config,"BLOQUES");
 	config_destroy(config);
@@ -63,5 +63,23 @@ char * armar_path(char *mensaje)
 	string_append(&mensaje2,montaje);
 	string_append(&mensaje2,mensaje);
 	return mensaje2;
+
+}
+
+int agregar_bloque()
+{
+	int bit = 0;
+	bool comprobar;
+	while(comprobar == false)
+	{
+		bit++;
+		comprobar = bitarray_test_bit(bitmap,bit);
+	}
+	bitarray_set_bit(bitmap,bit);
+	return bit;
+}
+
+void modificar_archivo(char* path, int tamanio, char* bloques)
+{
 
 }
