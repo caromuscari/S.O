@@ -23,6 +23,7 @@ extern t_list *list_finalizados;
 extern t_list *list_bloqueados;
 extern t_queue *cola_nuevos;
 extern t_queue *cola_listos;
+extern pthread_mutex_t mutex_planificador;
 extern pthread_mutex_t mutex_lista_cpus;
 extern pthread_mutex_t mutex_lista_ejecutando;
 extern pthread_mutex_t mutex_lista_finalizados;
@@ -52,6 +53,8 @@ void programas_listos_A_ejecutar()
 
 	while(1)
 	{
+		pthread_mutex_lock(&mutex_planificador);
+
 		listos = queue_size(cola_listos);
 		cpus_disponibles = list_count_satisfying(list_cpus, (void*)_cpuLibre);
 
@@ -87,6 +90,8 @@ void programas_listos_A_ejecutar()
 				pthread_mutex_unlock(&mutex_lista_cpus);
 			}
 		}
+
+		pthread_mutex_unlock(&mutex_planificador);
 	}
 }
 
