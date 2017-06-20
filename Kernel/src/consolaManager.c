@@ -18,6 +18,7 @@
 
 extern t_configuracion *config;
 extern t_list *list_consolas;
+extern pthread_mutex_t mutex_lista_consolas;
 
 fd_set master;
 fd_set read_fds;
@@ -89,7 +90,10 @@ void manejo_conexiones_consolas()
 						char *mensaje_recibido = recibir(i, &controlador);
 
 						if(controlador > 0)
+						{
 							desconectar_consola(i);
+							FD_CLR(i, &master);
+						}
 						else
 						{
 							responder_solicitud(i, mensaje_recibido);
@@ -124,7 +128,10 @@ void realizar_handShake_consola(int nuevo_socket)
 				t_consola *nueva_consola = malloc(sizeof(t_consola));
 				nueva_consola->socket = nuevo_socket;
 				nueva_consola->CID = get_CID();
+
+				pthread_mutex_lock(&mutex_lista_consolas);
 				list_add(list_consolas, nueva_consola);
+				pthread_mutex_unlock(&mutex_lista_consolas);
 			}
 			else
 			{
@@ -187,7 +194,9 @@ void eliminar_consola(int consola_id)
 		free(consola);
 	}
 
+	pthread_mutex_lock(&mutex_lista_consolas);
 	list_remove_and_destroy_by_condition(list_consolas, (void*)_localizar, (void*)liberar_consola);
+	pthread_mutex_unlock(&mutex_lista_consolas);
 }
 
 void responder_peticion_prog(int socket, char *mensaje)
@@ -226,7 +235,10 @@ int buscar_consola(int socket)
 		return (consola->socket == socket);
 	}
 
+	pthread_mutex_lock(&mutex_lista_consolas);
 	t_consola *cons = list_find(list_consolas, (void*)_buscar_consola_lst);
+	pthread_mutex_unlock(&mutex_lista_consolas);
+
 	return cons->CID;
 }
 

@@ -18,6 +18,11 @@ extern t_list *list_finalizados;
 extern t_list *list_bloqueados;
 extern t_queue *cola_nuevos;
 extern t_queue *cola_listos;
+extern pthread_mutex_t mutex_lista_ejecutando;
+extern pthread_mutex_t mutex_lista_finalizados;
+extern pthread_mutex_t mutex_lista_bloqueados;
+extern pthread_mutex_t mutex_cola_nuevos;
+extern pthread_mutex_t mutex_cola_listos;
 extern t_configuracion *config;
 
 void generar_listados();
@@ -68,12 +73,25 @@ void leer_consola()
 
 void generar_listados() // faltan los mutex
 {
+	pthread_mutex_lock(&mutex_cola_nuevos);
 	t_queue *nuevos = cola_nuevos;
-	t_queue *listos = cola_listos;
+	pthread_mutex_unlock(&mutex_cola_nuevos);
 
+	pthread_mutex_lock(&mutex_cola_listos);
+	t_queue *listos = cola_listos;
+	pthread_mutex_unlock(&mutex_cola_listos);
+
+	pthread_mutex_lock(&mutex_lista_bloqueados);
 	t_list *bloqueados = list_bloqueados;
+	pthread_mutex_unlock(&mutex_lista_bloqueados);
+
+	pthread_mutex_lock(&mutex_lista_ejecutando);
 	t_list *ejecutando = list_ejecutando;
+	pthread_mutex_unlock(&mutex_lista_ejecutando);
+
+	pthread_mutex_lock(&mutex_lista_finalizados);
 	t_list *finalizados = list_finalizados;
+	pthread_mutex_unlock(&mutex_lista_finalizados);
 
 	mostrar_cola(nuevos, "Los siguientes son los procesos en la cola de Nuevos: \n");
 	mostrar_cola(listos, "Los siguientes son los procesos en la cola de Listos: \n");
@@ -90,7 +108,7 @@ void mostrar_cola(t_queue *cola, char *procesos)
 	{
 		t_program *pr = malloc(sizeof(t_program));
 		pr = queue_pop(cola);
-		printf("%d \n", *(pr->PID));
+		printf("%d \n", pr->PID);
 		free(pr);
 	}
 }
@@ -106,7 +124,7 @@ void mostrar_listas(t_list *lista, char *procesos)
 	{
 		t_program *pr = malloc(sizeof(t_program));
 		pr = list_get(lista, c);
-		printf("%d \n", *(pr->PID));
+		printf("%d \n", pr->PID);
 		free(pr);
 		c++;
 	}

@@ -7,12 +7,12 @@
 #include <pthread.h>
 #include <commons/log.h>
 #include <stdlib.h>
-#include "estructuras.h"
-#include "manejo_errores.h"
-#include "socket.h"
 #include <string.h>
 #include <commons/string.h>
+#include "manejo_errores.h"
+#include "estructuras.h"
 #include "mensaje.h"
+#include "socket.h"
 
 extern t_configuracion *config;
 t_list *cpus_activas;
@@ -23,7 +23,6 @@ int fdmax;
 int controlador_cpu = 0;
 int id = 0;
 
-void manejo_conexiones_cpu();
 void realizar_handShake_cpu(int);
 void agregar_lista_cpu(int , char *);
 void inicializar_listas_cpu();
@@ -68,13 +67,8 @@ void manejo_conexiones_cpu()
 						int nuevo_socket = aceptar_conexion(config->server_cpu, &controlador_cpu);
 
 						//Controlo que no haya pasado nada raro y acepto al nuevo
-						if (controlador_cpu > 0)
+						if (controlador_cpu == 0)
 						{
-							error_sockets(&controlador_cpu, "");
-						}
-						else
-						{
-							//funcion para realizar handshake con nueva conexion
 							realizar_handShake_cpu(nuevo_socket);
 						}
 
@@ -103,23 +97,17 @@ void manejo_conexiones_cpu()
 void realizar_handShake_cpu(int nuevo_socket)
 {
 	//Envio mensaje a CPU pidiendo sus datos
-	char *mensaje = "K00";
+	char *mensaje = armar_mensaje("K00","");
 	enviar(nuevo_socket, mensaje, &controlador_cpu);
 
 	if (controlador_cpu > 0)
-	{
-		error_sockets(&controlador_cpu, string_itoa(nuevo_socket));
 		cerrar_conexion(nuevo_socket);
-	}
 	else
 	{
 		char *respuesta = recibir(nuevo_socket, &controlador_cpu);
 
 		if (controlador_cpu > 0)
-		{
-			error_sockets(&controlador_cpu, string_itoa(nuevo_socket));
 			cerrar_conexion(nuevo_socket);
-		}
 		else
 		{
 			//Aca deberia ir la validacion si el mensaje corresponde a cpu

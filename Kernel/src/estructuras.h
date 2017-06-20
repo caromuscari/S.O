@@ -89,11 +89,11 @@ typedef struct
 
 typedef struct
 {
-	int *PID;
-	int *CID;
-	int *syscall;
-	int *allocs;
-	int *frees;
+	int PID;
+	int CID;
+	int syscall;
+	int allocs;
+	int frees;
 	t_PCB *pcb;
 	t_list *TAP; //tabla de archivo por proceso
 	t_list *memoria_dinamica; //lista de paginas pedidas de manera dinámica
