@@ -11,37 +11,158 @@
 #include "log.h"
 #include "mensaje.h"
 #include "manejo_errores.h"
+//#include "Memoria.h"
+#include <commons/collections/list.h>
 
+//Variables Hilos x Pedido
+int cliente[20];
+pthread_t hiloEsperarMensaje[20];
+
+// Variables Globales
 fd_set master;
 fd_set read_fds;
 int fdmax;
 int controlador = 0;
 t_memoria *data_Memoria;
 t_log *log;
+int cantMarcosTablaPag;
 
-// Para multi-hilos
-int cliente[20];
-pthread_t hiloEsperarMensaje[20];
+char * Memoria;
+
+//Estructuras administrativas
+
+typedef struct{
+	int estado;
+	int pid;
+	int pag;
+} t_tablaPagina;
+
+t_tablaPagina* tablaPaginas;
+
+int tamanioMarco;
+int cantMarcos;
+int tamTablaPaginas;
+
+//Funciones
 void leerArchivoConfig(char* rutaArchivoConfig);
-
-//Clientes
-
 void esperar_mensaje(void *i);
+t_tablaPagina* crearEstrucTablaPag(void);
+int cantidadDePaginas(int tamanioBytes, int tamanioPaginas);
+t_list* asignarFramesLibres(int pid,int cantPaginasAgrabar);
+void cargarCodigoEnMemoria(char * datos, char * Memoria ,t_list * frames_pedidos, int cantPaginasAgrabar);
+//
 
 int main(int argc, char *argv[])
 {
 	crear_archivo_log("/home/utnso/Escritorio/MEMORIA-DEBUGGING-LOG.txt");
 	leerArchivoConfig(argv[1]);
 	//Creacion de Socket Server
-	printf("\n MARCOS %d  \n",data_Memoria->MARCOS);
-	printf("PUERTO %d  \n",data_Memoria->PUERTO);
-	//data_Memoria->SOCKET =
 
+	printf(" \n");
+	printf("CANT MARCOS: %d  \n",data_Memoria->MARCOS);
+	printf("TAM MARCO: %d  \n",data_Memoria->MARCO_SIZE);
+
+	tamanioMarco =data_Memoria->MARCO_SIZE;
+	cantMarcos=data_Memoria->MARCOS;
+	tamTablaPaginas = sizeof(t_tablaPagina)*cantMarcos;
+	cantMarcosTablaPag = cantidadDePaginas(tamTablaPaginas,tamanioMarco);
+    tablaPaginas = malloc(sizeof(t_tablaPagina)*cantMarcos);
+    tablaPaginas = crearEstrucTablaPag();
+
+    typedef unsigned char data_Marco[tamanioMarco];
+    //data_Marco *
+    Memoria = malloc(cantMarcos * tamanioMarco);
+
+//   data_Marco MARCO;
+
+/*/Inicializo Memoria
+    int r;
+        for( r=0;r<cantMarcos;r++){
+        	memset(Memoria[r],'\0',tamanioMarco);
+          	}
+//FinInicializo Memoria
+*/
+
+//Imprimir Tabla de Paginas
+	int it;
+	 /* 	for(it=0;it<data_Memoria->MARCOS;it++){
+		printf("%d | %d | %d \n",tablaPaginas[it].estado,tablaPaginas[it].pid,tablaPaginas[it].pag);
+	}
+*/
+	printf("Tamaño de Tabla de paginas %d \n",tamTablaPaginas);
+	printf("Tamaño Total de Memoria %d  \n",tamanioMarco * cantMarcos);
+
+	//Cargo tabla de Paginas en Memoria
+
+	int i_tp;
+	int inicio=0;
+	for(i_tp=0;i_tp<cantMarcosTablaPag;i_tp++){
+	tablaPaginas[i_tp].estado = 1;
+	tablaPaginas[i_tp].pag= inicio;
+	inicio ++;
+	}
+	memcpy(Memoria,tablaPaginas,tamTablaPaginas);
+
+	//Guardo lo que me llega por Socket
+
+
+	for(it=0;it<data_Memoria->MARCOS;it++){
+		printf("%d | %d | %d \n",tablaPaginas[it].estado,tablaPaginas[it].pid,tablaPaginas[it].pag);
+	}
+
+	 //recieve: Guardo lo que me llega por Socket
+	 char* codigo="SSSSSSSSSSSSSSSSSSSSAAAAAAAAAAAAAAAAAAAAJJJJJJJJJJJJJJJJJJJJ";
+	 int pid=89;
+
+	 int cantPaginasAgrabar=cantidadDePaginas(string_length(codigo),tamanioMarco);
+	 printf("%s | %d | %d \n",codigo, string_length(codigo),cantPaginasAgrabar);
+
+	//Guardar en paginas
+	//Busco y asigno paginas vacias
+
+	 t_list * frames_pedidos = list_create();
+	 frames_pedidos = asignarFramesLibres(pid,cantPaginasAgrabar);
+
+	 cargarCodigoEnMemoria(codigo,Memoria ,frames_pedidos, cantPaginasAgrabar);
+
+	 //Fin Guardo lo que me llega por Socket
+
+/*//--
+	int size = list_size(frames_pedidos);
+	int c = 0;
+	while(c < cantPaginasAgrabar)
+	{
+		int frame_pos = list_get(frames_pedidos, c);
+		printf("\npos:%d \n", frame_pos);
+		c++;
+	}
+
+	c=0;
+	while(c < cantPaginasAgrabar)
+	{
+		int frame_pos = list_get(frames_pedidos, c);
+		memcpy(Memoria[frame_pos],codigo+(c*tamanioMarco),tamanioMarco);
+		printf("\nSe guardo en el frame: %d \n", frame_pos);
+		c++;
+	}
+//-- */
+
+
+
+	for(it=0;it<data_Memoria->MARCOS;it++){
+		printf("%d | %d | %d \n",tablaPaginas[it].estado,tablaPaginas[it].pid,tablaPaginas[it].pag);
+	}
+
+
+
+
+
+	free(tablaPaginas);
+	free(Memoria);
 	int socketServerMemoria = iniciar_socket_server(data_Memoria->IP,data_Memoria->PUERTO,&controlador);
 
 	escribir_log(string_from_format("Se inicia Servidor de Memoria en Socket: %d ",socketServerMemoria));
-
-
+/*
 	int i = 0;
 
 		while (1) {
@@ -57,18 +178,8 @@ int main(int argc, char *argv[])
 			if(strcmp(header,"K")==0 || strcmp(header,"P")==0 )
 				{
 				//Cliente VALIDO
-					if (strcmp(header,"K")==0 )
-						{
-							char* HS_OK = armar_mensaje("M00","128"); // M|00|0000000003|128|
-							enviar(cliente[i],HS_OK, &controlador);
-						}
-						else
-						{
-							char* HS_OK = armar_mensaje("M00",""); // M|00|0000000000|
-							enviar(cliente[i],HS_OK, &controlador);
-						}
-
-
+					char* HS_OK = armar_mensaje("M00",string_itoa(data_Memoria->MARCO_SIZE)); // M|00|0000000003|128|
+					enviar(cliente[i],HS_OK, &controlador);
 				}
 				else
 				{
@@ -76,6 +187,7 @@ int main(int argc, char *argv[])
 					cerrar_conexion(cliente[i]);
 					goto salir_handshake;
 				}
+
 	//Si es Cliente valido entra a interactuar con la MEMORIA. // Hilo
 
 			pthread_create(&hiloEsperarMensaje[i], NULL, (void*) esperar_mensaje,(void *) cliente[i]);
@@ -87,7 +199,10 @@ int main(int argc, char *argv[])
 		}
 
 	//El select esta aca dentro --- ejecutar_server();
+	 *
+	 */
 	return EXIT_SUCCESS;
+
 }
 
 //A partir de este punto.. las funciones
@@ -134,9 +249,13 @@ void esperar_mensaje(void *i) {
 	printf("\n codigo: %d \n",codigo);
 
 	switch (codigo) {
-					case 1:
+					case 6:
 						{
-							escribir_log(string_from_format("CASE 1: %d ",cliente));
+
+							escribir_log(string_from_format("K06 - Guardando codigo: %d ",cliente));
+
+							//Meter funciones de guardar codigo
+
 
 						}
 					break;
@@ -172,3 +291,62 @@ void esperar_mensaje(void *i) {
 	}
 
 
+t_tablaPagina* crearEstrucTablaPag(void){
+
+	t_tablaPagina* estructuraTablaPaginas=malloc(sizeof(t_tablaPagina)*cantMarcos);
+
+	int i;
+
+	for(i=0;i<data_Memoria->MARCOS;i++){
+		estructuraTablaPaginas[i].estado=0;
+		estructuraTablaPaginas[i].pag=-1;
+		estructuraTablaPaginas[i].pid=-1;
+	}
+
+	return estructuraTablaPaginas;
+}
+
+int cantidadDePaginas(int tamanioBytes, int tamanioPaginas)
+{
+	double Bloques= -1;
+	if ((double)tamanioBytes/tamanioPaginas - (int)(tamanioBytes/tamanioPaginas) > 0){
+			Bloques = ((tamanioBytes/tamanioPaginas) +1);
+		}else{
+			Bloques = (int)(tamanioBytes/tamanioPaginas);
+		}
+	return (int)Bloques;
+
+}
+
+t_list* asignarFramesLibres(int pid,int cantPaginasAgrabar)
+{
+	//Calcular posición frames libres más próximos para una cantidad solicitada.
+	t_list* lt_framesLibres = list_create();
+	int z;
+	int libres=0;
+	int maxPagPid = 0; //Funcion que me devuelva la máxima pagina de un PID.
+	for (z=cantMarcosTablaPag; z<cantMarcosTablaPag+cantPaginasAgrabar; z++ )
+	{
+		if ( tablaPaginas[z].estado == 0 ) {
+			list_add(lt_framesLibres,z);
+			tablaPaginas[z].estado = 1;
+			tablaPaginas[z].pid = pid;
+			tablaPaginas[z].pag = maxPagPid;
+		}
+		maxPagPid ++;
+	}
+
+	return lt_framesLibres;
+
+}
+
+void cargarCodigoEnMemoria(char * datos, char * Memoria ,t_list * frames_pedidos, int cantPaginasAgrabar) {
+	int c = 0;
+	while(c < cantPaginasAgrabar){
+		int frame_pos = list_get(frames_pedidos, c);
+		int pos = (frame_pos * tamanioMarco)-1;
+		memcpy(Memoria+pos,datos+(c*tamanioMarco),tamanioMarco);
+		printf("\nSe guardo en el frame: %d \n", frame_pos);
+		c++;
+	}
+}
