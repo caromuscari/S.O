@@ -14,33 +14,34 @@
 #include "mensaje.h"
 
 extern t_list *global_fd;
+extern t_configuracion *config;
 
 void crear_tabla_global();
-void abrir_archivo(char *path, char* flag, t_program *prog);
+int abrir_archivo(char *path, char* flag, t_program *prog);
 t_TAG *buscar_archivo_TAG(char *p_sol);
-void crear_archivo(char *p);
-void pedido_lectura(t_program *prog, int fd, int offs, int size);
+void abrir_crear(char *mensaje, t_program *prog, int socket_cpu);
+void pedido_lectura(t_program *prog, int fd, int offs, int size, char *path, int socket_cpu);
 t_TAP *buscar_archivo_TAP(t_list *tap, int fd);
 char *get_path(int fd);
 t_TAG *buscar_archivo_TAG_fd(int fd);
 void mover_puntero(int socket_prog, int offset, int fd, t_program *prog);
-char *leer_escribir(int socket_prog);
 bool existe_archivo(t_list *tap, int fd);
 void destruir_file(t_TAP *ap);
 void destruir_file_TAG(t_TAG *tg);
 void cerrar_file(t_list *tap, int fd);
 char *get_path_msg(char *mensaje, int *payload1);
 char *get_info(char *mensaje, int payload1, int tam_info);
-void abrir_crear(char *mensaje, t_program *prog);
-void escribir_archivo(int offset, char *info, char *flags);
-
+void abrir_crear(char *mensaje, t_program *prog, int socket_cpu);
+void escribir_archivo(int offset, char *info, char *flags, char *path);
+void chequear_respuesta(int socket_cpu, char *path, char *flag, t_program *prog);
+void crear_archivo(int socket_cpu, char *path, char *flag, t_program *prog);
 
 void crear_tabla_global()
 {
 	global_fd = list_create();
 }
 
-void abrir_crear(char *mensaje, t_program *prog)
+void abrir_crear(char *mensaje, t_program *prog, int socket_cpu)
 {
 	int payload;
 	char *path = get_path_msg(mensaje, &payload);
@@ -48,13 +49,20 @@ void abrir_crear(char *mensaje, t_program *prog)
 
 	if(string_contains(flag, "c"))
 	{
-		crear_archivo(path);
-		//enviar path a file mandando a crear
-	}// else enviar path a file para abrir
+		crear_archivo(socket_cpu,path, flag, prog);
+	} else
+	{
+		char *mensaje = armar_mensaje("K12", path);
+		int controlador;
+		enviar(config->cliente_fs, mensaje, &controlador);
+		free(mensaje);
+
+		chequear_respuesta(socket_cpu, path, flag, prog);
+	}
 	abrir_archivo(path, flag, prog);
 }
 
-void abrir_archivo(char *path, char* flag, t_program *prog)
+int abrir_archivo(char *path, char* flag, t_program *prog)
 {
 	t_TAG *ag = malloc (sizeof(t_TAG));
 
@@ -79,6 +87,8 @@ void abrir_archivo(char *path, char* flag, t_program *prog)
 	list_add(prog->TAP, ar_p);
 	free(path);
 	free(flag);
+
+	return ar_p->FD;
 }
 
 t_TAG *buscar_archivo_TAG(char *path)
@@ -92,21 +102,47 @@ t_TAG *buscar_archivo_TAG(char *path)
 	return ag_encontrado;
 }
 
-void crear_archivo(char *p)
+void crear_archivo(int socket_cpu, char *path, char *flag, t_program *prog)
 {
-	//enviar mensaje a fs
-	//esperar respuesta
+	int controlador;
+	char *mensaje;
+
+	mensaje= armar_mensaje("K12",path);
+	enviar(config->cliente_fs, mensaje, &controlador);
+	free(mensaje);
+
+	chequear_respuesta(socket_cpu, path, flag, prog);
+
 }
 
-void pedido_lectura(t_program *prog, int fd, int offs, int size)
+void pedido_lectura(t_program *prog, int fd, int offs, int size, char *path, int socket_cpu)
 {
 	t_TAP *ap = malloc(sizeof(t_TAP));
 	ap = buscar_archivo_TAP(prog->TAP, fd);
 
 	if (ap != NULL)
 	{
-	//	char *path = strdup(get_path(fd));
-		//enviar el path al fs
+		if(string_contains(ap->flag,"r"))
+		{
+			int controlador;
+			char *path = get_path(ap->FD);
+			char *mensaje = armar_mensaje("K14", path);
+			enviar(config->cliente_fs, mensaje, &controlador);
+			free(mensaje);
+
+			char *mensaje_recibido = recibir(config->cliente_fs, &controlador);
+			if(comparar_header(mensaje,"F"))
+			{
+				if(get_codigo(mensaje) == 4)
+				{
+					char *mensaje_leido = get_mensaje(mensaje_recibido);
+					enviar(socket_cpu, mensaje_leido, &controlador);
+				}
+			}
+			free(mensaje_recibido);
+
+		}else /* eliminar programa, pedido de lectura sin permiso*/;
+
 	}//else //eliminar programa por querer leer un arch no abierto
 
 }
@@ -140,60 +176,45 @@ t_TAG *buscar_archivo_TAG_fd(int fd)
 	return ag_aux;
 }
 
-void mover_puntero(int socket_prog, int offset, int fd, t_program *prog)
+void mover_puntero(int socket_cpu, int offset, int fd, t_program *prog)
 {
-	//recibir para saber si hay que leer o escribir
 	int control;
-	char *mensaje = recibir(socket_prog, &control);
+	char *mensaje = recibir(socket_cpu, &control);
+	char *info = strdup("");
+	info = get_mensaje(mensaje);
+	char *path = get_path(fd);
+
 	if (comparar_header("P",mensaje))
 	{
 		switch (get_codigo(mensaje))
 		{
 			case 5 : ;//pedido de escritura
-				char *info = strdup("");
-				info = get_mensaje(mensaje);
+				/*char *info = strdup("");
+				info = get_mensaje(mensaje);*/
 				t_TAP *arch = buscar_archivo_TAP(prog->TAP, fd);
 				if (arch == NULL)
 				{
 					//hablar con lean
-				}else escribir_archivo(offset, info, arch->flag);
+				}else escribir_archivo(offset, info, arch->flag, path);
 				free(info);
+				break;
+			case 6: ;//pedido de lectura
+				int size = atoi(mensaje);
+				pedido_lectura(prog, fd, offset, size, path, socket_cpu);
+				break;
 		}
 	}
 }
 
-void escribir_archivo(int offset, char *info, char *flags)
+void escribir_archivo(int offset, char *info, char *flags, char *path)
 {
 	if (string_contains(flags, "w"))
 	{
+		//char *mensaje = strdup("");
+		//hay que armar la forma para enviar
 		//enviar a file para que escriba archivo
 		//esperar respuesta de ok
 	}else ; //hablar con Lean
-}
-
-char *leer_escribir(int socket_prog)
-{
-	int control;
-	char *mensaje = recibir(socket_prog, &control);
-	int cod = get_codigo(mensaje);
-	char *m2;
-	//char *m3;
-
-	switch (cod)
-	{
-		case 3:
-			m2 = get_mensaje(mensaje);
-			return m2;
-			break;
-		case 4:
-			m2 = get_mensaje(mensaje);
-			// acá sacar mensaje y de acá sacar lo que se va a escribir
-			break;
-		default:
-			break;
-	}
-	free(mensaje);
-	return (m2);
 }
 
 bool existe_archivo(t_list *tap, int fd)
@@ -263,4 +284,22 @@ char *get_info(char *mensaje, int payload1, int tam_info)
 	int payload2 = atoi(payload);
 	free(payload);
 	return string_substring(mensaje, (4+payload1+tam_info), payload2);
+}
+
+void chequear_respuesta(int socket_cpu, char *path, char *flag, t_program *prog)
+{
+	int controlador;
+	char *mensaje_recibido = recibir(config->cliente_fs, &controlador);
+	if(comparar_header(mensaje_recibido, "F"))
+	{
+		char *info = get_mensaje(mensaje_recibido);
+		if(!strcmp(info,"ok"))
+		{
+			int fd = abrir_archivo(path, flag, prog);
+			char *mensaje = armar_mensaje("K16", string_itoa(fd));
+			enviar(socket_cpu, mensaje, &controlador);
+			free(mensaje);
+		}
+	}else; //cerrar conexión
+	free(mensaje_recibido);
 }

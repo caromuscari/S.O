@@ -69,7 +69,7 @@ int main(int argc, char*argv[])
 	leer_configuracion();
 	crear_archivo_log("/home/utnso/log_kernel");
 
-	leer_consola();
+	//leer_consola();
 
 	crear_conexiones();
 	handshakearMemory();
