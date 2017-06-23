@@ -21,19 +21,20 @@ extern t_list *list_finalizados;
 extern t_list *list_bloqueados;
 extern t_queue *cola_nuevos;
 extern t_queue *cola_listos;
-extern pthread_mutex_t mutex_planificador;
 extern pthread_mutex_t mutex_lista_ejecutando;
 extern pthread_mutex_t mutex_lista_finalizados;
 extern pthread_mutex_t mutex_lista_bloqueados;
 extern pthread_mutex_t mutex_cola_nuevos;
 extern pthread_mutex_t mutex_cola_listos;
 extern t_configuracion *config;
+extern int flag_planificador;
 
 void generar_listados(int lista);
 void leer_consola();
 void imprimir_menu();
 void mostrar_cola(t_queue *, char *);
 void mostrar_listas(t_list *, char *);
+void obtener_informacion(int pid);
 
 void leer_consola()
 {
@@ -67,7 +68,7 @@ void leer_consola()
 			case 2 :
 				printf("Indique el PID del proceso a consultar: ");
 				scanf("%s", input2);
-				printf("Deberia devolver informacion del proceso");
+				obtener_informacion(atoi(input2));
 				break;
 			case 3 :
 				break;
@@ -80,13 +81,16 @@ void leer_consola()
 			case 5 :
 				printf("Indique el PID del proceso a finalizar: ");
 				scanf("%s", input2);
-				//pensar lo de la lista general, si no, usar las actuales
+				forzar_finalizacion(atoi(input2), 0, 0);
+				//falta algun tipo de chequeo por si el numero que puso no existe!!!
 				break;
 			case 6 : ;
-				pthread_mutex_lock(&mutex_planificador);
+				flag_planificador = 0;
+				printf("La planificacion se ha detenido\n");
 				break;
 			case 7 : ;
-				pthread_mutex_unlock(&mutex_planificador);
+				flag_planificador = 1;
+				printf("La planificacion se ha reanudado\n");
 				break;
 			default :
 				printf("No se reconocio la opcion ingresada\n");
@@ -169,6 +173,85 @@ void mostrar_listas(t_list *lista, char *procesos)
 	}
 }
 
+void obtener_informacion(int pid)
+{
+	char *lista;
+	int encontrado = 0;
+	t_list *lst_nuevos;
+	t_list *lst_listos;
+	t_program *found;
+
+	void _buscar_program(t_program *pr)
+	{
+		if(!(pr->PID == pid))
+		{
+			found = pr;
+			encontrado = 1;
+		}
+	}
+
+	pthread_mutex_lock(&mutex_lista_ejecutando);
+	list_iterate(list_ejecutando, (void*)_buscar_program);
+	pthread_mutex_unlock(&mutex_lista_ejecutando);
+
+	if(encontrado)	lista =	"Ejecutando";
+	encontrado = 0;
+
+	pthread_mutex_lock(&mutex_lista_bloqueados);
+	list_iterate(list_bloqueados, (void*)_buscar_program);
+	pthread_mutex_unlock(&mutex_lista_bloqueados);
+
+	if(encontrado)	lista =	"Bloqueado";
+	encontrado = 0;
+
+	pthread_mutex_lock(&mutex_lista_finalizados);
+	list_iterate(list_finalizados, (void*)_buscar_program);
+	pthread_mutex_unlock(&mutex_lista_finalizados);
+
+	if(encontrado)	lista =	"Finalizado";
+	encontrado = 0;
+
+	pthread_mutex_lock(&mutex_cola_nuevos);
+	t_queue *nuevos = cola_nuevos;
+	pthread_mutex_unlock(&mutex_cola_nuevos);
+
+	while(queue_size(nuevos))
+	{
+		list_add(lst_nuevos,queue_pop(nuevos));
+	}
+
+	list_iterate(lst_nuevos, (void*)_buscar_program);
+	if(encontrado)	lista =	"Cola de nuevos";
+	encontrado = 0;
+
+	pthread_mutex_lock(&mutex_cola_listos);
+	t_queue *listos = cola_listos;
+	pthread_mutex_unlock(&mutex_cola_listos);
+
+	while(queue_size(listos))
+	{
+		list_add(lst_listos,queue_pop(listos));
+	}
+
+	list_iterate(lst_listos, (void*)_buscar_program);
+	if(encontrado)	lista =	"Cola de listos";
+	encontrado = 0;
+
+	if(found == NULL)
+	{
+		printf("El proceso buscado no existe\n");
+	}
+	else
+	{
+		printf("Id Proceso: %i\n", found->PID);
+		printf("Id Consola: %i\n", found->CID);
+		printf("Status de proceso: %c\n", lista);
+		printf("Cantidad de allocations: %i\n", found->allocs);
+		printf("Cantidad de frees: %i\n", found->frees);
+		printf("Cantidad de Syscalls: %i\n", found->syscall);
+	}
+}
+
 void imprimir_menu()
 {
 	printf("Seleccione el numero de la opcion a ejecutar\n");
@@ -180,80 +263,3 @@ void imprimir_menu()
 	printf("	6 - Detener planificacion\n");
 	printf("	7 - Reanudar planificacion\n\n");
 }
-
-void obtener_informacion(int pid)
-{
-	t_list *encontrados = list_create();
-	int i, contador = 0;
-	int corte;
-
-	bool _buscar_program(t_program *pr)
-	{
-			return !pr->PID == pid;
-	}
-
-	corte = list_any_satisfying(list_ejecutando, (void*)_buscar_program);
-
-	if(contador)
-	{
-		pthread_mutex_lock(&mutex_lista_ejecutando);
-		list_add(encontrados, list_remove_by_condition(list_ejecutando, (void*)_buscar_program));
-		pthread_mutex_unlock(&mutex_lista_ejecutando);
-		contador --;
-	}
-
-	contador = list_count_satisfying(list_bloqueados, (void*)_buscar_program);
-	while(contador)
-	{
-		pthread_mutex_lock(&mutex_lista_bloqueados);
-		list_add(encontrados, list_remove_by_condition(list_bloqueados, (void*)_buscar_program));
-		pthread_mutex_unlock(&mutex_lista_bloqueados);
-		//deberia meter una funcion aca que habilite el semaforo que este estaba tomando
-		contador --;
-	}
-
-	controlador = queue_size(cola_nuevos);
-
-	for(i=0;i<controlador;i++)
-	{
-		pthread_mutex_lock(&mutex_cola_nuevos);
-		t_program *prog = queue_pop(cola_nuevos);
-		pthread_mutex_unlock(&mutex_cola_nuevos);
-
-		if(_buscar_program(prog))
-		{
-			list_add(encontrados,prog);
-		}
-		else
-		{
-			pthread_mutex_lock(&mutex_cola_nuevos);
-			queue_push(cola_nuevos,prog);
-			pthread_mutex_unlock(&mutex_cola_nuevos);
-		}
-	}
-
-	controlador = queue_size(cola_listos);
-
-	for(i=0;i<controlador;i++)
-	{
-		pthread_mutex_lock(&mutex_cola_listos);
-		t_program *prog = queue_pop(cola_listos);
-		pthread_mutex_unlock(&mutex_cola_listos);
-
-		if(_buscar_program(prog))
-		{
-			list_add(encontrados,prog);
-		}
-		else
-		{
-			pthread_mutex_lock(&mutex_cola_listos);
-			queue_push(cola_listos,prog);
-			pthread_mutex_unlock(&mutex_cola_listos);
-		}
-	}
-
-	list_iterate(encontrados, (void*)_procesar_program);
-	list_destroy(encontrados);
-}
-
-

@@ -27,7 +27,7 @@ t_program *programa_ejecutando(int socket_);
 int get_offset(char *mensaje);
 int get_fd(char *mensaje);
 
-void manejo_conexiones_cpu()
+void manejo_conexion_cpu()
 {
 	//Seteo en 0 el master y temporal
 	FD_ZERO(&master);

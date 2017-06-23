@@ -37,7 +37,6 @@ t_list *global_fd;
 t_queue *cola_nuevos;
 t_queue *cola_listos;
 t_log *log;
-pthread_mutex_t mutex_planificador;
 pthread_mutex_t mutex_lista_cpus;
 pthread_mutex_t mutex_lista_consolas;
 pthread_mutex_t mutex_lista_ejecutando;
@@ -45,6 +44,7 @@ pthread_mutex_t mutex_lista_finalizados;
 pthread_mutex_t mutex_lista_bloqueados;
 pthread_mutex_t mutex_cola_nuevos;
 pthread_mutex_t mutex_cola_listos;
+int flag_planificador = 1;
 int ultimo_pid = 0;
 int tam_pagina = 0;
 
@@ -69,7 +69,7 @@ int main(int argc, char*argv[])
 	leer_configuracion();
 	crear_archivo_log("/home/utnso/log_kernel");
 
-	//leer_consola();
+	leer_consola();
 
 	crear_conexiones();
 	handshakearMemory();
@@ -92,7 +92,7 @@ void inciar_manejo_consolas()
 
 void inciar_manejo_cpus()
 {
-	manejo_conexiones_cpu();
+	manejo_conexion_cpu();
 }
 
 void inicializar_variables()
@@ -134,8 +134,6 @@ void handshakearFS()
 	char *mensaje = armar_mensaje("K03","");
 	enviar(config->cliente_fs, mensaje, &controlador);
 }
-//void liberar_lista_char()
-
 
 void crear_conexiones()
 {
@@ -148,7 +146,6 @@ void crear_conexiones()
 
 void inicializar_semaforos()
 {
-	pthread_mutex_init(&mutex_planificador,NULL);
 	pthread_mutex_init(&mutex_lista_cpus,NULL);
 	pthread_mutex_init(&mutex_lista_consolas,NULL);
 	pthread_mutex_init(&mutex_lista_ejecutando,NULL);
