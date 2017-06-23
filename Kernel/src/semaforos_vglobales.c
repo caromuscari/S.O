@@ -17,6 +17,9 @@ extern t_log *log;
 void inicializar_sems();
 void sem_wait(int, char *);
 void sem_signal(int, char *);
+void inicializar_vglobales();
+void lock_vglobal();
+void unlock_vglobal();
 
 void inicializar_sems()
 {
@@ -84,4 +87,19 @@ void sem_signal(int proceso, char *sema)
 	{
 		//eliminar el proceso, signal a semaforo invalido
 	}
+}
+
+void inicializar_vglobales()
+{
+
+}
+
+void lock_vglobal()
+{
+
+}
+
+void unlock_vglobal()
+{
+
 }

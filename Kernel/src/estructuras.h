@@ -156,4 +156,9 @@ typedef struct
 	int open;
 }t_TAG;
 
+typedef struct
+{
+	int value;
+	bool mutex_;
+}t_vglobal;
 #endif /* ESTRUCTURAS_H_ */

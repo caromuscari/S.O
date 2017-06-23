@@ -1,15 +1,10 @@
-/*
- * cpuManager.c
- *
- *  Created on: 16/4/2017
- *      Author: utnso
- */
 #include <pthread.h>
 #include <commons/log.h>
 #include <stdlib.h>
 #include <string.h>
 #include <commons/string.h>
 #include "manejo_errores.h"
+#include "fileSystem.h"
 #include "estructuras.h"
 #include "mensaje.h"
 #include "socket.h"
@@ -27,6 +22,10 @@ void realizar_handShake_cpu(int);
 void agregar_lista_cpu(int);
 int get_cpuId();
 void actualizar_pcb();
+void responder_solicitud_cpu(int socket_);
+t_program *programa_ejecutando(int socket_);
+int get_offset(char *mensaje);
+int get_fd(char *mensaje);
 
 void manejo_conexiones_cpu()
 {
@@ -82,11 +81,7 @@ void manejo_conexiones_cpu()
 					}
 					else
 					{
-						//Es una conexion existente, respondo a lo que me pide
-						//aqui deberia ir la funcion que tome el socket que me hablo y hacer algo
-						//clientHandler((int) i);
-						puts("alguien conectado me hablo y dijo:");
-						puts(recibir(i, &controlador_cpu));
+						responder_solicitud_cpu(i);
 					}
 				}
 			}
@@ -155,4 +150,72 @@ int get_cpuId()
 	}
 	list_iterate(list_cpus, (void*)_mayor);
 	return ultimo_id;
+}
+
+void responder_solicitud_cpu(int socket_)
+{
+	int controlador;
+	char *mensaje = recibir(socket_, &controlador);
+
+	if(controlador > 0)
+	{
+		//desconectar_consola(i);
+		FD_CLR(socket_, &master);
+	}
+	else if(comparar_header(mensaje, "P"))
+	{
+		t_program *prog = programa_ejecutando(socket_);
+		switch(get_codigo(mensaje)) {
+			case 2 :
+				abrir_crear(mensaje, prog, socket_);
+				break;
+			case 3 : ;
+				int offset = get_offset(mensaje);
+				int fd = get_fd(mensaje);
+				mover_puntero(socket_, offset, fd, prog);
+				break;
+			default : ;
+				//No se comprende el mensaje recibido por cpu
+				char *msj_unknow = "K08";
+				enviar(socket_, msj_unknow, &controlador);
+				//if (controlador > 0) desconectar_consola(socket_);
+		}
+	}else ; //emisor no reconocido
+}
+
+t_program *programa_ejecutando(int socket_)
+{
+	pthread_mutex_lock(&mutex_lista_cpus);
+	t_list *cpus_aux = list_cpus;
+	pthread_mutex_unlock(&mutex_lista_cpus);
+
+	bool _cpu_por_socket(t_cpu cpu)
+	{
+		return cpu.socket_cpu == socket_ ;
+	}
+
+	t_cpu *cpu_ejecutando = list_find(cpus_aux, (void *)_cpu_por_socket);
+
+	return cpu_ejecutando->program;
+}
+
+int get_fd(char *mensaje)
+{
+	char *payload = string_substring(mensaje, 0, 2);
+	int payload2 = atoi(payload);
+	free(payload);
+	return atoi(string_substring(mensaje, 3, payload2));
+}
+
+int get_offset(char *mensaje)
+{
+	char *payload = string_substring(mensaje, 0, 2);
+	int payload2 = atoi(payload);
+	char *payload3 = string_substring(mensaje, 2 + payload2, 4);
+	int payload4 = atoi (payload3);
+
+	free(payload);
+	free(payload3);
+
+	return atoi(string_substring(mensaje ,(2+payload2+4), payload4));
 }
