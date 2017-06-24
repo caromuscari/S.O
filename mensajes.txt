@@ -25,7 +25,8 @@ K12:Mensaje para crear archivo
 K13:Mensaje para borrar 
 K14:Mensaje para leer
 K15:Mensaje para escribir
-k16:Mensaje para enviar FD a CPU
+K16:Mensaje para enviar FD a CPU
+K17:Mensaje para enviar pid, páginas para código y páginas para stack
 
 CPU - P
 P00: me presento al mundo como una CPU
