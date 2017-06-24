@@ -12,6 +12,8 @@
 #include "socket.h"
 #include "log.h"
 
+extern int tam_pagina_memoria;
+
 t_dictionary* armarDiccionarioEtiquetas(char* etiquetas_serializadas){
 	t_dictionary* dicc = dictionary_create();
 	int n=0;
@@ -19,7 +21,6 @@ t_dictionary* armarDiccionarioEtiquetas(char* etiquetas_serializadas){
 	int desplazamiento = sizeof(int);
 	memcpy(&cantEtiquetas,etiquetas_serializadas+desplazamiento,sizeof(int));
 	desplazamiento += sizeof(int);
-
 
 	while(n<cantEtiquetas){
 
@@ -365,6 +366,10 @@ int buscar_offset_variable(t_list* vars,char id){
 	}
 	return retorno;
 
+}
+int calcular_pagina(int offset,int paginas){
+	int pagina= offset / tam_pagina_memoria;
+	return pagina+paginas;
 }
 void stack_destroy(t_stack_element *self) {
    list_clean_and_destroy_elements(self->args,(void *) t_memoria_destroy);

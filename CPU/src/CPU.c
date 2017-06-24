@@ -18,10 +18,16 @@ int puertoK,puertoM;
 char *ipK;
 char *ipM;
 int sockKerCPU;
+int sockMemCPU;
 int tam_pagina_memoria;
 t_PCB_CPU* pcb;
 char* programa;
-
+static const char* bobo_ansisop =
+		"begin\n"
+		"variables a\n"
+		"a = 2\n"
+		"end\n"
+		"\n";
 static const char* facil_ansisop =
 		"begin\n"
 		"variables a, b\n"
@@ -71,7 +77,8 @@ int main(int argc, char *argv[])
 	int chau = 0;
 	//char *programa =strdup(facil_ansisop);
 	//char *programa =strdup(otro_ansisop);
-	programa =strdup(con_funcion_ansisop);
+	//programa =strdup(con_funcion_ansisop);
+	programa = strdup(bobo_ansisop);
 	crear_archivo_log("/home/utnso/CPUlog");
 	leerArchivoConfiguracion(argv[1]);
 	int res = conexion_Kernel(puertoK, ipK);
@@ -81,7 +88,7 @@ int main(int argc, char *argv[])
 		chau=1;
 	}
 	//	conectarse con memoria
-	// conexion_Memoria(puertoM,ipM);
+	//conexion_Memoria(puertoM,ipM);
 	int controlador = 0;
 	while(chau!=1){
 		char *buff = malloc (13);
@@ -102,7 +109,7 @@ int main(int argc, char *argv[])
 			free(sizemensaje);
 			char *mensajeEntero = malloc(largomensaje);
 			recibir(sockKerCPU,&controlador,mensajeEntero,largomensaje);
-			printf("hola\n");
+			//printf("hola\n");
 			pcb = deserializarPCB_KerCPU(mensajeEntero);
 			procesar();
 
@@ -110,7 +117,7 @@ int main(int argc, char *argv[])
 
 
 	}
-printf("Me fui\n");
+//printf("Me fui\n");
 free(programa);
 free(ipK);free(ipM);
 
@@ -122,16 +129,18 @@ void leerArchivoConfiguracion(char* argv)
 
 	t_config *configuracion;
 	configuracion = config_create(argv);
-	ipK = malloc(10);
-	ipM = malloc(10);
+	//ipK = malloc(12);
+	//ipM = malloc(10);
 	if(config_has_property(configuracion,"PUERTO_KERNEL")&&
 			config_has_property(configuracion,"PUERTO_MEMORIA")&&
 			config_has_property(configuracion,"IP_KERNEL")&&
 			config_has_property(configuracion,"IP_MEMORIA")){
 	puertoK = config_get_int_value(configuracion, "PUERTO_KERNEL");
 	puertoM = config_get_int_value(configuracion, "PUERTO_MEMORIA");
-	strcpy(ipK, config_get_string_value(configuracion, "IP_KERNEL"));
-	strcpy(ipM, config_get_string_value(configuracion, "IP_MEMORIA"));
+	//strcpy(ipK, config_get_string_value(configuracion, "IP_KERNEL"));
+	//strcpy(ipM, config_get_string_value(configuracion, "IP_MEMORIA"));
+	ipK = strdup(config_get_string_value(configuracion, "IP_KERNEL"));
+	ipM = strdup(config_get_string_value(configuracion, "IP_MEMORIA"));
 
 	char * aux = string_from_format("archivo de configiguracion leido \n PUERTO_KERNEL:%d \n PUERTO_MEMORIA:%d \n IP_KERNEL:%s \n IP_MEMORIA:%s",puertoK,puertoM,ipK,ipM);
 	escribir_log(aux,1);
@@ -177,13 +186,13 @@ int conexion_Kernel(int puertoK, char* ipK) {
 }
 void conexion_Memoria(int puerto, char* ip) {
 	int controladorConexion = 0;
-	sockKerCPU = iniciar_socket_cliente(ip, puerto, &controladorConexion);
+	sockMemCPU = iniciar_socket_cliente(ip, puerto, &controladorConexion);
 	if (controladorConexion == 0) {
 		escribir_log("Exitos conectandose al Kernel", 1);
 	} else {
 		escribir_log(string_itoa(controladorConexion),2);
 	}
-	tam_pagina_memoria = handshakeMemoria(sockKerCPU);
+	tam_pagina_memoria = handshakeMemoria(sockMemCPU);
 }
 char* pedir_linea_memoria(){
 	//if (linea_esta_dividida() == TRUE){

@@ -15,6 +15,8 @@
 #include "log.h"
 
 extern t_PCB_CPU* pcb;
+extern int sockKerCPU;
+extern int sockMemCPU;
 extern int tam_pagina_memoria;
 int FD;
 
@@ -85,8 +87,36 @@ t_puntero obtenerPosicionVariable(t_nombre_variable identificador_variable) {
 }
 
 t_valor_variable dereferenciar(t_puntero direccion_variable) {
+
+	/*char * mensaje = malloc(sizeof(char)+2+4*sizeof(int));
+	char * pid; char * pagina; char *offset; char *tam;
+	char * aux_ceros;
+	int desplazamiento=0;
+	int controlador=0;
+	pid = string_itoa(pcb->PID);
+	pagina = string_itoa(calcular_pagina(direccion_variable,pcb->cant_pag));
+	offset = string_itoa(direccion_variable);
+	tam = strdup("0004");
+	memcpy(mensaje+desplazamiento,"P01",3);
+	desplazamiento += 3;
+	aux_ceros = string_repeat('0',4-strlen(pid));
+	memcpy(mensaje+desplazamiento,aux_ceros,4-strlen(pid));
+	free(aux_ceros);
+	desplazamiento += 4-strlen(pid);
+	memcpy(mensaje+desplazamiento,pid,strlen(pid));
+	desplazamiento += strlen(pid);
+	aux_ceros = string_repeat('0',4-strlen(pagina));
+	memcpy(mensaje+desplazamiento,aux_ceros,4-strlen(pagina));
+	free(aux_ceros);
+	desplazamiento += 4-strlen(pagina);
+	memcpy(mensaje+desplazamiento,pagina,strlen(pagina));
+	desplazamiento += strlen(pagina);
+	memcpy(mensaje+desplazamiento,tam,4);
+
+	enviar(sockMemCPU,mensaje,&controlador,19);*/
+
 	escribir_log("Ejecute dereferenciar",1);
-		return 0;
+		return 2;
 }
 
 void asignar(t_puntero direccion_variable, t_valor_variable valor) {
@@ -94,7 +124,7 @@ void asignar(t_puntero direccion_variable, t_valor_variable valor) {
 }
 
 t_valor_variable obtenerValorCompartida(t_nombre_compartida variable) {
-	escribir_log("Ejecute obtenerValorCompartida",1);
+	escribir_log("Ejecute ",1);
 		return 0;
 }
 
