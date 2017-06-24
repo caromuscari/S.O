@@ -10,13 +10,15 @@
 #include <string.h>
 #include <commons/collections/dictionary.h>
 #include <commons/log.h>
+#include <semaphore.h>
+#include <commons/string.h>
 #include "socket_client.h"
 #include "hilo_usuario.h"
+#include "hilo_programa.h"
 #include "estructuras.h"
 #include "log.h"
 #include "mensaje.h"
-#include <semaphore.h>
-#include <commons/string.h>
+
 
 extern int socket_;
 pthread_t hiloPrograma;
@@ -27,34 +29,35 @@ extern t_dictionary * impresiones;
 extern int tamAimprimir;
 extern sem_t semaforo;
 
+void escuchar_mensaje();
 
-void *programa (char* pid);
-
-void * escuchar_mensaje(){
+void escuchar_mensaje()
+{
 	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE,NULL);
 	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,NULL);
-	char * mensaje;
-	int mensaje2;
+	char *mensaje;
+	char *mensaje2;
 	int flag=0;
-	char* pid;
+	char *pid;
 	sem_init(&semaforo,0,1);
 	while(flag==0)
 	{
 		sem_wait(&semaforo);
-		t_chequeo * sema = malloc(sizeof(t_chequeo));
-		t_chequeo * smod = malloc(sizeof(t_chequeo));
-		t_impresiones * cant = malloc(sizeof(t_impresiones));
-		t_hilo * hilo = malloc(sizeof(t_hilo));
+		t_chequeo *sema = malloc(sizeof(t_chequeo));
+		t_chequeo *smod = malloc(sizeof(t_chequeo));
+		t_impresiones *cant = malloc(sizeof(t_impresiones));
+		t_hilo *hilo = malloc(sizeof(t_hilo));
 		mensaje=recibir(socket_,13);
 		mensaje2=get_codigo(mensaje);
-		switch(mensaje2)
+
+		switch(atoi(mensaje2))
 		{
 			case 4:
 				sema->valor=0;
 				cant->cantidad=0;
 				hilo->hilo= hiloPrograma;
 				pid=recibir(socket_,2);
-				pthread_create(&hiloPrograma, NULL, (void*) programa(pid), NULL);
+				pthread_create(&hiloPrograma, NULL, (void*) programa, pid);
 				escribir_log("Se inicio el programa");
 				dictionary_put(p_pid,pid,hilo);
 				dictionary_put(h_pid,string_itoa(hiloPrograma),pid);
@@ -75,9 +78,10 @@ void * escuchar_mensaje(){
 				free(hilo);
 				free(pid);
 				break;
-			case 9:
+			case 9: ;//no entiendo qué hace esto
 				pid=recibir(socket_,2);
-				tamAimprimir= get_payload(mensaje);
+				char *size = get_payload(mensaje);
+				tamAimprimir= atoi(size);
 				smod=dictionary_get(sem,pid);
 				smod->valor=1;
 				free(sema);
@@ -85,6 +89,7 @@ void * escuchar_mensaje(){
 				free(smod);
 				free(hilo);
 				free(pid);
+				//free(tamAimprimir);
 				break;
 			case 10:
 				pid=recibir(socket_,2);
@@ -107,6 +112,7 @@ void * escuchar_mensaje(){
 		}
 		sem_post(&semaforo);
 		free(mensaje);
+		free(mensaje2);
 	}
 
 }

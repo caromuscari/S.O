@@ -58,7 +58,7 @@ char *recibir(int socket_receptor,int tamanio)
 {
 	int ret;
 
-	char *buffer = malloc(tamanio);
+	char *buffer = malloc(sizeof(char) * tamanio);
 
 	if ((ret = recv(socket_receptor, buffer, tamanio, 0)) <= 0) {
 		printf("error receiving or connection lost \n");

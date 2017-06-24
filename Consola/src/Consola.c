@@ -31,7 +31,7 @@ pthread_t hiloUsuario;
 pthread_t hiloMensaje;
 char * identi;
 char *ingreso;
-t_log * log;
+t_log * log_;
 t_dictionary * p_pid;
 t_dictionary * h_pid;
 t_dictionary * sem;
@@ -44,7 +44,7 @@ int tamAimprimir;
 void leer_archivo_configuracion(char * ruta);
 void handshake(int socket_);
 void * hilousuario ();
-void * escuchar_mensaje();
+void escuchar_mensaje();
 
 int main(int argc, char * argv[]) {
 
@@ -82,7 +82,7 @@ void leer_archivo_configuracion(char * ruta)
 }
 
 void handshake(int socket_){
-	char *mensaje = strdup("");
+	char *mensaje;/* = strdup("");*/
 	char *mensaje_recibido= recibir(socket_, 13);
 
 	char *otro_aux = get_header(mensaje_recibido);
