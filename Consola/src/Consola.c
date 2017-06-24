@@ -17,6 +17,8 @@
 #include <commons/string.h>
 #include "estructuras.h"
 #include "socket_client.h"
+#include "escuchar_mensaje.h"
+#include "hilo_usuario.h"
 #include "parametros.h"
 #include "mensaje.h"
 #include "log.h"
@@ -51,7 +53,13 @@ int main(int argc, char * argv[]) {
 	crear_archivo_log("/home/utnso/log_consola.txt");
 	leer_archivo_configuracion(argv[1]);
 	socket_ = iniciar_socket_cliente(arch_config->ip, arch_config->puerto);
+
 	handshake(socket_);
+
+	printf("ingresar la ruta del programa: ");
+	scanf("%s",identi);
+	iniciar_programa(identi,socket_);
+
 	pthread_create(&hiloUsuario, NULL, (void*) hilousuario, NULL);
 	pthread_create(&hiloMensaje, NULL, (void*) escuchar_mensaje, NULL);
 	pthread_join(hiloUsuario, NULL);

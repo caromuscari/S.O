@@ -33,11 +33,12 @@ void *programa (char* pid);
 void * escuchar_mensaje(){
 	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE,NULL);
 	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,NULL);
-	char * mensaje=strdup("");
+	char * mensaje;
 	int mensaje2;
+	int flag=0;
 	char* pid;
 	sem_init(&semaforo,0,1);
-	while(1)
+	while(flag==0)
 	{
 		sem_wait(&semaforo);
 		t_chequeo * sema = malloc(sizeof(t_chequeo));
@@ -62,6 +63,8 @@ void * escuchar_mensaje(){
 				free(sema);
 				free(cant);
 				free(smod);
+				free(hilo);
+				free(pid);
 				break;
 			case 5:
 				printf("%s","no se pudo iniciar el programa");
@@ -69,6 +72,8 @@ void * escuchar_mensaje(){
 				free(sema);
 				free(cant);
 				free(smod);
+				free(hilo);
+				free(pid);
 				break;
 			case 9:
 				pid=recibir(socket_,2);
@@ -78,6 +83,8 @@ void * escuchar_mensaje(){
 				free(sema);
 				free(cant);
 				free(smod);
+				free(hilo);
+				free(pid);
 				break;
 			case 10:
 				pid=recibir(socket_,2);
@@ -85,16 +92,21 @@ void * escuchar_mensaje(){
 				free(sema);
 				free(cant);
 				free(smod);
+				free(hilo);
+				free(pid);
 				break;
 			default:
 				escribir_log("Mensaje incorrecto del Kernel");
+				flag=1;
 				free(sema);
 				free(cant);
 				free(smod);
+				free(hilo);
+				free(pid);
 				break;
 		}
 		sem_post(&semaforo);
+		free(mensaje);
 	}
 
-	free(mensaje);
 }

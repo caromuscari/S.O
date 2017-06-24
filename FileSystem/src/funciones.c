@@ -100,10 +100,13 @@ void obtener_datos(char *path, int offset, int size)
 	char *lectura2 = strdup(""); // no se si es necesario para seguir guardando lo que se lee
 	int restoSize; // lo que falta leer
 	t_arch *archivo; //guarda la info del archivo en gral
-	div_t bloque; //guarda los datos de la division para sacar los bloques y el offset
+	div_t bloque ; //guarda los datos de la division para sacar los bloques y el offset
 	int bloqueSig; // guarda el bloque al que hay que ir
+	char* pathArmado;
 
-	archivo = leer_archivo(path);
+	pathArmado = armar_path(path);
+
+	archivo = leer_archivo(pathArmado);
 	bloque = div(offset,tBloques);
 	bloqueSig = bloque.quot;
 
@@ -150,6 +153,7 @@ void obtener_datos(char *path, int offset, int size)
 	free(lectura);
 	free(lectura2);
 	free(archivo);
+	free(pathArmado);
 
 }
 
@@ -160,12 +164,16 @@ void guardar_datos(char *path, int offset, int size, char *buffer)
 	char *pathBloque;// para guardar los path hechos
 	FILE *bloques; //para abrir cada archivo de bloques
 	t_arch *archivo; //guarda la info del archivo en gral
-	div_t bloque; //guarda los datos de la division para sacar los bloques y el offset
+	div_t bloque ; //guarda los datos de la division para sacar los bloques y el offset
 	int bloqueSig; // guarda el bloque al que hay que ir
 	int guardado = 0;
 	char * bloques_agregados = strdup("");
+	char * pathArmado;
+	char * bloques_final;
 
-	archivo = leer_archivo(path);
+	pathArmado = armar_path(path);
+
+	archivo = leer_archivo(pathArmado);
 	bloque = div(offset,tBloques);
 	bloqueSig = bloque.quot;
 
@@ -179,7 +187,8 @@ void guardar_datos(char *path, int offset, int size, char *buffer)
 
 	}
 
-	else{
+	else
+	{
 		while(guardado < size)
 		{
 			if((size - guardado) <= (64-bloque.rem))
@@ -205,10 +214,12 @@ void guardar_datos(char *path, int offset, int size, char *buffer)
 			}
 
 		}
-		archivo->tamanio += size;
-		modificar_archivo(path,archivo->tamanio,bloques_agregados);
 
 	}
+
+	archivo->tamanio += size;
+	bloques_final = crear_string_bloques(archivo->bloques, bloques_agregados);
+	modificar_archivo(pathArmado,archivo->tamanio,bloques_final);
 
 
 	mensaje = armar_mensaje("F05","");
@@ -218,5 +229,7 @@ void guardar_datos(char *path, int offset, int size, char *buffer)
 	free(mensaje);
 	free(pathBloque);
 	free(archivo);
+	free(bloques_agregados);
+	free(pathArmado);
 
 }

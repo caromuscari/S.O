@@ -104,8 +104,8 @@ void* hilousuario ()
 }*/
 
 void iniciar_programa(char * ruta, int socket_){
-	char * mensaje_armado=strdup("");
-	char * mensaje=strdup("");
+	char * mensaje_armado;
+	char * mensaje;
 	mensaje = leer_archivo(ruta);
 	mensaje_armado= armar_mensaje("C01", mensaje);
 	enviar(socket_, mensaje_armado,string_length(mensaje_armado));
@@ -118,19 +118,24 @@ void iniciar_programa(char * ruta, int socket_){
 char * leer_archivo(char * ruta){
 	FILE* archivo;
 	long int final;
-	char * mensaje;
+	//char * mensaje;
 	char * mensaje2;
 	archivo = fopen(ruta,"r");
 	fseek( archivo, 0L, SEEK_END );
 	final = ftell( archivo );
 	fseek(archivo,0,0);
-	mensaje=string_new();
-	mensaje2=string_new();
-	while(!feof(archivo)){
-		fgets(mensaje,final,archivo);
-		string_append(&mensaje2,mensaje);
-	}
-	free(mensaje);
+	//mensaje=strdup("");
+	mensaje2=malloc(final); // NO lo probe
+
+	fread(mensaje2,sizeof(char),final,archivo);
+	//while(!feof(archivo)){
+
+		//fgets(mensaje,final,archivo);
+		//string_append(&mensaje2,mensaje);
+
+	//}
+
+	//free(mensaje);
 	fclose(archivo);
 	return mensaje2;
 }

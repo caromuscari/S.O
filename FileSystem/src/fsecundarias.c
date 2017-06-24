@@ -15,6 +15,7 @@
 
 extern t_bitarray * bitmap;
 extern char *montaje;
+extern t_dictionary * archivos;
 
 void armar_archivo(FILE * archivo)
 {
@@ -81,5 +82,38 @@ int agregar_bloque()
 
 void modificar_archivo(char* path, int tamanio, char* bloques)
 {
+	char* tamanio2 = strdup("");
+	char* bloques2 = strdup("");
+	t_config * archconf;
 
+	archconf = config_create(path);
+
+	string_append(&tamanio2,string_itoa(tamanio));
+	string_append(&tamanio2,"\n");
+
+	config_set_value(archconf,"TAMANIO", tamanio2);
+	config_set_value(archconf,"BLOQUES", bloques2);
+
+	config_save(archconf);
+
+	config_destroy(archconf);
+	free(tamanio2);
+
+}
+
+char * crear_string_bloques(char ** bloques, char * bloques_nuevos)
+{
+	char * bloque = strdup("");
+	int i = 0;
+
+	while(!strcmp(bloques[i], "]"))
+	{
+		string_append(&bloque,bloques[i]);
+		i++;
+	}
+
+	string_append(&bloque,bloques_nuevos);
+	string_append(&bloque,"]");
+
+	return bloque;
 }
