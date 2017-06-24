@@ -23,7 +23,6 @@ extern t_list *list_finalizados;
 extern t_list *list_bloqueados;
 extern t_queue *cola_nuevos;
 extern t_queue *cola_listos;
-extern pthread_mutex_t mutex_planificador;
 extern pthread_mutex_t mutex_lista_cpus;
 extern pthread_mutex_t mutex_lista_ejecutando;
 extern pthread_mutex_t mutex_lista_finalizados;
@@ -32,6 +31,7 @@ extern pthread_mutex_t mutex_cola_nuevos;
 extern pthread_mutex_t mutex_cola_listos;
 extern t_configuracion *config;
 extern int tam_pagina;
+extern int flag_planificador;
 int controlador;
 
 void finalizar_proceso(int pid, int codigo_finalizacion);
@@ -53,45 +53,45 @@ void programas_listos_A_ejecutar()
 
 	while(1)
 	{
-		pthread_mutex_lock(&mutex_planificador);
-
-		listos = queue_size(cola_listos);
-		cpus_disponibles = list_count_satisfying(list_cpus, (void*)_cpuLibre);
-
-		if((listos) && (cpus_disponibles))
+		if(flag_planificador)
 		{
-			pthread_mutex_lock(&mutex_cola_listos);
-			t_program *program = queue_pop(cola_listos);
-			pthread_mutex_unlock(&mutex_cola_listos);
+			listos = queue_size(cola_listos);
+			cpus_disponibles = list_count_satisfying(list_cpus, (void*)_cpuLibre);
 
-			pthread_mutex_lock(&mutex_lista_cpus);
-			t_cpu *cpu_disponible = list_remove_by_condition(list_cpus, (void*)_cpuLibre);
-			pthread_mutex_unlock(&mutex_lista_cpus);
-
-			char *pcb_serializado = serializarPCB_KerCPU(program->pcb,config->algoritmo,config->quantum,config->quantum_sleep,&tam_prog);
-			char *mensaje_env = armar_mensaje("K07", pcb_serializado);
-			enviar(cpu_disponible->socket_cpu, mensaje_env, &controlador);
-
-			if(controlador)
+			if((listos) && (cpus_disponibles))
 			{
-				free(cpu_disponible);
-			}
-			else
-			{
-				pthread_mutex_lock(&mutex_lista_ejecutando);
-				list_add(list_ejecutando, program);
-				pthread_mutex_unlock(&mutex_lista_ejecutando);
-
-				*cpu_disponible->ejecutando = true;
-				cpu_disponible->program = program;
+				pthread_mutex_lock(&mutex_cola_listos);
+				t_program *program = queue_pop(cola_listos);
+				pthread_mutex_unlock(&mutex_cola_listos);
 
 				pthread_mutex_lock(&mutex_lista_cpus);
-				list_add(list_cpus, cpu_disponible);
+				t_cpu *cpu_disponible = list_remove_by_condition(list_cpus, (void*)_cpuLibre);
 				pthread_mutex_unlock(&mutex_lista_cpus);
+
+				char *pcb_serializado = serializarPCB_KerCPU(program->pcb,config->algoritmo,config->quantum,config->quantum_sleep,&tam_prog);
+				//char *mensaje_env = armar_mensaje("K07", pcb_serializado);
+				char *mensaje_env = armar_mensaje_pcb("K07", pcb_serializado, tam_prog);
+				enviar(cpu_disponible->socket_cpu, mensaje_env, &controlador);
+
+				if(controlador)
+				{
+					free(cpu_disponible);
+				}
+				else
+				{
+					pthread_mutex_lock(&mutex_lista_ejecutando);
+					list_add(list_ejecutando, program);
+					pthread_mutex_unlock(&mutex_lista_ejecutando);
+
+					*cpu_disponible->ejecutando = true;
+					cpu_disponible->program = program;
+
+					pthread_mutex_lock(&mutex_lista_cpus);
+					list_add(list_cpus, cpu_disponible);
+					pthread_mutex_unlock(&mutex_lista_cpus);
+				}
 			}
 		}
-
-		pthread_mutex_unlock(&mutex_planificador);
 	}
 }
 

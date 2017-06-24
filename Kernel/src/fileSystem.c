@@ -32,9 +32,10 @@ void cerrar_file(t_list *tap, int fd);
 char *get_path_msg(char *mensaje, int *payload1);
 char *get_info(char *mensaje, int payload1, int tam_info);
 void abrir_crear(char *mensaje, t_program *prog, int socket_cpu);
-void escribir_archivo(int offset, char *info, char *flags, char *path);
+void escribir_archivo(int offset, char *info, char *flags, char *path, int socket_cpu);
 void chequear_respuesta(int socket_cpu, char *path, char *flag, t_program *prog);
 void crear_archivo(int socket_cpu, char *path, char *flag, t_program *prog);
+char *armar_info_mensaje(char *info, char* path);
 
 void crear_tabla_global()
 {
@@ -125,7 +126,7 @@ void pedido_lectura(t_program *prog, int fd, int offs, int size, char *path, int
 		if(string_contains(ap->flag,"r"))
 		{
 			int controlador;
-			char *path = get_path(ap->FD);
+		//	char *path = get_path(ap->FD);
 			char *mensaje = armar_mensaje("K14", path);
 			enviar(config->cliente_fs, mensaje, &controlador);
 			free(mensaje);
@@ -195,7 +196,7 @@ void mover_puntero(int socket_cpu, int offset, int fd, t_program *prog)
 				if (arch == NULL)
 				{
 					//hablar con lean
-				}else escribir_archivo(offset, info, arch->flag, path);
+				}else escribir_archivo(offset, info, arch->flag, path, socket_cpu);
 				free(info);
 				break;
 			case 6: ;//pedido de lectura
@@ -206,15 +207,30 @@ void mover_puntero(int socket_cpu, int offset, int fd, t_program *prog)
 	}
 }
 
-void escribir_archivo(int offset, char *info, char *flags, char *path)
+void escribir_archivo(int offset, char *info, char *flags, char *path, int socket_cpu)
 {
 	if (string_contains(flags, "w"))
 	{
-		//char *mensaje = strdup("");
-		//hay que armar la forma para enviar
-		//enviar a file para que escriba archivo
-		//esperar respuesta de ok
-	}else ; //hablar con Lean
+		int controlador;
+		char *mensaje = armar_info_mensaje(info, path);
+		char *mensaje_enviar = armar_mensaje("K15", mensaje);
+		enviar(config->cliente_fs, mensaje_enviar, &controlador);
+
+		char *mensaje_recibido = recibir(config->cliente_fs, &controlador);
+		if(comparar_header(mensaje,"F"))
+		{
+			if(get_codigo(mensaje) == 5)
+			{
+				/*char *mensaje_leido = get_mensaje(mensaje_recibido);
+				enviar(socket_cpu, mensaje_leido, &controlador);*/
+			}
+		}
+		free(mensaje_recibido);
+
+
+
+		free(mensaje);
+	}else ;
 }
 
 bool existe_archivo(t_list *tap, int fd)
@@ -302,4 +318,22 @@ void chequear_respuesta(int socket_cpu, char *path, char *flag, t_program *prog)
 		}
 	}else; //cerrar conexión
 	free(mensaje_recibido);
+}
+
+char *armar_info_mensaje(char *info, char* path)
+{
+	char *payload_char = string_itoa(string_length(info));
+	int size_payload = string_length(payload_char);
+	char *primera_parte = string_repeat('0', 4 - size_payload);
+
+	char *payload_char2 = string_itoa(string_length(path));
+	int size_payload2 = string_length(payload_char2);
+	char *segunda_parte = string_repeat('0', 4 - size_payload2);
+
+	char *mensaje = strdup("");
+
+	string_append(&mensaje, primera_parte);
+	string_append(&mensaje, segunda_parte);
+
+	return mensaje;
 }
