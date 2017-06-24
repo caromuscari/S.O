@@ -38,6 +38,7 @@ t_queue *cola_nuevos;
 t_queue *cola_listos;
 t_log *log;
 pthread_mutex_t mutex_lista_cpus;
+pthread_mutex_t mutex_lista_fs;
 pthread_mutex_t mutex_lista_consolas;
 pthread_mutex_t mutex_lista_ejecutando;
 pthread_mutex_t mutex_lista_finalizados;
@@ -69,11 +70,11 @@ int main(int argc, char*argv[])
 	leer_configuracion();
 	crear_archivo_log("/home/utnso/log_kernel");
 
-	leer_consola();
+	//leer_consola();
 
 	crear_conexiones();
 	handshakearMemory();
-	handshakearFS();
+	//handshakearFS();
 
 	pthread_create(&hiloConsolaConsola, NULL, (void*)inciar_manejo_consolas, NULL);
 	pthread_create(&hiloConsolaCPU, NULL, (void*)inciar_manejo_cpus, NULL);
@@ -153,4 +154,5 @@ void inicializar_semaforos()
 	pthread_mutex_init(&mutex_lista_bloqueados,NULL);
 	pthread_mutex_init(&mutex_cola_nuevos,NULL);
 	pthread_mutex_init(&mutex_cola_listos,NULL);
+	pthread_mutex_init(&mutex_lista_fs,NULL);
 }

@@ -12,6 +12,7 @@
 #include <commons/collections/queue.h>
 #include <pthread.h>
 #include "estructuras.h"
+#include "planificador.h"
 #include "configuracion.h"
 #include "socket.h"
 #include "log.h"
@@ -19,8 +20,10 @@
 extern t_list *list_ejecutando;
 extern t_list *list_finalizados;
 extern t_list *list_bloqueados;
+extern t_list *global_fd;
 extern t_queue *cola_nuevos;
 extern t_queue *cola_listos;
+extern pthread_mutex_t mutex_lista_fs;
 extern pthread_mutex_t mutex_lista_ejecutando;
 extern pthread_mutex_t mutex_lista_finalizados;
 extern pthread_mutex_t mutex_lista_bloqueados;
@@ -35,6 +38,7 @@ void imprimir_menu();
 void mostrar_cola(t_queue *, char *);
 void mostrar_listas(t_list *, char *);
 void obtener_informacion(int pid);
+void imprimir_tabla_archivos();
 
 void leer_consola()
 {
@@ -61,16 +65,21 @@ void leer_consola()
 				scanf("%s", input2);
 
 				if((atoi(input2) > 0) && (atoi(input2) < 7))
-					generar_listados(atoi(input2));
+				{
+					int number = atoi(input2);
+					generar_listados(number);
+				}
 				else
 					printf("No se ingreso un numero valido\n");
 				break;
 			case 2 :
 				printf("Indique el PID del proceso a consultar: ");
 				scanf("%s", input2);
-				obtener_informacion(atoi(input2));
+				int number = atoi(input2);
+				obtener_informacion(number);
 				break;
 			case 3 :
+				imprimir_tabla_archivos();
 				break;
 			case 4 :
 				printf("Indique el nuevo grado de multiprogramacion: ");
@@ -78,10 +87,11 @@ void leer_consola()
 				int grado = atoi(input2);
 				config->grado_multiprog = grado;
 				break;
-			case 5 :
+			case 5 : ;
 				printf("Indique el PID del proceso a finalizar: ");
 				scanf("%s", input2);
-				forzar_finalizacion(atoi(input2), 0, 0);
+				int numberKill = atoi(input2);
+				forzar_finalizacion(numberKill, 0, 0);
 				//falta algun tipo de chequeo por si el numero que puso no existe!!!
 				break;
 			case 6 : ;
@@ -177,9 +187,9 @@ void obtener_informacion(int pid)
 {
 	char *lista;
 	int encontrado = 0;
-	t_list *lst_nuevos;
-	t_list *lst_listos;
 	t_program *found;
+	t_list *lst_nuevos = list_create();
+	t_list *lst_listos = list_create();
 
 	void _buscar_program(t_program *pr)
 	{
@@ -245,11 +255,24 @@ void obtener_informacion(int pid)
 	{
 		printf("Id Proceso: %i\n", found->PID);
 		printf("Id Consola: %i\n", found->CID);
-		printf("Status de proceso: %c\n", lista);
+		printf("Status de proceso: %s\n", lista);
 		printf("Cantidad de allocations: %i\n", found->allocs);
 		printf("Cantidad de frees: %i\n", found->frees);
 		printf("Cantidad de Syscalls: %i\n", found->syscall);
 	}
+}
+
+void imprimir_tabla_archivos()
+{
+	void _imprimir(t_TAG *tg)
+	{
+		printf("Archivo: %s\n", tg->path);
+		printf("Open: %i\n\n", tg->open);
+	}
+
+	pthread_mutex_lock(&mutex_lista_fs);
+	list_iterate(global_fd, (void*)_imprimir);
+	pthread_mutex_unlock(&mutex_lista_fs);
 }
 
 void imprimir_menu()

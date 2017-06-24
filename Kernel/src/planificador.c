@@ -69,7 +69,8 @@ void programas_listos_A_ejecutar()
 				pthread_mutex_unlock(&mutex_lista_cpus);
 
 				char *pcb_serializado = serializarPCB_KerCPU(program->pcb,config->algoritmo,config->quantum,config->quantum_sleep,&tam_prog);
-				char *mensaje_env = armar_mensaje("K07", pcb_serializado);
+				//char *mensaje_env = armar_mensaje("K07", pcb_serializado);
+				char *mensaje_env = armar_mensaje_pcb("K07", pcb_serializado, tam_prog);
 				enviar(cpu_disponible->socket_cpu, mensaje_env, &controlador);
 
 				if(controlador)
