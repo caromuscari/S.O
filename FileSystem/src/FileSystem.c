@@ -49,6 +49,7 @@ int main(int argc, char *argv[])
 {
 	int metadata;
 	int bitmap;
+	int flag = 0;
 
 	reservar_memoria();
 	archivoDeCofiguracion(argv[1]);
@@ -64,9 +65,9 @@ int main(int argc, char *argv[])
 
 	handshake1();
 
-	while(1)
+	while(flag == 0)
 	{
-		char *mensaje = strdup("");
+		char *mensaje; //saque el strdup
 		int codigo;
 		char * mensaje2 = strdup("");
 		char **parametros;
@@ -105,6 +106,8 @@ int main(int argc, char *argv[])
 				break;
 			default:
 				escribir_log("Mensaje incorrecto");
+				flag =1;
+				break;
 
 		}
 		free(mensaje);
@@ -120,9 +123,9 @@ int main(int argc, char *argv[])
 
 void handshake1()
 {
-	char *handshake = strdup("");
+	char *handshake;//saque el strdup
 	int esKernel=0;
-	char *mensaje = strdup("");
+	char *mensaje; //saque el strdup
 	while(esKernel == 0)
 	{
 		int cliente = escuchar_conexiones(socketfs,&flagsocket);
@@ -137,10 +140,10 @@ void handshake1()
 			printf("intruso no kernel eliminado \n");
 			escribir_log("Proceso no Kernel eliminado");
 		}
+		free(handshake);
 	}
 	printf("KERNEL CONECTADO \n");
 	escribir_log("Se conecto el Kernel");
-	free(handshake);
 }
 
 void reservar_memoria()
@@ -149,7 +152,7 @@ void reservar_memoria()
 	ip = strdup("");
 	magic_number = strdup("");
 	crear_archivo_log("/home/utnso/log_fs.txt");
-	archivos = dictionary_create();
+	//archivos = dictionary_create();
 }
 
 void liberar_memoria()
@@ -158,8 +161,8 @@ void liberar_memoria()
 	free(ip);
 	free(magic_number);
 	munmap(&mystat,mystat.st_size);
-	dictionary_clean(archivos);
-	dictionary_destroy(archivos);
+	//dictionary_clean(archivos);
+	//dictionary_destroy(archivos);
 	liberar_log();
 }
 

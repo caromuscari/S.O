@@ -24,13 +24,13 @@
 extern int tBloques;
 extern int socketfs;
 extern int flagsocket;
-extern t_dictionary * archivos;
+//extern t_dictionary * archivos;
 
 
 void validar_archivo(char *mensaje)
 {
 	FILE * archivo;
-	char * mensaje2 = strdup("");
+	char * mensaje2;
 	char *pathArmado;
 
 	pathArmado = armar_path(mensaje);
@@ -43,7 +43,7 @@ void validar_archivo(char *mensaje)
 	else {
 		mensaje2 = armar_mensaje("F01","ok");
 		enviar(socketfs,mensaje2,&flagsocket);
-		dictionary_put(archivos,pathArmado,archivo);
+		//dictionary_put(archivos,pathArmado,archivo);
 	}
 
 	free(mensaje2);
@@ -53,7 +53,7 @@ void validar_archivo(char *mensaje)
 void crear_archivo(char *mensaje)
 {
 	FILE *archivo;
-	char *mensaje2 = strdup("");
+	char *mensaje2;
 	char *pathArmado;
 
 	pathArmado = armar_path(mensaje);
@@ -77,7 +77,7 @@ void crear_archivo(char *mensaje)
 void borrar_archivo(char *mensaje)
 {
 	char *pathArmado;
-	char *mensaje2 =strdup("");
+	char *mensaje2;
 
 	pathArmado = armar_path(mensaje);
 
@@ -92,12 +92,12 @@ void borrar_archivo(char *mensaje)
 
 void obtener_datos(char *path, int offset, int size)
 {
-	char *mensaje =strdup(""); // para enviar los datos
+	char *mensaje; // para enviar los datos
 	char *path2 = "/mnt/FS_SADICA/Bloques/"; //para sacar cada path de bloques
 	char *pathBloque;// para guardar los path hechos
 	FILE *bloques; //para abrir cada archivo de bloques
 	char *lectura=strdup(""); // para guardar lo que se lee
-	char *lectura2 = strdup(""); // no se si es necesario para seguir guardando lo que se lee
+	//char *lectura2 = strdup(""); // no se si es necesario para seguir guardando lo que se lee
 	int restoSize; // lo que falta leer
 	t_arch *archivo; //guarda la info del archivo en gral
 	div_t bloque ; //guarda los datos de la division para sacar los bloques y el offset
@@ -120,19 +120,23 @@ void obtener_datos(char *path, int offset, int size)
 	{
 		if(restoSize <= 64-bloque.rem)
 		{
-			while(!feof(bloques))
+			fread(lectura,sizeof(char),restoSize,bloques);
+			/*while(!feof(bloques))
 			{
 				fgets(lectura2,restoSize,bloques);
 				string_append(&lectura,lectura2);
-			}
+			}*/
 
 		} // preguntar estructura de los bloques.bin
 		else{
-			while(!feof(bloques))
+			/*while(!feof(bloques))
 			{
 				fgets(lectura2,64-bloque.rem,bloques);
 				string_append(&lectura,lectura2);
-			}
+			}*/
+
+			fread(lectura,sizeof(char),restoSize,bloques);
+
 			fclose(bloques);
 
 			restoSize = size - string_length(lectura);
@@ -151,7 +155,7 @@ void obtener_datos(char *path, int offset, int size)
 	free(mensaje);
 	free(pathBloque);
 	free(lectura);
-	free(lectura2);
+	//free(lectura2);
 	free(archivo);
 	free(pathArmado);
 
@@ -159,7 +163,7 @@ void obtener_datos(char *path, int offset, int size)
 
 void guardar_datos(char *path, int offset, int size, char *buffer)
 {
-	char *mensaje =strdup(""); // para enviar los datos
+	char *mensaje; // para enviar los datos
 	char *path2 = "/mnt/FS_SADICA/Bloques/"; //para sacar cada path de bloques
 	char *pathBloque;// para guardar los path hechos
 	FILE *bloques; //para abrir cada archivo de bloques
@@ -193,8 +197,8 @@ void guardar_datos(char *path, int offset, int size, char *buffer)
 		{
 			if((size - guardado) <= (64-bloque.rem))
 			{
-				fputs(string_substring(buffer,guardado,64-bloque.rem),bloques);
-				guardado = size - guardado;
+				fputs(string_substring(buffer,guardado,size - guardado),bloques);
+				guardado = size;
 
 			} // preguntar estructura de los bloques.bin
 			else
@@ -217,7 +221,7 @@ void guardar_datos(char *path, int offset, int size, char *buffer)
 
 	}
 
-	archivo->tamanio += size;
+	archivo->tamanio += size; //averiguar si es adentro o afuera del primer if
 	bloques_final = crear_string_bloques(archivo->bloques, bloques_agregados);
 	modificar_archivo(pathArmado,archivo->tamanio,bloques_final);
 

@@ -12,22 +12,18 @@
 #include "estructuras.h"
 #include <commons/bitarray.h>
 #include <commons/config.h>
+#include "fsecundarias.h"
 
 extern t_bitarray * bitmap;
 extern char *montaje;
-extern t_dictionary * archivos;
 
 void armar_archivo(FILE * archivo)
 {
 	char * tamanio = "TAMANIO=0\n";
 	char * bloques =strdup("");
-	int bit = 0;
-	bool comprobar;
-	while(comprobar == false){
-		bit++;
-		comprobar = bitarray_test_bit(bitmap,bit);
-	}
-	bitarray_set_bit(bitmap,bit);
+	int bit;
+	bit = agregar_bloque();
+
 	string_append(&bloques, "BLOQUES=[");
 	string_append(&bloques, string_itoa(bit));
 	string_append(&bloques, "]");

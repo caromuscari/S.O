@@ -43,7 +43,7 @@ void archivoDeCofiguracion(char* argv)
 	config_destroy(configuracion);
 }
 
-int leer_metadata()
+int leer_metadata() //preguntar si se puede hacer como archivo de configuracion
 {
 	char *ruta = strdup("");
 	char *mensaje = strdup("");
