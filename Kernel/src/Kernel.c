@@ -55,49 +55,47 @@ void handshakearFS();
 void handshakearMemory();
 void crear_conexiones();
 void inicializar_semaforos();
-void inciar_manejo_consolas();
-void inciar_manejo_cpus();
+void programas_listos_A_ejecutar();
+void programas_nuevos_A_listos();
+void manejo_conexiones_consolas();
+void manejo_conexion_cpu();
 
 int main(int argc, char*argv[])
 {
 	pthread_t hiloConsolaConsola;
 	pthread_t hiloConsolaCPU;
+	pthread_t hiloNuevos;
+	pthread_t hiloListos;
 
 	ruta_config = strdup(argv[1]);
 
+	crear_archivo_log("/home/utnso/log_kernel");
 	inicializar_variables();
 	inicializar_semaforos();
 	leer_configuracion();
-	crear_archivo_log("/home/utnso/log_kernel");
 
 	//leer_consola();
-
 	crear_conexiones();
-	handshakearMemory();
+	//handshakearMemory();
 	//handshakearFS();
 
-	pthread_create(&hiloConsolaConsola, NULL, (void*)inciar_manejo_consolas, NULL);
-	pthread_create(&hiloConsolaCPU, NULL, (void*)inciar_manejo_cpus, NULL);
+	pthread_create(&hiloConsolaConsola, NULL, (void*)manejo_conexiones_consolas, NULL);
+	pthread_create(&hiloConsolaCPU, NULL, (void*)manejo_conexion_cpu, NULL);
+	pthread_create(&hiloNuevos, NULL, (void*)programas_nuevos_A_listos, NULL);
+	pthread_create(&hiloListos, NULL, (void*)programas_listos_A_ejecutar, NULL);
 
 	pthread_join(hiloConsolaConsola, NULL);
 	pthread_join(hiloConsolaCPU, NULL);
+	pthread_join(hiloNuevos, NULL);
+	pthread_join(hiloListos, NULL);
 
 	liberar_memoria();
 	return EXIT_SUCCESS;
 }
 
-void inciar_manejo_consolas()
-{
-	manejo_conexiones_consolas();
-}
-
-void inciar_manejo_cpus()
-{
-	manejo_conexion_cpu();
-}
-
 void inicializar_variables()
 {
+	escribir_log("Inicializar variables");
 	config = malloc(sizeof(t_configuracion));
 	config->algoritmo = strdup("");
 	config->ip_fs = strdup("");
@@ -117,6 +115,7 @@ void inicializar_variables()
 
 void liberar_memoria()
 {
+	escribir_log("Liberando memoria");
 	free(config->algoritmo);
 	free(config->ip_fs);
 	free(config->ip_memoria);
@@ -131,6 +130,7 @@ void liberar_memoria()
 
 void handshakearFS()
 {
+	escribir_log("Realizando handshake con FS");
 	int controlador = 0;
 	char *mensaje = armar_mensaje("K03","");
 	enviar(config->cliente_fs, mensaje, &controlador);
@@ -139,14 +139,19 @@ void handshakearFS()
 void crear_conexiones()
 {
 	int controlador = 0;
+	escribir_log("Creando server Kernel - Cpu");
 	config->server_cpu = iniciar_socket_server(config->ip_kernel, config->puerto_cpu, &controlador);
+	escribir_log("Creando server Kernel - Consola");
 	config->server_consola = iniciar_socket_server(config->ip_kernel, config->puerto_prog, &controlador);
-	config->cliente_fs = iniciar_socket_cliente(config->ip_fs, config->puerto_fs, &controlador);
-	config->cliente_memoria = iniciar_socket_cliente(config->ip_memoria, config->puerto_memoria, &controlador);
+	//escribir_log("Conectando con FS");
+	//config->cliente_fs = iniciar_socket_cliente(config->ip_fs, config->puerto_fs, &controlador);
+	//escribir_log("Conectando con Memoria");
+	//config->cliente_memoria = iniciar_socket_cliente(config->ip_memoria, config->puerto_memoria, &controlador);
 }
 
 void inicializar_semaforos()
 {
+	escribir_log("Inicializando semaforos");
 	pthread_mutex_init(&mutex_lista_cpus,NULL);
 	pthread_mutex_init(&mutex_lista_consolas,NULL);
 	pthread_mutex_init(&mutex_lista_ejecutando,NULL);

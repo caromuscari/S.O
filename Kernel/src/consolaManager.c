@@ -15,6 +15,7 @@
 #include "estructuras.h"
 #include "manejo_errores.h"
 #include "socket.h"
+#include "log.h"
 
 extern t_configuracion *config;
 extern t_list *list_consolas;
@@ -23,7 +24,7 @@ extern pthread_mutex_t mutex_lista_consolas;
 fd_set master;
 fd_set read_fds;
 int fdmax;
-int controlador;
+int controlador = 0;
 extern int ultimo_pid;
 
 void realizar_handShake_consola(int nuevo_socket);
@@ -35,6 +36,7 @@ int buscar_consola(int socket);
 
 void manejo_conexiones_consolas()
 {
+	escribir_log("Iniciando administrador de consolas");
 	//Seteo en 0 el master y temporal
 	FD_ZERO(&master);
 	FD_ZERO(&read_fds);
@@ -51,10 +53,12 @@ void manejo_conexiones_consolas()
 		read_fds = master;
 
 		int selectResult = select(fdmax + 1, &read_fds, NULL, NULL, NULL);
+		escribir_log("Actividad detectada en administrador de consolas");
 
 		if (selectResult == -1)
 		{
 			break;
+			escribir_error_log("Error en el administrador de consolas");
 		}
 		else
 		{
@@ -68,6 +72,7 @@ void manejo_conexiones_consolas()
 					if (i == config->server_consola)
 					{
 						//Gestiono la conexion entrante
+						escribir_log("Se detecto actividad en el server consola");
 						int nuevo_socket = aceptar_conexion(config->server_consola, &controlador);
 
 						//Controlo que no haya pasado nada raro y acepto al nuevo
@@ -91,6 +96,7 @@ void manejo_conexiones_consolas()
 
 						if(controlador > 0)
 						{
+							escribir_log("Se eliminara una consola que se desconecto");
 							desconectar_consola(i);
 							FD_CLR(i, &master);
 						}
@@ -112,18 +118,25 @@ void realizar_handShake_consola(int nuevo_socket)
 	enviar(nuevo_socket, mensaje, &controlador);
 
 	if (controlador > 0)
+	{
 		cerrar_conexion(nuevo_socket);
+		escribir_error_log("Fallo el Handshake con el administrador consola");
+	}
 	else
 	{
 		char *respuesta = recibir(nuevo_socket, &controlador);
 
 		if (controlador > 0)
+		{
 			cerrar_conexion(nuevo_socket);
+			escribir_error_log("Fallo el Handshake con el administrador consola");
+		}
 		else
 		{
 			//Aca deberia ir la validacion si el mensaje corresponde a una consola
 			if(comparar_header("C", respuesta))
 			{
+				escribir_log("Se ha conectado una nueva consola");
 				//Es una Consola, se puede agregar
 				t_consola *nueva_consola = malloc(sizeof(t_consola));
 				nueva_consola->socket = nuevo_socket;
@@ -136,6 +149,7 @@ void realizar_handShake_consola(int nuevo_socket)
 			else
 			{
 				//El recien conectado NO corresponde a una consola
+				escribir_log("El administrador de consola rechazo una conexion");
 				char *mensaje = "Perdon no sos una Consola, Chau!";
 				enviar(nuevo_socket, mensaje, &controlador);
 				cerrar_conexion(nuevo_socket);
@@ -163,9 +177,11 @@ void responder_solicitud(int socket, char *mensaje)
 {
 	switch(get_codigo(mensaje)) {
 		case 1 :
+			escribir_log("Llego una solicitud de inicio de programa");
 			responder_peticion_prog(socket, mensaje);
 			break;
 		case 2 : ;
+			escribir_log("Llego una solicitud de finalizacion de programa");
 			int pid = atoi(get_mensaje(mensaje));
 			forzar_finalizacion(pid, 0, 0);
 			break;
@@ -175,6 +191,7 @@ void responder_solicitud(int socket, char *mensaje)
 			desconectar_consola(socket);
 			break;
 		default : ;
+			escribir_log("El administrador de consola recibio un mensaje desconocido");
 			//No se comprende el mensaje recibido por consola
 			char *msj_unknow = "K08";
 			enviar(socket, msj_unknow, &controlador);
@@ -214,10 +231,12 @@ void responder_peticion_prog(int socket, char *mensaje)
 
 	if(codigo_m == 3)
 	{
+		escribir_log("No se puede guardar codigo en memoria");
 		enviar(socket, "K05", &controlador);
 	}
 	else
 	{
+		escribir_log("Se puede guardar codigo en memoria");
 		ultimo_pid ++;
 		int consola = buscar_consola(socket);
 		agregar_nueva_prog(consola, ultimo_pid, mensaje);

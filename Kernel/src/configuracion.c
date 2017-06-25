@@ -5,6 +5,7 @@
 #include <commons/config.h>
 #include <commons/string.h>
 #include "estructuras.h"
+#include "log.h"
 
 extern char *ruta_config;
 extern t_configuracion *config;
@@ -14,6 +15,7 @@ extern char *shared;
 
 void leer_configuracion()
 {
+	escribir_log("Leyendo configuracion");
 	char *ruta_aux = strdup(ruta_config);
 	t_config *configuracion = config_create(ruta_aux);
 

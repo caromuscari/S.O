@@ -8,6 +8,7 @@
 #include "estructuras.h"
 #include "mensaje.h"
 #include "socket.h"
+#include "log.h"
 
 extern t_configuracion *config;
 extern t_list *list_cpus;
@@ -22,14 +23,16 @@ void realizar_handShake_cpu(int);
 void agregar_lista_cpu(int);
 int get_cpuId();
 void actualizar_pcb();
-void responder_solicitud_cpu(int socket_);
+void responder_solicitud_cpu(int socket_, char *mensaje);
 t_program *programa_ejecutando(int socket_);
 int get_offset(char *mensaje);
 int get_fd(char *mensaje);
 
 void manejo_conexion_cpu()
 {
+	escribir_log("Iniciando administrador de CPUs");
 	//Seteo en 0 el master y temporal
+	//
 	FD_ZERO(&master);
 	FD_ZERO(&read_fds);
 
@@ -45,10 +48,12 @@ void manejo_conexion_cpu()
 		read_fds = master;
 
 		int selectResult = select(fdmax + 1, &read_fds, NULL, NULL, NULL);
+		escribir_log("Actividad detectada en administrador de CPUs");
 
 		if (selectResult == -1)
 		{
 			break;
+			escribir_error_log("Error en el administrador de CPUs");
 		}
 		else
 		{
@@ -62,7 +67,7 @@ void manejo_conexion_cpu()
 					if (i == config->server_cpu)
 					{
 						//Gestiono la conexion entrante
-
+						escribir_log("Se detecto actividad en el server CPU");
 						int nuevo_socket = aceptar_conexion(config->server_cpu, &controlador_cpu);
 
 						//Controlo que no haya pasado nada raro y acepto al nuevo
@@ -81,7 +86,19 @@ void manejo_conexion_cpu()
 					}
 					else
 					{
-						responder_solicitud_cpu(i);
+						//Es una conexion existente, respondo a lo que me pide
+						char *mensaje_recibido = recibir(i, &controlador_cpu);
+
+						if(controlador_cpu > 0)
+						{
+							escribir_log("Se eliminara una CPU que se desconecto");
+							FD_CLR(i, &master);
+						}
+						else
+						{
+							responder_solicitud_cpu(i, mensaje_recibido);
+						}
+
 					}
 				}
 			}
@@ -96,21 +113,31 @@ void realizar_handShake_cpu(int nuevo_socket)
 	enviar(nuevo_socket, mensaje, &controlador_cpu);
 
 	if (controlador_cpu > 0)
+	{
 		cerrar_conexion(nuevo_socket);
+		escribir_error_log("Fallo el Handshake con el administrador CPU");
+	}
 	else
 	{
 		char *respuesta = recibir(nuevo_socket, &controlador_cpu);
 
 		if (controlador_cpu > 0)
+		{
 			cerrar_conexion(nuevo_socket);
+			escribir_error_log("Fallo el Handshake con el administrador CPU");
+		}
 		else
 		{
 			//Aca deberia ir la validacion si el mensaje corresponde a cpu
 			if(comparar_header("P", respuesta))
+			{
+				escribir_log("Se ha conectado una nueva CPU");
 				agregar_lista_cpu(nuevo_socket);
+			}
 			else
 			{
 				//El recien conectado NO corresponde a una CPU
+				escribir_log("El administrador de CPUs rechazo una conexion");
 				char *mensaje = "Perdon no sos una CPU, Chau!";
 				enviar(nuevo_socket, mensaje, &controlador_cpu);
 				cerrar_conexion(nuevo_socket);
@@ -152,35 +179,32 @@ int get_cpuId()
 	return ultimo_id;
 }
 
-void responder_solicitud_cpu(int socket_)
+void responder_solicitud_cpu(int socket_, char *mensaje)
 {
-	int controlador;
-	char *mensaje = recibir(socket_, &controlador);
-
-	if(controlador > 0)
-	{
-		//desconectar_consola(i);
-		FD_CLR(socket_, &master);
-	}
-	else if(comparar_header(mensaje, "P"))
+	if(comparar_header(mensaje, "P"))
 	{
 		t_program *prog = programa_ejecutando(socket_);
+
 		switch(get_codigo(mensaje)) {
 			case 2 :
+				escribir_log("Se recibio una peticion de CPU de abrir crear");
 				abrir_crear(mensaje, prog, socket_);
 				break;
 			case 3 : ;
+				escribir_log("Se recibio una peticion de CPU de mover puntero");
 				int offset = get_offset(mensaje);
 				int fd = get_fd(mensaje);
 				mover_puntero(socket_, offset, fd, prog);
 				break;
 			default : ;
 				//No se comprende el mensaje recibido por cpu
+				escribir_error_log("Se recibio una peticion de CPU desconocida");
 				char *msj_unknow = "K08";
-				enviar(socket_, msj_unknow, &controlador);
+				enviar(socket_, msj_unknow, &controlador_cpu);
 				//if (controlador > 0) desconectar_consola(socket_);
 		}
-	}else ; //emisor no reconocido
+	}else
+		escribir_error_log("No se reconocio el mensaje de CPU"); //emisor no reconocido
 }
 
 t_program *programa_ejecutando(int socket_)
@@ -189,13 +213,12 @@ t_program *programa_ejecutando(int socket_)
 	t_list *cpus_aux = list_cpus;
 	pthread_mutex_unlock(&mutex_lista_cpus);
 
-	bool _cpu_por_socket(t_cpu cpu)
+	bool _cpu_por_socket(t_cpu *cpu)
 	{
-		return cpu.socket_cpu == socket_ ;
+		return !(cpu->socket_cpu == socket_);
 	}
 
 	t_cpu *cpu_ejecutando = list_find(cpus_aux, (void *)_cpu_por_socket);
-
 	return cpu_ejecutando->program;
 }
 
