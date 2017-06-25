@@ -42,7 +42,7 @@ int flag;
 
 void leer_archivo_configuracion(char * ruta);
 void handshake(int socket_);
-void * hilousuario ();
+void hilousuario ();
 void escuchar_mensaje();
 
 int main(int argc, char * argv[]) {

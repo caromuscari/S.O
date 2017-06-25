@@ -32,13 +32,16 @@ void programa (char* pid)
 	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE,NULL);
 	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,NULL);
 	char * mensaje;
-	t_chequeo * semp /*= malloc(sizeof(t_chequeo))*/;
-	t_impresiones * impresiones2 /*= malloc(sizeof(t_impresiones))*/;
+	t_chequeo * semp;
+	t_impresiones * impresiones2;
+
 	tiempoInicial=malloc(sizeof(time_t));
 	*tiempoInicial=time(NULL);
 	dictionary_put(tiempo,pid,tiempoInicial);
+
 	impresiones2=dictionary_get(impresiones,pid);
 	semp=dictionary_get(sem,pid);
+
 	while(1)
 	{
 		if(semp->valor==1)
@@ -52,7 +55,5 @@ void programa (char* pid)
 
 	}
 
-	//free(semp);
-	//free(impresiones2);
 	free(tiempoInicial);
 }

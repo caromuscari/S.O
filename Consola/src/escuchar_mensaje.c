@@ -38,7 +38,6 @@ void escuchar_mensaje()
 	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,NULL);
 	char *mensaje;
 	char *mensaje2;
-	//char *pid;
 	sem_init(&semaforo,0,1);
 
 	while(flag==0)
@@ -57,52 +56,64 @@ void escuchar_mensaje()
 		{
 			case 4: ;
 				char *pid;
+
 				sema->valor=0;
 				cant->cantidad=0;
 				hilo->hilo= hiloPrograma;
+
 				pid=recibir(socket_,1);
 				escribir_log(pid);
+
 				pthread_create(&hiloPrograma, NULL, (void*) programa, pid);
+
 				escribir_log("Se inicio el programa");
+
 				dictionary_put(p_pid,pid,hilo);
 				dictionary_put(h_pid,string_itoa(hiloPrograma),pid);
 				dictionary_put(sem,pid,sema);
 				dictionary_put(impresiones,pid,cant);
-				/*free(sema);
-				free(cant);
-				free(smod);
-				free(hilo);
-				//free(pid);*/
+
 				break;
 			case 5:
 				printf("%s","no se pudo iniciar el programa");
 				escribir_log("No se pudo iniciar el programa");
+
 				free(sema);
 				free(cant);
 				free(smod);
 				free(hilo);
-				free(pid);
+
 				break;
-			case 9: ;//no entiendo qué hace esto
-				pid=recibir(socket_,1);
+			case 9: ;
+				char * pid2;
+
+				pid2=recibir(socket_,1);
 				char *size = get_payload(mensaje);
 				tamAimprimir= atoi(size);
+
 				smod=dictionary_get(sem,pid);
 				smod->valor=1;
+
 				free(sema);
 				free(cant);
-				free(smod);
 				free(hilo);
-				free(pid);
+				free(pid2);
+
 				break;
-			case 10:
-				pid=recibir(socket_,1);
-				finalizar_programa(pid,socket_);
+			case 10: ;
+				char * pid3;
+				char * hpid=strdup("");
+
+				pid3=recibir(socket_,1);
+				hpid=dictionary_get(p_pid,pid3);
+				finalizar_programa(hpid, socket_);
+
 				free(sema);
 				free(cant);
 				free(smod);
 				free(hilo);
-				free(pid);
+				free(pid3);
+
 				break;
 			default:
 				escribir_log("Mensaje incorrecto del Kernel");
@@ -111,7 +122,6 @@ void escuchar_mensaje()
 				free(cant);
 				free(smod);
 				free(hilo);
-				free(pid);
 				break;
 		}
 		sem_post(&semaforo);
