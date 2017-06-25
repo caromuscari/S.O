@@ -18,15 +18,11 @@ extern t_dictionary * sem;
 extern t_dictionary * tiempo;
 extern t_dictionary * impresiones;
 extern t_consola * arch_config;
-extern char * ingreso;
-extern char * identi;
 
 void inicializar_parametros()
 {
 	arch_config = malloc(sizeof(t_consola));
 	arch_config->ip= strdup("");
-	ingreso= strdup("");
-	identi= strdup("");
 	p_pid = dictionary_create();
 	h_pid = dictionary_create();
 	sem = dictionary_create();
@@ -37,8 +33,6 @@ void inicializar_parametros()
 void liberar_memoria()
 {
 	free(arch_config->ip);
-	free(ingreso);
-	free(identi);
 	dictionary_clean(p_pid);
 	dictionary_destroy(p_pid);
 	dictionary_clean(h_pid);

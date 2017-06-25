@@ -13,7 +13,8 @@
 char *armar_mensaje(char *identificador, char *mensaje)
 {
 	char *resultado = strdup(identificador);
-	char *payload_char = string_itoa(string_length(mensaje));
+	int length = string_length(mensaje);
+	char *payload_char = string_itoa(length);
 	int size_payload = string_length(payload_char);
 	char *completar = string_repeat('0', 10 - size_payload);
 

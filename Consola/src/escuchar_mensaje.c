@@ -38,8 +38,9 @@ void escuchar_mensaje()
 	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,NULL);
 	char *mensaje;
 	char *mensaje2;
-	char *pid;
+	//char *pid;
 	sem_init(&semaforo,0,1);
+
 	while(flag==0)
 	{
 		sem_wait(&semaforo);
@@ -48,26 +49,30 @@ void escuchar_mensaje()
 		t_impresiones *cant = malloc(sizeof(t_impresiones));
 		t_hilo *hilo = malloc(sizeof(t_hilo));
 		mensaje=recibir(socket_,13);
+		escribir_log(mensaje);
 		mensaje2=get_codigo(mensaje);
+		escribir_log(mensaje2);
 
 		switch(atoi(mensaje2))
 		{
-			case 4:
+			case 4: ;
+				char *pid;
 				sema->valor=0;
 				cant->cantidad=0;
 				hilo->hilo= hiloPrograma;
-				pid=recibir(socket_,2);
+				pid=recibir(socket_,1);
+				escribir_log(pid);
 				pthread_create(&hiloPrograma, NULL, (void*) programa, pid);
 				escribir_log("Se inicio el programa");
 				dictionary_put(p_pid,pid,hilo);
 				dictionary_put(h_pid,string_itoa(hiloPrograma),pid);
 				dictionary_put(sem,pid,sema);
 				dictionary_put(impresiones,pid,cant);
-				free(sema);
+				/*free(sema);
 				free(cant);
 				free(smod);
 				free(hilo);
-				free(pid);
+				//free(pid);*/
 				break;
 			case 5:
 				printf("%s","no se pudo iniciar el programa");
@@ -79,7 +84,7 @@ void escuchar_mensaje()
 				free(pid);
 				break;
 			case 9: ;//no entiendo qué hace esto
-				pid=recibir(socket_,2);
+				pid=recibir(socket_,1);
 				char *size = get_payload(mensaje);
 				tamAimprimir= atoi(size);
 				smod=dictionary_get(sem,pid);
@@ -91,7 +96,7 @@ void escuchar_mensaje()
 				free(pid);
 				break;
 			case 10:
-				pid=recibir(socket_,2);
+				pid=recibir(socket_,1);
 				finalizar_programa(pid,socket_);
 				free(sema);
 				free(cant);

@@ -17,8 +17,6 @@
 #include <commons/log.h>
 #include "estructuras.h"
 
-extern char * identi;
-extern char * ingreso;
 extern int socket_;
 extern t_dictionary * p_pid;
 extern t_dictionary * h_pid;
@@ -40,8 +38,11 @@ void hilousuario ()
 {
 	//t_dictionary* switch_;
 	//cargar_switch(switch_);
-	while(flag == 0){
-		scanf("%s",ingreso);
+	while(flag == 0)
+	{
+		char *ingreso;// = strdup("");
+		char *identi;
+		scanf("%ms", &ingreso);
 		//fgets(ingreso,20,stdin);
 
 		/*int data=dictionary_get(switch_,ingreso);
@@ -69,14 +70,16 @@ void hilousuario ()
 
 		if(!strcmp(ingreso, "iniciar_programa")){
 			printf("ingresar la ruta del programa: ");
-			scanf("%s",identi);
+			scanf("%ms",&identi);
 			iniciar_programa(identi,socket_);
+			free(identi);
 		}
 		else{
 			if(!strcmp(ingreso, "finalizar_programa")){
 				printf("ingresar el PID del programa: ");
-				scanf("%s",identi);
+				scanf("%ms",&identi);
 				finalizar_programa(identi,socket_);
+				free(identi);
 			}
 			else{
 				if(!strcmp(ingreso, "desconectar_consola")){
@@ -92,7 +95,7 @@ void hilousuario ()
 				}
 			}
 		}
-
+		free(ingreso);
 	}
 }
 
@@ -120,13 +123,13 @@ char * leer_archivo(char * ruta){
 	FILE* archivo;
 	long int final;
 	//char * mensaje;
-	char * mensaje2;
+
 	archivo = fopen(ruta,"r");
 	fseek( archivo, 0L, SEEK_END );
 	final = ftell( archivo );
 	fseek(archivo,0,0);
-	//mensaje=strdup("");
-	mensaje2=malloc(final); // NO lo probe
+	char mensaje2[final];
+	//mensaje2=malloc(final); // NO lo probe
 
 	fread(mensaje2,sizeof(char),final,archivo);
 	//while(!feof(archivo)){
@@ -138,7 +141,9 @@ char * leer_archivo(char * ruta){
 
 	//free(mensaje);
 	fclose(archivo);
-	return mensaje2;
+	char *r = strdup(mensaje2);
+
+	return r;
 }
 
 void finalizar_programa(char* pid, int socket_)

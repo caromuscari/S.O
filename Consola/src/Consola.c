@@ -29,8 +29,6 @@ t_consola *arch_config;
 int socket_;
 pthread_t hiloUsuario;
 pthread_t hiloMensaje;
-char * identi;
-char *ingreso;
 t_log * log_;
 t_dictionary * p_pid;
 t_dictionary * h_pid;

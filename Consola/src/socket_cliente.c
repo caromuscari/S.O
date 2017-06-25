@@ -58,9 +58,10 @@ char *recibir(int socket_receptor,int tamanio)
 {
 	int ret;
 
-	char *buffer = malloc(sizeof(char) * tamanio);
+	char buffer2[tamanio];
+	char *buffer;
 
-	if ((ret = recv(socket_receptor, buffer, tamanio, 0)) <= 0) {
+	if ((ret = recv(socket_receptor,(void *) buffer2, tamanio, 0)) <= 0) {
 		printf("error receiving or connection lost \n");
 			if (ret == 0) {
 				printf("socket %d se desconectó \n", socket_receptor);
@@ -73,9 +74,10 @@ char *recibir(int socket_receptor,int tamanio)
 			//close(socket_receptor);
 	}
 
-	//buffer[ret]='\0';
+	buffer2[ret]='\0';
 //	char *buffer_aux= strdup(buffer);
 	//free(buffer);
+	buffer = strdup(buffer2);
 	return buffer;
 	//free(sbuffer);
 
