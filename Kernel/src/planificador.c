@@ -12,10 +12,12 @@
 #include <commons/collections/list.h>
 #include <commons/collections/queue.h>
 #include <commons/string.h>
+#include <pthread.h>
 #include "estructuras.h"
 #include "mensaje.h"
 #include "metadata.h"
 #include "socket.h"
+#include "log.h"
 
 extern t_list *list_cpus;
 extern t_list *list_ejecutando;
@@ -44,7 +46,7 @@ int calcular_pag(char *mensaje);
 void programas_listos_A_ejecutar()
 {
 	int listos, cpus_disponibles;
-	int *tam_prog;
+	int *tam_prog = 0;
 
 	int _cpuLibre(t_cpu *una_cpu)
 	{
@@ -68,9 +70,9 @@ void programas_listos_A_ejecutar()
 				t_cpu *cpu_disponible = list_remove_by_condition(list_cpus, (void*)_cpuLibre);
 				pthread_mutex_unlock(&mutex_lista_cpus);
 
-				char *pcb_serializado = serializarPCB_KerCPU(program->pcb,config->algoritmo,config->quantum,config->quantum_sleep,&tam_prog);
+				char *pcb_serializado = serializarPCB_KerCPU(program->pcb,config->algoritmo,config->quantum,config->quantum_sleep,tam_prog);
 				//char *mensaje_env = armar_mensaje("K07", pcb_serializado);
-				char *mensaje_env = armar_mensaje_pcb("K07", pcb_serializado, tam_prog);
+				char *mensaje_env = armar_mensaje_pcb("K07", pcb_serializado, *tam_prog);
 				enviar(cpu_disponible->socket_cpu, mensaje_env, &controlador);
 
 				if(controlador)
@@ -224,9 +226,9 @@ void forzar_finalizacion(int pid, int cid, int codigo_finalizacion)
 	bool _buscar_program(t_program *pr)
 	{
 		if(pid)
-			return !pr->PID == pid;
+			return pr->PID == pid;
 		else
-			return !pr->CID == cid;
+			return pr->CID == cid;
 	}
 
 	void _procesar_program(t_program *pr)
@@ -235,6 +237,8 @@ void forzar_finalizacion(int pid, int cid, int codigo_finalizacion)
 		pthread_mutex_lock(&mutex_lista_finalizados);
 		list_add(list_finalizados,pr);
 		pthread_mutex_unlock(&mutex_lista_finalizados);
+
+		escribir_log_con_numero("Planificador -- acaba de meter el proceso como finalizado y la lista tiene: ",list_size(list_finalizados));
 	}
 
 	contador = list_count_satisfying(list_ejecutando, (void*)_buscar_program);
@@ -260,16 +264,19 @@ void forzar_finalizacion(int pid, int cid, int codigo_finalizacion)
 
 	for(i=0;i<controlador;i++)
 	{
+		escribir_log("Planificador -- antes de copiar lista de nuevos");
 		pthread_mutex_lock(&mutex_cola_nuevos);
 		t_program *prog = queue_pop(cola_nuevos);
 		pthread_mutex_unlock(&mutex_cola_nuevos);
 
 		if(_buscar_program(prog))
 		{
+			escribir_log("Planificador -- antes de copiar a lista de encontrados");
 			list_add(encontrados,prog);
 		}
 		else
 		{
+			escribir_log("Planificador -- antes de devolver a lista de nuevos");
 			pthread_mutex_lock(&mutex_cola_nuevos);
 			queue_push(cola_nuevos,prog);
 			pthread_mutex_unlock(&mutex_cola_nuevos);
@@ -295,8 +302,6 @@ void forzar_finalizacion(int pid, int cid, int codigo_finalizacion)
 			pthread_mutex_unlock(&mutex_cola_listos);
 		}
 	}
-
-	escribir_log("Se ha forzado la finalizacion de un proceso");
 
 	list_iterate(encontrados, (void*)_procesar_program);
 	list_destroy(encontrados);

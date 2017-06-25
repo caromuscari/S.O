@@ -114,6 +114,7 @@ int aceptar_conexion(int socketServidor, int *controlador)
 {
 	int c;
 	struct sockaddr_in client;
+	*controlador = 0;
 
 	int client_sock_accepted = accept(socketServidor, (struct sockaddr *)&client, (socklen_t*)&c);
 	if (client_sock_accepted < 0)

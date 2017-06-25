@@ -16,7 +16,6 @@
 extern t_list *global_fd;
 extern t_configuracion *config;
 
-void crear_tabla_global();
 int abrir_archivo(char *path, char* flag, t_program *prog);
 t_TAG *buscar_archivo_TAG(char *p_sol);
 void abrir_crear(char *mensaje, t_program *prog, int socket_cpu);
@@ -36,11 +35,6 @@ void escribir_archivo(int offset, char *info, char *flags, char *path, int socke
 void chequear_respuesta(int socket_cpu, char *path, char *flag, t_program *prog);
 void crear_archivo(int socket_cpu, char *path, char *flag, t_program *prog);
 char *armar_info_mensaje(char *info, char* path);
-
-void crear_tabla_global()
-{
-	global_fd = list_create();
-}
 
 void abrir_crear(char *mensaje, t_program *prog, int socket_cpu)
 {

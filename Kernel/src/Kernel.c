@@ -66,6 +66,7 @@ int main(int argc, char*argv[])
 	pthread_t hiloConsolaCPU;
 	pthread_t hiloNuevos;
 	pthread_t hiloListos;
+	pthread_t hiloConsolaKernel;
 
 	ruta_config = strdup(argv[1]);
 
@@ -74,20 +75,21 @@ int main(int argc, char*argv[])
 	inicializar_semaforos();
 	leer_configuracion();
 
-	//leer_consola();
 	crear_conexiones();
-	//handshakearMemory();
+	handshakearMemory();
 	//handshakearFS();
 
 	pthread_create(&hiloConsolaConsola, NULL, (void*)manejo_conexiones_consolas, NULL);
 	pthread_create(&hiloConsolaCPU, NULL, (void*)manejo_conexion_cpu, NULL);
 	pthread_create(&hiloNuevos, NULL, (void*)programas_nuevos_A_listos, NULL);
 	pthread_create(&hiloListos, NULL, (void*)programas_listos_A_ejecutar, NULL);
+	pthread_create(&hiloConsolaKernel, NULL, (void*)leer_consola, NULL);
 
 	pthread_join(hiloConsolaConsola, NULL);
 	pthread_join(hiloConsolaCPU, NULL);
 	pthread_join(hiloNuevos, NULL);
 	pthread_join(hiloListos, NULL);
+	pthread_join(hiloConsolaKernel, NULL);
 
 	liberar_memoria();
 	return EXIT_SUCCESS;
@@ -104,6 +106,7 @@ void inicializar_variables()
 	/*config->sem_ids = list_create();
 	config->sem_init = list_create();
 	config->shared_vars = list_create();*/
+	global_fd = list_create();
 	list_cpus = list_create();
 	list_consolas = list_create();
 	list_ejecutando = list_create();
@@ -145,8 +148,8 @@ void crear_conexiones()
 	config->server_consola = iniciar_socket_server(config->ip_kernel, config->puerto_prog, &controlador);
 	//escribir_log("Conectando con FS");
 	//config->cliente_fs = iniciar_socket_cliente(config->ip_fs, config->puerto_fs, &controlador);
-	//escribir_log("Conectando con Memoria");
-	//config->cliente_memoria = iniciar_socket_cliente(config->ip_memoria, config->puerto_memoria, &controlador);
+	escribir_log("Conectando con Memoria");
+	config->cliente_memoria = iniciar_socket_cliente(config->ip_memoria, config->puerto_memoria, &controlador);
 }
 
 void inicializar_semaforos()

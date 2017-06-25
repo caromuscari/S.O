@@ -4,7 +4,6 @@
 #include <stdbool.h>
 #include "estructuras.h"
 
-void crear_tabla_global();
 int abrir_archivo(char *path, char* flag, t_program *prog);
 t_TAG *buscar_archivo_TAG(char *p_sol);
 void abrir_crear(char *mensaje, t_program *prog, int socket_cpu);

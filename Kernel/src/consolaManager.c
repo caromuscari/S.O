@@ -116,6 +116,7 @@ void realizar_handShake_consola(int nuevo_socket)
 	//Envio mensaje a consola pidiendo sus datos
 	char *mensaje = armar_mensaje("K00","");
 	enviar(nuevo_socket, mensaje, &controlador);
+	escribir_log("Enviado mensaje para handshake con consola");//despues borrar
 
 	if (controlador > 0)
 	{
@@ -125,6 +126,7 @@ void realizar_handShake_consola(int nuevo_socket)
 	else
 	{
 		char *respuesta = recibir(nuevo_socket, &controlador);
+		escribir_log("Recibido mensaje para handshake con consola");//despues borrar
 
 		if (controlador > 0)
 		{
@@ -183,11 +185,11 @@ void responder_solicitud(int socket, char *mensaje)
 		case 2 : ;
 			escribir_log("Llego una solicitud de finalizacion de programa");
 			int pid = atoi(get_mensaje(mensaje));
-			forzar_finalizacion(pid, 0, 0);
+			forzar_finalizacion(pid, 0, -7);
 			break;
 		case 3 : ;
 			int consola_id = atoi(get_mensaje(mensaje));
-			forzar_finalizacion(0, consola_id, 0);
+			forzar_finalizacion(0, consola_id, -6);
 			desconectar_consola(socket);
 			break;
 		default : ;
@@ -242,6 +244,7 @@ void responder_peticion_prog(int socket, char *mensaje)
 		agregar_nueva_prog(consola, ultimo_pid, mensaje);
 
 		char *mensaje_conf =  armar_mensaje("K04", string_itoa(ultimo_pid));
+		escribir_log_compuesto("este es el mensaje de un proceso recien creado: ",mensaje_conf);
 		enviar(socket, mensaje_conf, &controlador);
 	}
 	if(controlador > 0) cerrar_conexion(socket);
