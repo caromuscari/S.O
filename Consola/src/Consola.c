@@ -39,6 +39,7 @@ t_dictionary * tiempo;
 t_dictionary * impresiones;
 sem_t semaforo;
 int tamAimprimir;
+int flag;
 
 
 void leer_archivo_configuracion(char * ruta);
@@ -55,10 +56,6 @@ int main(int argc, char * argv[]) {
 	socket_ = iniciar_socket_cliente(arch_config->ip, arch_config->puerto);
 
 	handshake(socket_);
-
-	printf("ingresar la ruta del programa: ");
-	scanf("%s",identi);
-	iniciar_programa(identi,socket_);
 
 	pthread_create(&hiloUsuario, NULL, (void*) hilousuario, NULL);
 	pthread_create(&hiloMensaje, NULL, (void*) escuchar_mensaje, NULL);

@@ -26,6 +26,7 @@ extern pthread_t hiloMensaje;
 extern t_dictionary * sem;
 extern t_dictionary * impresiones;
 extern t_dictionary * tiempo;
+extern int flag;
 
 
 char* leer_archivo(char*);
@@ -35,11 +36,11 @@ void desconectar_consola();
 void cerrar_programas(char* key, void* data);
 void tiempofinal_impresiones(char* pid);
 
-void* hilousuario ()
+void hilousuario ()
 {
 	//t_dictionary* switch_;
 	//cargar_switch(switch_);
-	while(1){
+	while(flag == 0){
 		scanf("%s",ingreso);
 		//fgets(ingreso,20,stdin);
 
@@ -152,9 +153,9 @@ void finalizar_programa(char* pid, int socket_)
 		escribir_log_con_numero("Se finalizo el programa", pid3);
 		tiempofinal_impresiones(pid);
 		pid2=dictionary_get(h_pid,pid);
-		dictionary_remove(h_pid,pid);
-		dictionary_remove(p_pid,pid2);
-		dictionary_remove(impresiones,pid);
+		free(dictionary_remove(h_pid,pid));
+		free(dictionary_remove(p_pid,pid2));
+		free(dictionary_remove(impresiones,pid));
 		free(dictionary_remove(sem,pid));
 		free(dictionary_remove(tiempo,pid));
 	}
@@ -170,6 +171,7 @@ void desconectar_consola(){
 	enviar(socket_, mensaje, string_length(mensaje));
 	escribir_log("Se desconecta la consola");
 	pthread_cancel(hiloMensaje);
+	free(mensaje);
 	pthread_exit(NULL);
 }
 void cerrar_programas(char* key, void* data){
@@ -178,19 +180,22 @@ void cerrar_programas(char* key, void* data){
 
 void tiempofinal_impresiones(char* pid){
 	time_t *tiempoFinal= malloc(sizeof(time_t));
-	t_impresiones * cant = malloc(sizeof(t_impresiones));
-	time_t *tiempoinicial = malloc(sizeof(time_t));
+	t_impresiones * cant; //= malloc(sizeof(t_impresiones));
+	time_t *tiempoinicial; // = malloc(sizeof(time_t));
 	double diferencia;
+
 	*tiempoFinal = time(NULL);
+
 	cant = dictionary_get(impresiones,pid);
 	tiempoinicial = dictionary_get(tiempo,pid);
+
 	diferencia= difftime(*tiempoinicial, *tiempoFinal);
+
 	escribir_log_con_numero("Inicio de ejecución : ", *tiempoinicial);
 	escribir_log_con_numero("Fin de ejecución : ", *tiempoFinal);
 	escribir_log_con_numero("Cantidad de impresiones: ", cant->cantidad);
 	escribir_log_con_numero("Tiempo total de ejecución : ", diferencia);
-	free(cant);
-	free(tiempoinicial);
+
 	free(tiempoFinal);
 }
 

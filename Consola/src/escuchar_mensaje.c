@@ -28,6 +28,7 @@ extern t_dictionary * sem;
 extern t_dictionary * impresiones;
 extern int tamAimprimir;
 extern sem_t semaforo;
+extern int flag;
 
 void escuchar_mensaje();
 
@@ -37,7 +38,6 @@ void escuchar_mensaje()
 	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,NULL);
 	char *mensaje;
 	char *mensaje2;
-	int flag=0;
 	char *pid;
 	sem_init(&semaforo,0,1);
 	while(flag==0)
@@ -89,7 +89,6 @@ void escuchar_mensaje()
 				free(smod);
 				free(hilo);
 				free(pid);
-				//free(tamAimprimir);
 				break;
 			case 10:
 				pid=recibir(socket_,2);
