@@ -19,15 +19,14 @@ int cliente[20];
 pthread_t hiloEsperarMensaje[20];
 
 // Variables Globales
-fd_set master;
-fd_set read_fds;
-int fdmax;
+int tamanioMarco;
+int cantMarcos;
+int socketServerMemoria;
 int controlador = 0;
 t_memoria *data_Memoria;
 t_log *log;
-int cantMarcosTablaPag;
-
 char * Memoria;
+int STACK_SIZE;
 
 //Estructuras administrativas
 
@@ -36,21 +35,24 @@ typedef struct{
 	int pid;
 	int pag;
 } t_tablaPagina;
-
 t_tablaPagina* tablaPaginas;
+int cantMarcosTablaPag;
 
-int tamanioMarco;
-int cantMarcos;
 int tamTablaPaginas;
 
 //Funciones
 void leerArchivoConfig(char* rutaArchivoConfig);
 void esperar_mensaje(void *i);
 t_tablaPagina* crearEstrucTablaPag(void);
-int cantidadDePaginas(int tamanioBytes, int tamanioPaginas);
-t_list* asignarFramesLibres(int pid,int cantPaginasAgrabar);
+int cantidadDePaginas(int tamanioBytes);
 void cargarCodigoEnMemoria(char * datos, char * Memoria ,t_list * frames_pedidos, int cantPaginasAgrabar);
-//
+int posFrameEnMemoria(int nroFrame);
+int maxPaginaPid(int p_pid);
+bool f_mayor(int a, int b);
+void inicializarPrograma (int pid, int paginasRequeridas);
+int posPaginaSolicitada(int pid,int paginaSolicitada);
+char * hash_lookup(t_list* lista,int pagSol);
+void almacenarBytes(int pid, int pag, int offset, int tamanio);
 
 int main(int argc, char *argv[])
 {
@@ -65,30 +67,13 @@ int main(int argc, char *argv[])
 	tamanioMarco =data_Memoria->MARCO_SIZE;
 	cantMarcos=data_Memoria->MARCOS;
 	tamTablaPaginas = sizeof(t_tablaPagina)*cantMarcos;
-	cantMarcosTablaPag = cantidadDePaginas(tamTablaPaginas,tamanioMarco);
+	cantMarcosTablaPag = cantidadDePaginas(tamTablaPaginas);
     tablaPaginas = malloc(sizeof(t_tablaPagina)*cantMarcos);
     tablaPaginas = crearEstrucTablaPag();
 
-    typedef unsigned char data_Marco[tamanioMarco];
-    //data_Marco *
     Memoria = malloc(cantMarcos * tamanioMarco);
+    memset(Memoria,'\0',cantMarcos * tamanioMarco);
 
-//   data_Marco MARCO;
-
-/*/Inicializo Memoria
-    int r;
-        for( r=0;r<cantMarcos;r++){
-        	memset(Memoria[r],'\0',tamanioMarco);
-          	}
-//FinInicializo Memoria
-*/
-
-//Imprimir Tabla de Paginas
-	int it;
-	 /* 	for(it=0;it<data_Memoria->MARCOS;it++){
-		printf("%d | %d | %d \n",tablaPaginas[it].estado,tablaPaginas[it].pid,tablaPaginas[it].pag);
-	}
-*/
 	printf("Tamaño de Tabla de paginas %d \n",tamTablaPaginas);
 	printf("Tamaño Total de Memoria %d  \n",tamanioMarco * cantMarcos);
 
@@ -103,66 +88,41 @@ int main(int argc, char *argv[])
 	}
 	memcpy(Memoria,tablaPaginas,tamTablaPaginas);
 
-	//Guardo lo que me llega por Socket
-
-
+	int it;
 	for(it=0;it<data_Memoria->MARCOS;it++){
 		printf("%d | %d | %d \n",tablaPaginas[it].estado,tablaPaginas[it].pid,tablaPaginas[it].pag);
 	}
 
+
+
 	 //recieve: Guardo lo que me llega por Socket
-	 char* codigo="SSSSSSSSSSSSSSSSSSSSAAAAAAAAAAAAAAAAAAAAJJJJJJJJJJJJJJJJJJJJ";
-	 int pid=89;
 
-	 int cantPaginasAgrabar=cantidadDePaginas(string_length(codigo),tamanioMarco);
-	 printf("%s | %d | %d \n",codigo, string_length(codigo),cantPaginasAgrabar);
+	char* codigo="SSSSSSSSSSSSXXXXXXXX";
+	int pid=89;
+	int cantPaginasAgrabar=cantidadDePaginas(string_length(codigo));
 
+	//inicializarPrograma(pid,cantPaginasAgrabar);
+
+
+	printf("%s | %d | %d \n",codigo, string_length(codigo),cantPaginasAgrabar);
+
+	//printf("\nPOSICION DONDE ESTA LA PAGINA :%d \n",posPaginaSolicitada(pid,0));
 	//Guardar en paginas
 	//Busco y asigno paginas vacias
 
-	 t_list * frames_pedidos = list_create();
-	 frames_pedidos = asignarFramesLibres(pid,cantPaginasAgrabar);
+//	 t_list * frames_pedidos = list_create();
+// frames_pedidos = asignarFramesLibres(pid,cantPaginasAgrabar);
+//	 cargarCodigoEnMemoria(codigo,Memoria ,frames_pedidos, cantPaginasAgrabar);
 
-	 cargarCodigoEnMemoria(codigo,Memoria ,frames_pedidos, cantPaginasAgrabar);
+	int pp =maxPaginaPid(pid);
+	printf("\n maximaPosicion %d \n",pp);
 
-	 //Fin Guardo lo que me llega por Socket
-
-/*//--
-	int size = list_size(frames_pedidos);
-	int c = 0;
-	while(c < cantPaginasAgrabar)
-	{
-		int frame_pos = list_get(frames_pedidos, c);
-		printf("\npos:%d \n", frame_pos);
-		c++;
-	}
-
-	c=0;
-	while(c < cantPaginasAgrabar)
-	{
-		int frame_pos = list_get(frames_pedidos, c);
-		memcpy(Memoria[frame_pos],codigo+(c*tamanioMarco),tamanioMarco);
-		printf("\nSe guardo en el frame: %d \n", frame_pos);
-		c++;
-	}
-//-- */
-
-
-
-	for(it=0;it<data_Memoria->MARCOS;it++){
-		printf("%d | %d | %d \n",tablaPaginas[it].estado,tablaPaginas[it].pid,tablaPaginas[it].pag);
-	}
-
-
-
-
-
-	free(tablaPaginas);
-	free(Memoria);
-	int socketServerMemoria = iniciar_socket_server(data_Memoria->IP,data_Memoria->PUERTO,&controlador);
+	socketServerMemoria = iniciar_socket_server(data_Memoria->IP,data_Memoria->PUERTO,&controlador);
 
 	escribir_log(string_from_format("Se inicia Servidor de Memoria en Socket: %d ",socketServerMemoria));
-/*
+
+
+
 	int i = 0;
 
 		while (1) {
@@ -199,8 +159,9 @@ int main(int argc, char *argv[])
 		}
 
 	//El select esta aca dentro --- ejecutar_server();
-	 *
-	 */
+		free(tablaPaginas);
+		free(Memoria);
+
 	return EXIT_SUCCESS;
 
 }
@@ -229,7 +190,6 @@ void esperar_mensaje(void *i) {
 	int chau = 0;
 	while (chau != 1 )
 	{
-
 	char *mensRec = malloc(1024);
 	memset(mensRec,'\0', 1024);
 
@@ -242,47 +202,70 @@ void esperar_mensaje(void *i) {
 		goto chau;
 	}
 
-	char *header = get_header(mensRec);
+	char *header=get_header(mensRec);
 	int codigo = get_codigo(mensRec);
 
 	printf("\n header: %s \n",header);
 	printf("\n codigo: %d \n",codigo);
 
 	switch (codigo) {
-					case 6:
+					case 17: //INICIALIZAR PROGRAMA
 						{
+							//K|17|PPPP|XXXX|YYYY|
+							//PPPP: Pid
+							//XXXX: CantidadPaginasCodigo
+							//YYYY: CantidadPaginasSTACK
+							escribir_log(string_from_format("K17-Guardando codigo: %d",cliente));
 
-							escribir_log(string_from_format("K06 - Guardando codigo: %d ",cliente));
+							printf("\nMENSAJE RECIBIDO\n%s\n",mensRec);
 
+							int procPid= atoi(string_substring(mensRec, 3, 4));
+
+							char *paginasCodigo= malloc(4); memset(paginasCodigo,'0',4);
+							memcpy(paginasCodigo,mensRec+7, sizeof(int));
+							int pagsCodigo = atoi(paginasCodigo);
+							char *paginasSTACK= malloc(4); memset(paginasSTACK,'0',4);
+							memcpy(paginasSTACK,mensRec+11, sizeof(int));
+							STACK_SIZE = atoi(paginasSTACK);
+
+							printf("\n PID RECIBIDO %d \n",procPid);
+							printf("\n TAMAÑO PAGINAS CODIGO %d \n",pagsCodigo);
+							printf("\n TAÑANO PAGINAS STACK %d \n ",STACK_SIZE);
+
+							inicializarPrograma (procPid,pagsCodigo);
+							inicializarPrograma (procPid,STACK_SIZE);
+
+							int it;
+							for(it=0;it<cantMarcos;it++){
+								printf("%d | %d | %d \n",tablaPaginas[it].estado,tablaPaginas[it].pid,tablaPaginas[it].pag);
+							}
+							free(paginasCodigo);
+							free(paginasSTACK);
+						}
+					break;
+					case 18: //K|18|PIDD|0000000006|CODIGO
+								{
+								escribir_log(string_from_format("K06 - Guardando codigo: %d ",cliente));
+								int procPid= atoi(string_substring(mensRec, 3, 4));
+
+								int tamanio= atoi(string_substring(mensRec, 7, 10));
+
+								char * codigo = malloc(tamanio); memset(codigo,'\0', tamanio);
+								codigo = string_substring(mensRec, 17, tamanio);
+								int pagsCod = cantidadDePaginas(tamanio);
+								printf("\n ----------------------------- \n");
+								printf("%d \n",procPid);
+								printf("%d \n",pagsCod);
+								printf("%s", codigo);
+								printf("\n ----------------------------- \n");
 							//Meter funciones de guardar codigo
 
 
-						}
-					break;
-					case 2:
-						{
-							escribir_log(string_from_format("CASE 2: %d ",cliente));
-						}
-					break;
-					case 3:
-						{
-							escribir_log(string_from_format("CASE 3: %d ",cliente));
 
-						}
-					break;
-					case 4:
-						{
-							escribir_log(string_from_format("CASE 4: %d ",cliente));
 
-						}
-					break;
-					case 5:
-						{
-							escribir_log(string_from_format("CASE 5: %d ",cliente));
 
-						}
-					break;
-
+							}
+										break;
 						}
 
 					chau:
@@ -294,49 +277,24 @@ void esperar_mensaje(void *i) {
 t_tablaPagina* crearEstrucTablaPag(void){
 
 	t_tablaPagina* estructuraTablaPaginas=malloc(sizeof(t_tablaPagina)*cantMarcos);
-
 	int i;
-
 	for(i=0;i<data_Memoria->MARCOS;i++){
 		estructuraTablaPaginas[i].estado=0;
 		estructuraTablaPaginas[i].pag=-1;
 		estructuraTablaPaginas[i].pid=-1;
 	}
-
 	return estructuraTablaPaginas;
 }
 
-int cantidadDePaginas(int tamanioBytes, int tamanioPaginas)
+int cantidadDePaginas(int tamanioBytes)
 {
 	double Bloques= -1;
-	if ((double)tamanioBytes/tamanioPaginas - (int)(tamanioBytes/tamanioPaginas) > 0){
-			Bloques = ((tamanioBytes/tamanioPaginas) +1);
+	if ((double)tamanioBytes/tamanioMarco - (int)(tamanioBytes/tamanioMarco) > 0){
+			Bloques = ((tamanioBytes/tamanioMarco) +1);
 		}else{
-			Bloques = (int)(tamanioBytes/tamanioPaginas);
+			Bloques = (int)(tamanioBytes/tamanioMarco);
 		}
 	return (int)Bloques;
-
-}
-
-t_list* asignarFramesLibres(int pid,int cantPaginasAgrabar)
-{
-	//Calcular posición frames libres más próximos para una cantidad solicitada.
-	t_list* lt_framesLibres = list_create();
-	int z;
-	int libres=0;
-	int maxPagPid = 0; //Funcion que me devuelva la máxima pagina de un PID.
-	for (z=cantMarcosTablaPag; z<cantMarcosTablaPag+cantPaginasAgrabar; z++ )
-	{
-		if ( tablaPaginas[z].estado == 0 ) {
-			list_add(lt_framesLibres,z);
-			tablaPaginas[z].estado = 1;
-			tablaPaginas[z].pid = pid;
-			tablaPaginas[z].pag = maxPagPid;
-		}
-		maxPagPid ++;
-	}
-
-	return lt_framesLibres;
 
 }
 
@@ -344,9 +302,117 @@ void cargarCodigoEnMemoria(char * datos, char * Memoria ,t_list * frames_pedidos
 	int c = 0;
 	while(c < cantPaginasAgrabar){
 		int frame_pos = list_get(frames_pedidos, c);
-		int pos = (frame_pos * tamanioMarco)-1;
+		int pos = posFrameEnMemoria(frame_pos);
 		memcpy(Memoria+pos,datos+(c*tamanioMarco),tamanioMarco);
 		printf("\nSe guardo en el frame: %d \n", frame_pos);
 		c++;
 	}
 }
+
+/*void almacenarBytes(int pid, int pag, int offset, int tamanio)
+{
+	int c = 0;
+
+	while(c < ){
+		int frame_pos = list_get(frames_pedidos, c);
+		int pos = posFrameEnMemoria(frame_pos);
+		memcpy(Memoria+pos,datos+(c*tamanioMarco),tamanioMarco);
+		printf("\nSe guardo en el frame: %d \n", frame_pos);
+		c++;
+	}
+
+}
+*/
+
+
+int posFrameEnMemoria(int nroFrame){
+	//Devuelve la posicion de inicio del Frame
+	int pos= (nroFrame* tamanioMarco)-1;
+	return pos;
+}
+
+int maxPaginaPid(int p_pid)
+{
+t_list* lt_pagsXpid= list_create();
+int primeraPosicion = 0;
+int z;
+int max=-1;
+	  for (z=cantMarcosTablaPag; z<cantMarcos; z++ )
+	 {
+	 	if ( tablaPaginas[z].estado == 1 && tablaPaginas[z].pid == p_pid) {
+	 		list_add(lt_pagsXpid,tablaPaginas[z].pag);
+	 	}
+	 }
+	list_sort(lt_pagsXpid,(void*) f_mayor);
+
+	if ( list_size(lt_pagsXpid) != 0 ){
+		max=list_get(lt_pagsXpid,primeraPosicion);
+	}
+
+	return max;
+}
+
+bool f_mayor(int a, int b) {
+        return a > b;
+    }
+
+
+void inicializarPrograma (int pid,int cantPaginasAgrabar)
+	{
+		//Calcular posición frames libres más próximos para una cantidad solicitada.
+		int z;
+		int paginas=0;
+		int maxPagPid = maxPaginaPid(pid); //Funcion que me devuelva la máxima pagina de un PID.
+		for (z=cantMarcosTablaPag; z<cantMarcos; z++ )
+		{
+			if (tablaPaginas[z].estado == 0 && paginas < cantPaginasAgrabar) {
+				tablaPaginas[z].estado = 1;
+				tablaPaginas[z].pid = pid;
+				tablaPaginas[z].pag = maxPagPid+1;
+				maxPagPid ++;
+				paginas ++;
+			} else if (paginas >=cantPaginasAgrabar){
+				z=cantMarcos;
+				}
+		}
+	}
+
+int posPaginaSolicitada(int pid,int paginaSolicitada)
+{
+	//Calcular posición frames libres más próximos para una cantidad solicitada.
+	t_list* lt_paginas = list_create();
+
+	int z;
+
+	char*valor=string_new();
+
+
+	for (z=cantMarcosTablaPag; z<cantMarcos; z++ )
+	{
+		if ( tablaPaginas[z].estado == 1 && tablaPaginas[z].pid==pid) {
+				string_append(&valor,string_itoa(z));
+				string_append(&valor,",");
+				string_append(&valor, string_itoa(tablaPaginas[z].pag));
+			//printf(" \n POS: %s", valor);
+		list_add(lt_paginas, valor);
+		valor=string_new();
+		}
+	}
+
+	char* pp = hash_lookup(lt_paginas,paginaSolicitada);
+	char** s_frame = string_split(pp, ",");
+	//printf(" \n POS: %s",pp);
+	return atoi(s_frame[0]) ;
+}
+
+char * hash_lookup(t_list* lista,int pagSol) {
+		int _is_the_one(char *posPag) {
+
+			char** substrings = string_split(posPag, ",");
+
+			return string_equals_ignore_case(substrings[1], string_itoa(pagSol));
+		}
+
+		return list_find((lista), (void*) _is_the_one);
+	}
+
