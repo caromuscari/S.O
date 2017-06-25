@@ -140,13 +140,15 @@ char * leer_archivo(char * ruta){
 	return mensaje2;
 }
 
-void finalizar_programa(char* pid, int socket_){
-	char * mensaje = strdup("");
+void finalizar_programa(char* pid, int socket_)
+{
+	char * mensaje;
 	char* pid2;
 	long int pid3=atoi(pid);
 	mensaje = armar_mensaje("C02",pid);
-	enviar(socket_, mensaje, sizeof(mensaje));
-	if(pthread_cancel(pid3)==0){
+	enviar(socket_, mensaje, string_length(mensaje));
+	if(pthread_cancel(pid3)==0)
+	{
 		escribir_log_con_numero("Se finalizo el programa", pid3);
 		tiempofinal_impresiones(pid);
 		pid2=dictionary_get(h_pid,pid);
@@ -162,7 +164,7 @@ void finalizar_programa(char* pid, int socket_){
 }
 
 void desconectar_consola(){
-	char *mensaje = strdup("");
+	char *mensaje;
 	dictionary_iterator(h_pid,cerrar_programas);
 	mensaje = armar_mensaje("C03", "");
 	enviar(socket_, mensaje, string_length(mensaje));

@@ -35,15 +35,16 @@ char *get_header(char *mensaje)
 	return mensaje2;*/
 }
 
-int comparar_header(char *identificador, char *mensaje)
+int comparar_header(char *identificador, char *header)
 {
-	return !strcmp(string_substring(mensaje, 0, 1), identificador);
+	return !strcmp(header, identificador);
+	//return !strcmp(string_substring(mensaje, 0, 1), identificador);
 }
 
 //devuelve el codigo del mensaje
-int get_codigo(char *mensaje)
+char * get_codigo(char *mensaje)
 {
-	return atoi(string_substring(mensaje, 1, 2));
+	return string_substring(mensaje, 1, 2);
 }
 
 //obtiene el mensaje
@@ -59,7 +60,7 @@ char * get_pid(char* mensaje)
 	return string_substring(mensaje, 13, 2);
 }
 
-int get_payload(char *mensaje)
+char * get_payload(char *mensaje)
 {
-	return atoi(string_substring(mensaje, 3, 10));
+	return string_substring(mensaje, 3, 10);
 }

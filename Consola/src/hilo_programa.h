@@ -8,6 +8,6 @@
 #ifndef HILO_PROGRAMA_H_
 #define HILO_PROGRAMA_H_
 
-void * programa(long int pid);
+void programa(long int pid);
 
 #endif /* HILO_PROGRAMA_H_ */

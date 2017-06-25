@@ -8,6 +8,6 @@
 #ifndef ESCUCHAR_MENSAJE_H_
 #define ESCUCHAR_MENSAJE_H_
 
-void * escuchar_mensaje();
+void escuchar_mensaje();
 
 #endif /* ESCUCHAR_MENSAJE_H_ */

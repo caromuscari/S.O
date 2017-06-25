@@ -8,8 +8,8 @@
 #ifndef HILO_USUARIO_H_
 #define HILO_USUARIO_H_
 
-void* hilousuario ();
-char* leer_archivo(char*);
+void *hilousuario ();
+char *leer_archivo(char*);
 void iniciar_programa(char * ruta, int socket_);
 void finalizar_programa(char* pid, int socket_);
 void desconectar_consola();
