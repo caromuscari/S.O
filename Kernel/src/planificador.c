@@ -92,6 +92,7 @@ void programas_listos_A_ejecutar()
 					list_add(list_cpus, cpu_disponible);
 					pthread_mutex_unlock(&mutex_lista_cpus);
 				}
+				free(mensaje_env);
 			}
 		}
 	}
@@ -145,6 +146,7 @@ void agregar_nueva_prog(int id_consola, int pid, char *mensaje)
 	pthread_mutex_lock(&mutex_cola_nuevos);
 	queue_push(cola_nuevos, programa);
 	pthread_mutex_unlock(&mutex_cola_nuevos);
+	free(codigo);
 }
 
 void bloquear_proceso(int pid)
@@ -207,14 +209,15 @@ void finalizar_proceso(int pid, int codigo_finalizacion)
 
 int calcular_pag(char *mensaje)
 {
-	int tamanio = atoi(string_substring(mensaje, 3, 10));
+	char *tam = string_substring(mensaje, 3, 10);
+	int tamanio = atoi(tam);
 	int paginas = (int)(tamanio/tam_pagina);
 
 	if (tamanio % tam_pagina > 0)
 	{
 		paginas ++;
 	}
-
+	free(tam);
 	return paginas;
 }
 

@@ -184,8 +184,10 @@ void responder_solicitud_cpu(int socket_, char *mensaje)
 	if(comparar_header(mensaje, "P"))
 	{
 		t_program *prog = programa_ejecutando(socket_);
+		char *cod = get_mensaje(mensaje);
+		int codigo = atoi(cod);
 
-		switch(get_codigo(mensaje)) {
+		switch(codigo) {
 			case 2 :
 				escribir_log("Se recibio una peticion de CPU de abrir crear");
 				abrir_crear(mensaje, prog, socket_);

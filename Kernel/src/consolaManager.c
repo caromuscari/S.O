@@ -136,7 +136,8 @@ void realizar_handShake_consola(int nuevo_socket)
 		else
 		{
 			//Aca deberia ir la validacion si el mensaje corresponde a una consola
-			if(comparar_header("C", respuesta))
+			char *header = get_header(respuesta);
+			if(comparar_header("C", header))
 			{
 				escribir_log("Se ha conectado una nueva consola");
 				//Es una Consola, se puede agregar
@@ -156,6 +157,8 @@ void realizar_handShake_consola(int nuevo_socket)
 				enviar(nuevo_socket, mensaje, &controlador);
 				cerrar_conexion(nuevo_socket);
 			}
+			free(mensaje);
+			free(header);
 		}
 	}
 }
@@ -177,20 +180,27 @@ int get_CID()
 
 void responder_solicitud(int socket, char *mensaje)
 {
-	switch(get_codigo(mensaje)) {
+	char *codigo = get_codigo(mensaje);
+	int cod = atoi(codigo);
+	switch(cod)
+	{
 		case 1 :
 			escribir_log("Llego una solicitud de inicio de programa");
 			responder_peticion_prog(socket, mensaje);
 			break;
 		case 2 : ;
 			escribir_log("Llego una solicitud de finalizacion de programa");
-			int pid = atoi(get_mensaje(mensaje));
+			char *pid_c = get_mensaje(mensaje);
+			int pid = atoi(pid_c);
 			forzar_finalizacion(pid, 0, -7);
+			free(pid_c);
 			break;
 		case 3 : ;
-			int consola_id = atoi(get_mensaje(mensaje));
+			char *con = get_mensaje(mensaje);
+			int consola_id = atoi(con);
 			forzar_finalizacion(0, consola_id, -6);
 			desconectar_consola(socket);
+			free(con);
 			break;
 		default : ;
 			escribir_log("El administrador de consola recibio un mensaje desconocido");
@@ -199,6 +209,7 @@ void responder_solicitud(int socket, char *mensaje)
 			enviar(socket, msj_unknow, &controlador);
 			if (controlador > 0) desconectar_consola(socket);
 	}
+	free(codigo);
 }
 
 void eliminar_consola(int consola_id)
@@ -229,7 +240,8 @@ void responder_peticion_prog(int socket, char *mensaje)
 
 	//recibo la respuesta de memoria
 	char *mensaje_recibido = recibir(config->cliente_memoria, &controlador);
-	int codigo_m = get_codigo(mensaje_recibido);
+	char *cod = get_codigo(mensaje_recibido);
+	int codigo_m = atoi(cod);
 
 	if(codigo_m == 3)
 	{
@@ -246,8 +258,14 @@ void responder_peticion_prog(int socket, char *mensaje)
 		char *mensaje_conf =  armar_mensaje("K04", string_itoa(ultimo_pid));
 		escribir_log_compuesto("este es el mensaje de un proceso recien creado: ",mensaje_conf);
 		enviar(socket, mensaje_conf, &controlador);
+		free(mensaje_conf);
 	}
 	if(controlador > 0) cerrar_conexion(socket);
+
+	free(codigo);
+	free(mensaje_envio);
+	free(mensaje_recibido);
+	free(cod);
 }
 
 int buscar_consola(int socket)
