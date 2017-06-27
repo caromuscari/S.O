@@ -43,6 +43,15 @@ char * armar_pathBloque(char *path,int bloqueSig,t_arch *archivo)
 	return path2;
 }
 
+char * armar_pathBloqueNuevo(char *path,int bloqueSig,t_arch *archivo)
+{
+	char *path2 =strdup("");
+	string_append(&path2,path);
+	string_append(&path2,string_itoa(bloqueSig));
+	string_append(&path2,".bin");
+	return path2;
+}
+
 t_arch *leer_archivo(char * path)
 {
 	t_arch *archivo;
@@ -79,7 +88,6 @@ int agregar_bloque()
 void modificar_archivo(char* path, int tamanio, char* bloques)
 {
 	char* tamanio2 = strdup("");
-	char* bloques2 = strdup("");
 	t_config * archconf;
 
 	archconf = config_create(path);
@@ -88,7 +96,7 @@ void modificar_archivo(char* path, int tamanio, char* bloques)
 	string_append(&tamanio2,"\n");
 
 	config_set_value(archconf,"TAMANIO", tamanio2);
-	config_set_value(archconf,"BLOQUES", bloques2);
+	config_set_value(archconf,"BLOQUES", bloques);
 
 	config_save(archconf);
 
@@ -102,14 +110,53 @@ char * crear_string_bloques(char ** bloques, char * bloques_nuevos)
 	char * bloque = strdup("");
 	int i = 0;
 
-	while(!strcmp(bloques[i], "]"))
+	string_append(&bloque,"[");
+
+	while(bloques[i] != '\0')//hay que ver si funciona con **
 	{
 		string_append(&bloque,bloques[i]);
+		string_append(&bloque,",");
 		i++;
 	}
 
-	string_append(&bloque,bloques_nuevos);
+	string_append(&bloque,bloques_nuevos); //no se si me fijo si hay algo en bloques_nuevos
 	string_append(&bloque,"]");
 
 	return bloque;
+}
+
+t_datos * recuperar_datos(char * codigo, char * mensaje)
+{
+	t_datos * estructura = malloc(sizeof(t_datos));
+	int size;
+	int start;
+	estructura->path = strdup("");
+
+	size = atoi(string_substring(mensaje, 0, 4)); //hay que ver si el tamanio del size es 4
+	estructura->path = string_substring(mensaje,4,size);
+
+	start = 4+ size;
+
+	size = atoi(string_substring(mensaje,start,4));
+	start += 4;
+	estructura->offset = atoi(string_substring(mensaje,start,size));
+
+	start += size;
+
+	size = atoi(string_substring(mensaje,start,4));
+	start +=4;
+	estructura->size = atoi(string_substring(mensaje,start,size));
+
+	start += size;
+
+	if(atoi(codigo) == 15)
+	{
+		estructura->buffer = strdup("");
+
+		size = atoi(string_substring(mensaje,start,4));
+		start +=4;
+		estructura->buffer = string_substring(mensaje,start,size);
+	}
+
+	return estructura;
 }

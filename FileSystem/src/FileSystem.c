@@ -24,6 +24,7 @@
 #include <sys/stat.h>
 #include <sys/mman.h>
 #include <commons/collections/dictionary.h>
+#include "estructuras.h"
 
 int puerto;
 char *ip;
@@ -63,19 +64,20 @@ int main(int argc, char *argv[])
 	flagsocket=0;
 	socketfs =iniciar_socket_server(ip,puerto,&flagsocket);
 
+	//aceptar conexiones
+
 	handshake1();
 
 	while(flag == 0)
 	{
-		char *mensaje; //saque el strdup
-		int codigo;
-		char * mensaje2 = strdup("");
-		char **parametros;
+		char *mensaje;
+		char * codigo;
+		char * mensaje2;
 
 		mensaje = recibir(socketfs,&flagsocket);
 		codigo = get_codigo(mensaje);
 
-		switch(codigo)
+		switch(atoi(codigo))
 		{
 			case 11:
 				mensaje2 = get_mensaje(mensaje);
@@ -92,16 +94,18 @@ int main(int argc, char *argv[])
 				borrar_archivo(mensaje2);
 				free(mensaje2);
 				break;
-			case 14:
+			case 14: ;
+				t_datos * est;
 				mensaje2 = get_mensaje(mensaje);
-				parametros = string_split(mensaje2,",");
-				obtener_datos(parametros[0],atoi(parametros[1]),atoi(parametros[2]));
+				est =recuperar_datos(codigo);
+				obtener_datos(est->path,est->offset,est->size);
 				free(mensaje2);
 				break;
-			case 15:
+			case 15: ;
+				t_datos * estruct;
 				mensaje2 = get_mensaje(mensaje);
-				parametros = string_split(mensaje2,",");
-				guardar_datos(parametros[0],atoi(parametros[1]),atoi(parametros[2]),parametros[3]);
+				estruct = recuperar_datos(codigo,mensaje2);
+				guardar_datos(estruct->path,estruct->offset,estruct->size,estruct->buffer);
 				free(mensaje2);
 				break;
 			default:
@@ -123,9 +127,9 @@ int main(int argc, char *argv[])
 
 void handshake1()
 {
-	char *handshake;//saque el strdup
+	char *handshake;
 	int esKernel=0;
-	char *mensaje; //saque el strdup
+	char *mensaje;
 	while(esKernel == 0)
 	{
 		int cliente = escuchar_conexiones(socketfs,&flagsocket);
@@ -135,6 +139,7 @@ void handshake1()
 			esKernel = 1;
 			mensaje = armar_mensaje("F00","");
 			enviar(socketfs,mensaje,&flagsocket);
+			free(mensaje);
 		}else{
 			cerrar_conexion(cliente);
 			printf("intruso no kernel eliminado \n");
@@ -152,7 +157,6 @@ void reservar_memoria()
 	ip = strdup("");
 	magic_number = strdup("");
 	crear_archivo_log("/home/utnso/log_fs.txt");
-	//archivos = dictionary_create();
 }
 
 void liberar_memoria()
@@ -161,8 +165,6 @@ void liberar_memoria()
 	free(ip);
 	free(magic_number);
 	munmap(&mystat,mystat.st_size);
-	//dictionary_clean(archivos);
-	//dictionary_destroy(archivos);
 	liberar_log();
 }
 
