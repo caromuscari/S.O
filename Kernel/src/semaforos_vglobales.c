@@ -12,6 +12,7 @@
 extern char *sem_id;
 extern char *sem_in;
 extern t_dictionary *sems;
+extern t_dictionary *vglobales;
 
 void inicializar_sems();
 void sem_wait(int, char *);
@@ -44,6 +45,29 @@ void inicializar_sems()
 
 	free(ids);
 	free(ins);
+}
+
+void inicializar_vglobales()
+{
+	vglobales = dictionary_create();
+	char **ids = string_split(shared, ",");
+	int n = 0;
+
+	while (ids[n] != NULL)
+	{
+		t_vglobal *vg = malloc (sizeof(t_vglobal));
+		vg->mutex_ = 1;
+		vg->value = 0;
+		vg->procesos = queue_create();
+		dictionary_put(vglobales ,ids[n] ,vg);
+		n++;
+	}
+	n = 0;
+	while (ids[n] != NULL)
+	{
+		free(ids[n]);
+	}
+	free(ids);
 }
 
 void sem_wait(int proceso, char *sema)
@@ -86,11 +110,6 @@ void sem_signal(int proceso, char *sema)
 	{
 		//eliminar el proceso, signal a semaforo invalido
 	}
-}
-
-void inicializar_vglobales()
-{
-
 }
 
 void lock_vglobal()

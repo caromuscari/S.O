@@ -28,6 +28,7 @@ char *sem_id;
 char *sem_in;
 char *shared;
 t_dictionary *sems;
+t_dictionary *vglobales;
 t_list *list_cpus;
 t_list *list_consolas;
 t_list *list_ejecutando;

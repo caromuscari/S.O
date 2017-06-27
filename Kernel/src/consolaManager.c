@@ -103,6 +103,7 @@ void manejo_conexiones_consolas()
 						else
 						{
 							responder_solicitud(i, mensaje_recibido);
+							free(mensaje_recibido);
 						}
 					}
 				}
