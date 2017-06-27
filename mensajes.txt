@@ -27,6 +27,8 @@ K14:Mensaje para leer
 K15:Mensaje para escribir
 K16:Mensaje para enviar FD a CPU
 K17:Mensaje para enviar pid, páginas para código y páginas para stack
+K18: ENVIAR VALOR VARIABLE COMPARTIDA A CPU : K|18|0025| (EMISOR-CODIGO-4BYTES VALOR INT DE LA VARIABLE COMPARTIDA)(RESPUESTA A UN P09)
+
 
 CPU - P
 P00: me presento al mundo como una CPU
@@ -37,7 +39,9 @@ P04 LEER
 P05 ESCRIBIR
 P06 CERRAR
 P07 BORRAR
-
+P08 ASIGNAR BYTES EN MEMORIA
+P09 PEDIR VALOR VARIABLE COMPARTIDA A KERNEL: P|09|0000000018|"variablecompartida"
+P10  ASIGNAR VALOR VARIABLE COMPARTIDA KERNEL: P|10|0000000018|"variablecompartida"|0025 
 
 MEMORIA - M
 M00: Respuesta a la solicitud de datos (Kernel) de tamaño de página. Va en el HandShake. Rta Ej: M|00|0128|
