@@ -13,4 +13,11 @@ typedef struct{
 	char ** bloques;
 }t_arch;
 
+typedef struct{
+	char * path;
+	int offset;
+	int size;
+	char * buffer;
+}t_datos;
+
 #endif /* ESTRUCTURAS_H_ */

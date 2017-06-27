@@ -103,6 +103,7 @@ int abrir_bitmap()
 		return -1;
 	}
 	bitmap = bitarray_create_with_mode(posicion,cantBloques,LSB_FIRST);
+	//free (posicion);
 	return 0;
 
 }

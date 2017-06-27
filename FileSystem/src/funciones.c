@@ -24,7 +24,6 @@
 extern int tBloques;
 extern int socketfs;
 extern int flagsocket;
-//extern t_dictionary * archivos;
 
 
 void validar_archivo(char *mensaje)
@@ -43,7 +42,6 @@ void validar_archivo(char *mensaje)
 	else {
 		mensaje2 = armar_mensaje("F01","ok");
 		enviar(socketfs,mensaje2,&flagsocket);
-		//dictionary_put(archivos,pathArmado,archivo);
 	}
 
 	free(mensaje2);
@@ -97,7 +95,6 @@ void obtener_datos(char *path, int offset, int size)
 	char *pathBloque;// para guardar los path hechos
 	FILE *bloques; //para abrir cada archivo de bloques
 	char *lectura=strdup(""); // para guardar lo que se lee
-	//char *lectura2 = strdup(""); // no se si es necesario para seguir guardando lo que se lee
 	int restoSize; // lo que falta leer
 	t_arch *archivo; //guarda la info del archivo en gral
 	div_t bloque ; //guarda los datos de la division para sacar los bloques y el offset
@@ -121,21 +118,11 @@ void obtener_datos(char *path, int offset, int size)
 		if(restoSize <= 64-bloque.rem)
 		{
 			fread(lectura,sizeof(char),restoSize,bloques);
-			/*while(!feof(bloques))
-			{
-				fgets(lectura2,restoSize,bloques);
-				string_append(&lectura,lectura2);
-			}*/
 
 		} // preguntar estructura de los bloques.bin
 		else{
-			/*while(!feof(bloques))
-			{
-				fgets(lectura2,64-bloque.rem,bloques);
-				string_append(&lectura,lectura2);
-			}*/
 
-			fread(lectura,sizeof(char),restoSize,bloques);
+			fread(lectura,sizeof(char),64-bloque.rem,bloques);
 
 			fclose(bloques);
 
@@ -155,7 +142,6 @@ void obtener_datos(char *path, int offset, int size)
 	free(mensaje);
 	free(pathBloque);
 	free(lectura);
-	//free(lectura2);
 	free(archivo);
 	free(pathArmado);
 
@@ -209,11 +195,14 @@ void guardar_datos(char *path, int offset, int size, char *buffer)
 				fclose(bloques);
 
 				bloqueSig = agregar_bloque();
-				pathBloque = armar_pathBloque(path2,bloqueSig,archivo);
+				pathBloque = armar_pathBloqueNuevo(path2,bloqueSig,archivo);
 				bloques =fopen(pathBloque,"w");
 				bloque.rem = 0;
 				string_append(&bloques_agregados,",");
 				string_append(&bloques_agregados,string_itoa(bloqueSig));
+				if((size - guardado) > (64-bloque.rem)){
+					string_append(&bloques_agregados,",");
+				}
 
 			}
 
