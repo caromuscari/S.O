@@ -12,7 +12,6 @@
 extern char *sem_id;
 extern char *sem_in;
 extern t_dictionary *sems;
-extern t_log *log;
 
 void inicializar_sems();
 void sem_wait(int, char *);

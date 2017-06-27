@@ -126,14 +126,20 @@ void pedido_lectura(t_program *prog, int fd, int offs, int size, char *path, int
 			free(mensaje);
 
 			char *mensaje_recibido = recibir(config->cliente_fs, &controlador);
-			if(comparar_header(mensaje,"F"))
+			char *header = get_header(mensaje);
+
+			if(comparar_header(header,"F"))
 			{
-				if(get_codigo(mensaje) == 4)
+				char *codig = get_codigo(mensaje);
+				int cod = atoi(codig);
+				if(cod == 4)
 				{
 					char *mensaje_leido = get_mensaje(mensaje_recibido);
 					enviar(socket_cpu, mensaje_leido, &controlador);
+					free(mensaje_leido);
 				}
 			}
+			free(header);
 			free(mensaje_recibido);
 
 		}else /* eliminar programa, pedido de lectura sin permiso*/;
@@ -175,13 +181,15 @@ void mover_puntero(int socket_cpu, int offset, int fd, t_program *prog)
 {
 	int control;
 	char *mensaje = recibir(socket_cpu, &control);
-	char *info = strdup("");
-	info = get_mensaje(mensaje);
+	char *info = get_mensaje(mensaje);
 	char *path = get_path(fd);
+	char *header = get_header(mensaje);
 
-	if (comparar_header("P",mensaje))
+	if (comparar_header("P",header))
 	{
-		switch (get_codigo(mensaje))
+		char *cod = get_codigo(mensaje);
+		int codigo = atoi(cod);
+		switch (codigo)
 		{
 			case 5 : ;//pedido de escritura
 				/*char *info = strdup("");
@@ -198,7 +206,12 @@ void mover_puntero(int socket_cpu, int offset, int fd, t_program *prog)
 				pedido_lectura(prog, fd, offset, size, path, socket_cpu);
 				break;
 		}
+		free(cod);
 	}
+	free(mensaje);
+	free(info);
+	free(path);
+	free(header);
 }
 
 void escribir_archivo(int offset, char *info, char *flags, char *path, int socket_cpu)
@@ -211,19 +224,23 @@ void escribir_archivo(int offset, char *info, char *flags, char *path, int socke
 		enviar(config->cliente_fs, mensaje_enviar, &controlador);
 
 		char *mensaje_recibido = recibir(config->cliente_fs, &controlador);
-		if(comparar_header(mensaje,"F"))
+		char *header = get_header(mensaje);
+
+		if(comparar_header(header,"F"))
 		{
-			if(get_codigo(mensaje) == 5)
+			char *cod = get_codigo(mensaje);
+			int codigo = atoi(mensaje);
+			if(codigo== 5)
 			{
 				/*char *mensaje_leido = get_mensaje(mensaje_recibido);
 				enviar(socket_cpu, mensaje_leido, &controlador);*/
 			}
+			free(cod);
 		}
+		free(header);
 		free(mensaje_recibido);
-
-
-
 		free(mensaje);
+		free(mensaje_enviar);
 	}else ;
 }
 
@@ -300,7 +317,8 @@ void chequear_respuesta(int socket_cpu, char *path, char *flag, t_program *prog)
 {
 	int controlador;
 	char *mensaje_recibido = recibir(config->cliente_fs, &controlador);
-	if(comparar_header(mensaje_recibido, "F"))
+	char *header = get_header(mensaje_recibido);
+	if(comparar_header(header, "F"))
 	{
 		char *info = get_mensaje(mensaje_recibido);
 		if(!strcmp(info,"ok"))
@@ -310,18 +328,22 @@ void chequear_respuesta(int socket_cpu, char *path, char *flag, t_program *prog)
 			enviar(socket_cpu, mensaje, &controlador);
 			free(mensaje);
 		}
+		free(info);
 	}else; //cerrar conexión
 	free(mensaje_recibido);
+	free(header);
 }
 
 char *armar_info_mensaje(char *info, char* path)
 {
 	char *payload_char = string_itoa(string_length(info));
 	int size_payload = string_length(payload_char);
+	free(payload_char);
 	char *primera_parte = string_repeat('0', 4 - size_payload);
 
 	char *payload_char2 = string_itoa(string_length(path));
 	int size_payload2 = string_length(payload_char2);
+	free(payload_char2);
 	char *segunda_parte = string_repeat('0', 4 - size_payload2);
 
 	char *mensaje = strdup("");

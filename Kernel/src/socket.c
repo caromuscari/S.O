@@ -10,8 +10,6 @@
 #include "log.h"
 #include "manejo_errores.h"
 
-extern t_log *log;
-
 int iniciar_socket_cliente(char *ip, int puerto_conexion, int *control)
 {
 	int connected_socket;

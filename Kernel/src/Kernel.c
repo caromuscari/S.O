@@ -36,7 +36,7 @@ t_list *list_bloqueados;
 t_list *global_fd;
 t_queue *cola_nuevos;
 t_queue *cola_listos;
-t_log *log;
+t_log *log_;
 pthread_mutex_t mutex_lista_cpus;
 pthread_mutex_t mutex_lista_fs;
 pthread_mutex_t mutex_lista_consolas;
@@ -137,6 +137,7 @@ void handshakearFS()
 	int controlador = 0;
 	char *mensaje = armar_mensaje("K03","");
 	enviar(config->cliente_fs, mensaje, &controlador);
+	free(mensaje);
 }
 
 void crear_conexiones()

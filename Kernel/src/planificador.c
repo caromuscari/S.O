@@ -45,7 +45,7 @@ int calcular_pag(char *mensaje);
 
 void programas_listos_A_ejecutar()
 {
-	int listos, cpus_disponibles;
+	int i, listos, cpus_disponibles;
 	int *tam_prog = 0;
 
 	int _cpuLibre(t_cpu *una_cpu)
@@ -60,7 +60,7 @@ void programas_listos_A_ejecutar()
 			listos = queue_size(cola_listos);
 			cpus_disponibles = list_count_satisfying(list_cpus, (void*)_cpuLibre);
 
-			if((listos) && (cpus_disponibles))
+			if((listos>0)&&(cpus_disponibles>0))
 			{
 				pthread_mutex_lock(&mutex_cola_listos);
 				t_program *program = queue_pop(cola_listos);
@@ -71,13 +71,25 @@ void programas_listos_A_ejecutar()
 				pthread_mutex_unlock(&mutex_lista_cpus);
 
 				char *pcb_serializado = serializarPCB_KerCPU(program->pcb,config->algoritmo,config->quantum,config->quantum_sleep,tam_prog);
-				//char *mensaje_env = armar_mensaje("K07", pcb_serializado);
 				char *mensaje_env = armar_mensaje_pcb("K07", pcb_serializado, *tam_prog);
 				enviar(cpu_disponible->socket_cpu, mensaje_env, &controlador);
 
-				if(controlador)
+				if(controlador>0)
 				{
+					escribir_error_log("Ha fallado la conexion con una CPU");
 					free(cpu_disponible);
+
+					pthread_mutex_lock(&mutex_cola_listos);
+					int size = queue_size(cola_listos);
+					queue_push(cola_listos,program);
+					pthread_mutex_unlock(&mutex_cola_listos);
+
+					for(i=0;i<size;i++)
+					{
+						pthread_mutex_lock(&mutex_cola_listos);
+						queue_push(cola_listos,queue_pop(cola_listos));
+						pthread_mutex_unlock(&mutex_cola_listos);
+					}
 				}
 				else
 				{
@@ -92,6 +104,7 @@ void programas_listos_A_ejecutar()
 					list_add(list_cpus, cpu_disponible);
 					pthread_mutex_unlock(&mutex_lista_cpus);
 				}
+				free(mensaje_env);
 			}
 		}
 	}
@@ -108,8 +121,9 @@ void programas_nuevos_A_listos()
 		listos = queue_size(cola_listos);
 		multiprogramacion_dis = config->grado_multiprog - (procesando + listos);
 
-		if((multiprogramacion_dis)&&(nuevos))
+		if((multiprogramacion_dis>0)&&(nuevos>0))
 		{
+			escribir_log("Se ha movido un proceso de nuevos a listos");
 			pthread_mutex_lock(&mutex_cola_nuevos);
 			pthread_mutex_lock(&mutex_cola_listos);
 			queue_push(cola_listos, queue_pop(cola_nuevos));
@@ -145,6 +159,7 @@ void agregar_nueva_prog(int id_consola, int pid, char *mensaje)
 	pthread_mutex_lock(&mutex_cola_nuevos);
 	queue_push(cola_nuevos, programa);
 	pthread_mutex_unlock(&mutex_cola_nuevos);
+	free(codigo);
 }
 
 void bloquear_proceso(int pid)
@@ -207,14 +222,15 @@ void finalizar_proceso(int pid, int codigo_finalizacion)
 
 int calcular_pag(char *mensaje)
 {
-	int tamanio = atoi(string_substring(mensaje, 3, 10));
+	char *tam = string_substring(mensaje, 3, 10);
+	int tamanio = atoi(tam);
 	int paginas = (int)(tamanio/tam_pagina);
 
 	if (tamanio % tam_pagina > 0)
 	{
 		paginas ++;
 	}
-
+	free(tam);
 	return paginas;
 }
 
