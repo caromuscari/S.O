@@ -11,6 +11,7 @@
 
 extern char *sem_id;
 extern char *sem_in;
+extern char *shared;
 extern t_dictionary *sems;
 extern t_dictionary *vglobales;
 
@@ -18,7 +19,7 @@ void inicializar_sems();
 void sem_wait(int, char *);
 void sem_signal(int, char *);
 void inicializar_vglobales();
-void lock_vglobal();
+int lock_vglobal(t_vglobal *vg, int prog);
 void unlock_vglobal();
 
 void inicializar_sems()
@@ -112,12 +113,36 @@ void sem_signal(int proceso, char *sema)
 	}
 }
 
-void lock_vglobal()
+int lock_vglobal(t_vglobal *vg, int prog)
 {
-
+	vg->mutex_ --;
+	if(vg->mutex_ < 0)
+	{
+		queue_push(vg->procesos,(void *) prog);
+		return 0;
+	}else return 1;
 }
 
-void unlock_vglobal()
+void set_vglobal(char *vglobal, int num, int prog)
 {
+	t_vglobal *vg = (t_vglobal *)dictionary_get(vglobales, vglobal);
 
+	if(vg != NULL)
+	{
+		int sem = lock_vglobal(vg, prog);
+		if(sem)
+		{
+			vg->value = num;
+			unlock_vglobal(vg);
+		}else ; //bloquear proceso
+	}
+}
+
+void unlock_vglobal(t_vglobal *vg)
+{
+	vg->mutex_ ++;
+	if(vg->mutex_ <= 0)
+	{
+		queue_pop(vg->procesos);
+	}
 }
