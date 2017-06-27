@@ -20,6 +20,7 @@ int buscar_offset_variable(t_list* vars,char id);
 void stack_destroy(t_stack_element *self);
 void t_memoria_destroy(t_memoria *self);
 int calcular_pagina(int offset,int paginas);
+int calcular_offset_respecto_pagina(int offset);
 
 
 #endif /* SRC_FUNCIONESCPU_ */

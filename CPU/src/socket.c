@@ -59,13 +59,13 @@ int enviar(int socket_emisor, void *mensaje_a_enviar, int *controlador,int size)
 	return ret;
 }
 
-void recibir(int socket_receptor, int *controlador,void *buff,int size)
+void recibir(int socket_receptor, int *controlador,char *buff,int size)
 {
 	int ret;
 
 	*controlador = 0;
 
-	if ((ret = recv(socket_receptor, buff, size,0)) <= 0)
+	if ((ret = recv(socket_receptor, buff, size,MSG_WAITALL)) <= 0)
 	{
 		//printf("error receiving or connection lost \n");
 		if (ret == 0)

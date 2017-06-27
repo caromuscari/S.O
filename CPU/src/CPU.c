@@ -4,15 +4,16 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <stdbool.h>
 #include <commons/config.h>
 #include <commons/collections/list.h>
 #include <parser/metadata_program.h>
 #include "log.h"
 #include "socket.h"
 #include "funcionesCPU.h"
+#include "cosas.h"
 #include "funcionesParser.h"
-#define ROUNDROBIN "RR"
-#define FIFO "FF"
+
 
 int puertoK,puertoM;
 char *ipK;
@@ -22,6 +23,7 @@ int sockMemCPU;
 int tam_pagina_memoria;
 t_PCB_CPU* pcb;
 char* programa;
+int n;
 static const char* bobo_ansisop =
 		"begin\n"
 		"variables a\n"
@@ -66,37 +68,47 @@ static const char* con_funcion_ansisop =
 		"\n";
 
 
+
+void procesar();
+void iniciar_pcb_falsa();
 void leerArchivoConfiguracion(char* argv);
 int conexion_Kernel(int puertoK, char* ipK);
-void conexion_Memoria(int puertoM,char* ipM);
-void procesar();
-char* pedir_linea_memoria();
+int conexion_Memoria(int puertoM,char* ipM);
+char * pedir_linea_memoria();
 
 int main(int argc, char *argv[])
 {
-	int chau = 0;
+
 	//char *programa =strdup(facil_ansisop);
 	//char *programa =strdup(otro_ansisop);
 	//programa =strdup(con_funcion_ansisop);
 	programa = strdup(bobo_ansisop);
 	crear_archivo_log("/home/utnso/CPUlog");
 	leerArchivoConfiguracion(argv[1]);
-	int res = conexion_Kernel(puertoK, ipK);
+	int res;int chau = 0;
+	res = conexion_Kernel(puertoK, ipK);
 	if(res != 0){
 		cerrar_conexion(sockKerCPU);
-		printf("RES ES:%d\n",res);
+		escribir_log("CPU finalizada por error en conexión con Kernel",2);
 		chau=1;
 	}
-	//	conectarse con memoria
-	//conexion_Memoria(puertoM,ipM);
+
+	res = conexion_Memoria(puertoM,ipM);
+	if(res!= 0){
+		cerrar_conexion(sockMemCPU);
+		escribir_log("CPU finalizada por error en conexión con Memoria",2);
+		chau=1;
+	}
+
 	int controlador = 0;
 	while(chau!=1){
-		char *buff = malloc (13);
-		char *idmensaje = malloc(2);
-		char *sizemensaje= malloc (10);
-		int largomensaje  = 0;
+		char *buff = malloc (13); memset(buff,'0',13);
+		char *idmensaje = malloc(2);memset(idmensaje,'0',2);
+		//char *sizemensaje= malloc (10);
+		//int largomensaje  = 0;
 		escribir_log("Esperando mensajes del Kernel para ponerme a trabajar...",1);
 		recibir(sockKerCPU,&controlador,buff,13);
+
 		if(controlador != 0){
 			escribir_log("error recibiendo mensaje del Kernel, bai",2);
 			chau = 1;
@@ -105,16 +117,24 @@ int main(int argc, char *argv[])
 
 		switch (atoi(idmensaje)){
 		case 7:
-			memcpy(sizemensaje,buff+3,10);largomensaje = atoi(sizemensaje);
+			escribir_log("CASE N° 7: iniciar procesamiento de PCB",1);
+			iniciar_pcb_falsa();
+			/*memcpy(sizemensaje,buff+3,10);largomensaje = atoi(sizemensaje);
 			free(sizemensaje);
 			char *mensajeEntero = malloc(largomensaje);
 			recibir(sockKerCPU,&controlador,mensajeEntero,largomensaje);
 			//printf("hola\n");
-			pcb = deserializarPCB_KerCPU(mensajeEntero);
+			pcb = deserializarPCB_KerCPU(mensajeEntero);*/
 			procesar();
+			break;
+		default:
+			escribir_log("CASE DEFAULT: error - CPU desconoce ese mensaje",2);
+			break;
 
 		}
-
+		free(buff);
+		free(idmensaje);
+		//free(sizemensaje);
 
 	}
 //printf("Me fui\n");
@@ -137,8 +157,6 @@ void leerArchivoConfiguracion(char* argv)
 			config_has_property(configuracion,"IP_MEMORIA")){
 	puertoK = config_get_int_value(configuracion, "PUERTO_KERNEL");
 	puertoM = config_get_int_value(configuracion, "PUERTO_MEMORIA");
-	//strcpy(ipK, config_get_string_value(configuracion, "IP_KERNEL"));
-	//strcpy(ipM, config_get_string_value(configuracion, "IP_MEMORIA"));
 	ipK = strdup(config_get_string_value(configuracion, "IP_KERNEL"));
 	ipM = strdup(config_get_string_value(configuracion, "IP_MEMORIA"));
 
@@ -151,25 +169,27 @@ void leerArchivoConfiguracion(char* argv)
 	config_destroy(configuracion);
 }
 void procesar(){
-	if(string_equals_ignore_case(pcb->algoritmo,ROUNDROBIN) == 0){
+	if(string_equals_ignore_case(pcb->algoritmo,"RR") == 1){
 		//PROCESAR SEGUN QUANTUM/QUANTUM_SLEEP EL PCB
 		int ins_realizada=0;
 		while(ins_realizada < pcb->quantum){
 			char * linea= pedir_linea_memoria();
+			escribir_log(linea,1);
 			analizadorLinea(linea,&funcionesTodaviaSirve,&funcionesKernelTodaviaSirve);
 			free(linea);
 			ins_realizada ++;
 			pcb->PC++;
 			//sleep(pcb->quantum_sleep);
 		}
-	}if(string_equals_ignore_case(pcb->algoritmo,FIFO) == 0){
+	}if(string_equals_ignore_case(pcb->algoritmo,"FF") == 1){
 
 		// PROCESAR SEGUN FIFO
-		int n=0;
+		n=0;
 		while(n == 0){
 			char *linea = pedir_linea_memoria();
 			analizadorLinea(linea,&funcionesTodaviaSirve,&funcionesKernelTodaviaSirve);
 			free(linea);
+			pcb->PC ++;
 		}
 	}
 }
@@ -184,15 +204,16 @@ int conexion_Kernel(int puertoK, char* ipK) {
 	int resultado = handshakeKernel(sockKerCPU);
 	return resultado;
 }
-void conexion_Memoria(int puerto, char* ip) {
+int conexion_Memoria(int puerto, char* ip) {
 	int controladorConexion = 0;
 	sockMemCPU = iniciar_socket_cliente(ip, puerto, &controladorConexion);
 	if (controladorConexion == 0) {
 		escribir_log("Exitos conectandose al Kernel", 1);
 	} else {
 		escribir_log(string_itoa(controladorConexion),2);
+		return -1;
 	}
-	tam_pagina_memoria = handshakeMemoria(sockMemCPU);
+	 return handshakeMemoria(sockMemCPU);
 }
 char* pedir_linea_memoria(){
 	//if (linea_esta_dividida() == TRUE){
@@ -209,4 +230,18 @@ char* pedir_linea_memoria(){
 	char *linea = string_substring(programa,pcb->in_cod[pcb->PC].offset_inicio,pcb->in_cod[pcb->PC].offset_fin);
 
 	return linea;
+}
+void iniciar_pcb_falsa(){
+
+		pcb= malloc(sizeof(t_PCB_CPU));
+			pcb->PC =0;
+			pcb->PID =2;
+			pcb->SP = 0;
+			pcb->cant_pag = 1;
+			pcb->exit_code = 0;
+			pcb->in_cod = armarIndiceCodigo(programa);
+			pcb->in_et = armarIndiceEtiquetas(programa);
+			pcb->in_stack = armarIndiceStack(programa);
+			pcb->dicc_et = armarDiccionarioEtiquetas(pcb->in_et);
+			pcb->algoritmo = strdup("FF");
 }

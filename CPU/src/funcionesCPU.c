@@ -306,7 +306,6 @@ int handshakeMemoria(int socketMP){
 	}else {
 
 		if(strncmp(handshake,"M00",3) == 0){
-			escribir_log("mensaje de conexion con Memoria recibido",1);
 			if(control != 0){
 				escribir_log("error enviando mensaje al Memoria",2);
 			}
@@ -315,14 +314,16 @@ int handshakeMemoria(int socketMP){
 			memcpy(tammensaje,handshake+3,10);
 			tamimensaje = atoi(tammensaje);
 			free(tammensaje);
-			char *tampag = malloc(tamimensaje);
-			memcpy(tampag,handshake+13,tamimensaje);
+			char *tampag = malloc(tamimensaje);printf("tamimensaje%d\n",tamimensaje);
+			recibir(socketMP,&control,tampag,tamimensaje);
 			tamanopag = atoi(tampag); free(tampag);
+
 
 		}
 	}
 	free (handshake);
-	return tamanopag;
+	tam_pagina_memoria = tamanopag;
+	return control;
 
 }
 int calcular_offset(t_list* args,t_list* vars){
@@ -381,4 +382,7 @@ void stack_destroy(t_stack_element *self) {
 
 void t_memoria_destroy(t_memoria *self){
 	free(self);
+}
+int calcular_offset_respecto_pagina(int offset){
+	return offset % tam_pagina_memoria;
 }
