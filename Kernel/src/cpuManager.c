@@ -129,7 +129,8 @@ void realizar_handShake_cpu(int nuevo_socket)
 		else
 		{
 			//Aca deberia ir la validacion si el mensaje corresponde a cpu
-			if(comparar_header("P", respuesta))
+			char *header = get_header(respuesta);
+			if(comparar_header("P", header))
 			{
 				escribir_log("Se ha conectado una nueva CPU");
 				agregar_lista_cpu(nuevo_socket);

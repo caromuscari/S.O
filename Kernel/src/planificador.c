@@ -149,6 +149,7 @@ void agregar_nueva_prog(int id_consola, int pid, char *mensaje)
 	programa->pcb->PC = 0;
 	programa->pcb->PID = pid;
 	programa->pcb->SP = 0;//ver que es esto!!!
+	programa->pcb->exit_code = 0;
 	programa->pcb->cant_pag = calcular_pag(mensaje);
 	programa->pcb->in_cod = armarIndiceCodigo(codigo);
 	programa->pcb->in_et = armarIndiceEtiquetas(codigo);
@@ -173,7 +174,7 @@ void bloquear_proceso(int pid)
 	t_PCB *proc = list_remove_by_condition(list_ejecutando, (void*)_buscar_proceso);
 	pthread_mutex_unlock(&mutex_lista_ejecutando);
 
-	escribir_log("Se ha bloqueado un proceso");
+	escribir_log_con_numero("Se ha bloqueado el proceso: ", proc->PID);
 
 	pthread_mutex_lock(&mutex_lista_bloqueados);
 	list_add(list_bloqueados, proc);
@@ -191,7 +192,7 @@ void desbloquear_proceso(int pid)
 	t_PCB *proc = list_remove_by_condition(list_bloqueados, (void*)_buscar_proceso);
 	pthread_mutex_unlock(&mutex_lista_bloqueados);
 
-	escribir_log("Se ha desbloqueado un proceso");
+	escribir_log_con_numero("Se ha desbloqueado el proceso: ", proc->PID);
 
 	pthread_mutex_lock(&mutex_cola_listos);
 	queue_push(cola_listos, proc);
@@ -211,7 +212,7 @@ void finalizar_proceso(int pid, int codigo_finalizacion)
 
 	programa->pcb->exit_code = codigo_finalizacion;
 
-	escribir_log("Se ha finalizado un proceso");
+	escribir_log_con_numero("Se ha finalizado el proceso: ", programa->PID);
 
 	pthread_mutex_lock(&mutex_lista_finalizados);
 	list_add(list_finalizados, programa);
@@ -253,8 +254,6 @@ void forzar_finalizacion(int pid, int cid, int codigo_finalizacion)
 		pthread_mutex_lock(&mutex_lista_finalizados);
 		list_add(list_finalizados,pr);
 		pthread_mutex_unlock(&mutex_lista_finalizados);
-
-		escribir_log_con_numero("Planificador -- acaba de meter el proceso como finalizado y la lista tiene: ",list_size(list_finalizados));
 	}
 
 	contador = list_count_satisfying(list_ejecutando, (void*)_buscar_program);

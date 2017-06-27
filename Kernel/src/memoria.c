@@ -84,7 +84,7 @@ void reservar_memoria_din(t_program *program, int size_solicitado)
 
 void manejar_respuesta(char *respuesta)
 {
-	int codigo = get_codigo(respuesta);
+	int codigo = atoi(get_codigo(respuesta));
 	char *mensaje = strdup("");
 	mensaje = get_mensaje(respuesta);
 
