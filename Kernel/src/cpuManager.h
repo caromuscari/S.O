@@ -5,7 +5,7 @@ void realizar_handShake_cpu(int);
 void agregar_lista_cpu(int , char *);
 void inicializar_listas_cpu();
 void actualizar_pcb();
-void responder_solicitud_cpu(int socket_);
+void responder_solicitud_cpu(int i, char *mensaje_recibido);
 t_program *programa_ejecutando(int socket_);
 int get_offset(char *mensaje);
 int get_fd(char *mensaje);

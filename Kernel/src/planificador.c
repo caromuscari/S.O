@@ -48,7 +48,7 @@ void forzar_finalizacion(int pid, int cid, int codigo_finalizacion);
 void programas_listos_A_ejecutar()
 {
 	int i, listos, cpus_disponibles;
-	int *tam_prog = 0;
+	int tam_prog = 0;
 
 	int _cpuLibre(t_cpu *una_cpu)
 	{
@@ -60,7 +60,6 @@ void programas_listos_A_ejecutar()
 		if(flag_planificador)
 		{
 			listos = queue_size(cola_listos);
-			cpus_disponibles = list_count_satisfying(list_cpus, (void*)_cpuLibre);
 
 			if((listos>0)&&(cpus_disponibles>0))
 			{
@@ -72,9 +71,13 @@ void programas_listos_A_ejecutar()
 				t_cpu *cpu_disponible = list_remove_by_condition(list_cpus, (void*)_cpuLibre);
 				pthread_mutex_unlock(&mutex_lista_cpus);
 
-				char *pcb_serializado = serializarPCB_KerCPU(program->pcb,config->algoritmo,config->quantum,config->quantum_sleep,tam_prog);
-				char *mensaje_env = armar_mensaje_pcb("K07", pcb_serializado, *tam_prog);
-				enviar(cpu_disponible->socket_cpu, mensaje_env, &controlador);
+				char *pcb_serializado = serializarPCB_KerCPU(program->pcb,config->algoritmo,config->quantum,config->quantum_sleep,&tam_prog);
+				printf("%s\n",pcb_serializado);
+				escribir_log_compuesto("pcb_serializado",pcb_serializado);
+				char *mensaje_env = armar_mensaje_pcb("K07", pcb_serializado, tam_prog);
+				printf("%s\n",mensaje_env);
+				escribir_log_compuesto("mensaje_env",mensaje_env);
+				enviar_pcb(cpu_disponible->socket_cpu, mensaje_env, &controlador, tam_prog+13);
 
 				if(controlador>0)
 				{
@@ -99,7 +102,7 @@ void programas_listos_A_ejecutar()
 					list_add(list_ejecutando, program);
 					pthread_mutex_unlock(&mutex_lista_ejecutando);
 
-					*cpu_disponible->ejecutando = true;
+					cpu_disponible->ejecutando = 1;
 					cpu_disponible->program = program;
 
 					pthread_mutex_lock(&mutex_lista_cpus);
@@ -254,7 +257,7 @@ void forzar_finalizacion(int pid, int cid, int codigo_finalizacion)
 	void _procesar_program(t_program *pr)
 	{
 		pr->pcb->exit_code = codigo_finalizacion;
-		sem_signal(pr, "$");
+		//sem_signal(pr, "$");
 		pthread_mutex_lock(&mutex_lista_finalizados);
 		list_add(list_finalizados,pr);
 		pthread_mutex_unlock(&mutex_lista_finalizados);

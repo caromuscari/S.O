@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
 #include <semaphore.h>
 #include <unistd.h>
 #include <commons/config.h>
@@ -11,9 +13,9 @@
 #include <commons/collections/queue.h>
 #include <commons/collections/dictionary.h>
 #include "configuracion.h"
-#include "consolaManager.h"
 #include "manejo_errores.h"
 #include "consolaKernel.h"
+#include "manejo_conexiones.h"
 #include "planificador.h"
 #include "estructuras.h"
 #include "cpuManager.h"
@@ -58,13 +60,11 @@ void crear_conexiones();
 void inicializar_semaforos();
 void programas_listos_A_ejecutar();
 void programas_nuevos_A_listos();
-void manejo_conexiones_consolas();
-void manejo_conexion_cpu();
+void manejo_conexiones();
 
 int main(int argc, char*argv[])
 {
 	pthread_t hiloConsolaConsola;
-	pthread_t hiloConsolaCPU;
 	pthread_t hiloNuevos;
 	pthread_t hiloListos;
 	pthread_t hiloConsolaKernel;
@@ -80,14 +80,12 @@ int main(int argc, char*argv[])
 	handshakearMemory();
 	//handshakearFS();
 
-	pthread_create(&hiloConsolaConsola, NULL, (void*)manejo_conexiones_consolas, NULL);
-	pthread_create(&hiloConsolaCPU, NULL, (void*)manejo_conexion_cpu, NULL);
+	pthread_create(&hiloConsolaConsola, NULL, (void*)manejo_conexiones, NULL);
 	pthread_create(&hiloNuevos, NULL, (void*)programas_nuevos_A_listos, NULL);
 	pthread_create(&hiloListos, NULL, (void*)programas_listos_A_ejecutar, NULL);
 	pthread_create(&hiloConsolaKernel, NULL, (void*)leer_consola, NULL);
 
 	pthread_join(hiloConsolaConsola, NULL);
-	pthread_join(hiloConsolaCPU, NULL);
 	pthread_join(hiloNuevos, NULL);
 	pthread_join(hiloListos, NULL);
 	pthread_join(hiloConsolaKernel, NULL);
@@ -151,7 +149,7 @@ void crear_conexiones()
 	//escribir_log("Conectando con FS");
 	//config->cliente_fs = iniciar_socket_cliente(config->ip_fs, config->puerto_fs, &controlador);
 	escribir_log("Conectando con Memoria");
-	config->cliente_memoria = iniciar_socket_cliente(config->ip_memoria, config->puerto_memoria, &controlador);
+	//config->cliente_memoria = iniciar_socket_cliente(config->ip_memoria, config->puerto_memoria, &controlador);
 }
 
 void inicializar_semaforos()

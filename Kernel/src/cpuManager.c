@@ -11,7 +11,6 @@
 #include "log.h"
 #include "semaforos_vglobales.h"
 
-extern t_configuracion *config;
 extern t_list *list_cpus;
 extern pthread_mutex_t mutex_lista_cpus;
 fd_set master;
@@ -31,88 +30,10 @@ int get_fd(char *mensaje);
 char *get_variable(char *mensaje);
 char *get_numero(char *mensaje);
 
-void manejo_conexion_cpu()
-{
-	escribir_log("Iniciando administrador de CPUs");
-	//Seteo en 0 el master y temporal
-	//
-	FD_ZERO(&master);
-	FD_ZERO(&read_fds);
-
-	//Cargo el socket server
-	FD_SET(config->server_cpu, &master);
-
-	//Cargo el socket mas grande
-	fdmax = config->server_cpu;
-
-	//Bucle principal
-	while (1)
-	{
-		read_fds = master;
-
-		int selectResult = select(fdmax + 1, &read_fds, NULL, NULL, NULL);
-		escribir_log("Actividad detectada en administrador de CPUs");
-
-		if (selectResult == -1)
-		{
-			break;
-			escribir_error_log("Error en el administrador de CPUs");
-		}
-		else
-		{
-			//Recorro los descriptores para ver quien llamo
-			int i;
-			for (i = 0; i <= fdmax; i++)
-			{
-				if (FD_ISSET(i, &read_fds))
-				{
-					//Se detecta alguien nuevo llamando?
-					if (i == config->server_cpu)
-					{
-						//Gestiono la conexion entrante
-						escribir_log("Se detecto actividad en el server CPU");
-						int nuevo_socket = aceptar_conexion(config->server_cpu, &controlador_cpu);
-
-						//Controlo que no haya pasado nada raro y acepto al nuevo
-						if (controlador_cpu == 0)
-						{
-							realizar_handShake_cpu(nuevo_socket);
-						}
-
-						//Cargo la nueva conexion a la lista y actualizo el maximo
-						FD_SET(nuevo_socket, &master);
-
-						if (nuevo_socket > fdmax)
-						{
-							fdmax = nuevo_socket;
-						}
-					}
-					else
-					{
-						//Es una conexion existente, respondo a lo que me pide
-						char *mensaje_recibido = recibir(i, &controlador_cpu);
-
-						if(controlador_cpu > 0)
-						{
-							escribir_log("Se eliminara una CPU que se desconecto");
-							FD_CLR(i, &master);
-						}
-						else
-						{
-							responder_solicitud_cpu(i, mensaje_recibido);
-						}
-
-					}
-				}
-			}
-		}
-	}
-}
-
 void realizar_handShake_cpu(int nuevo_socket)
 {
 	//Envio mensaje a CPU pidiendo sus datos
-	char *mensaje = armar_mensaje("K00","");
+	char *mensaje = strdup("K00");
 	enviar(nuevo_socket, mensaje, &controlador_cpu);
 
 	if (controlador_cpu > 0)
@@ -123,6 +44,8 @@ void realizar_handShake_cpu(int nuevo_socket)
 	else
 	{
 		char *respuesta = recibir(nuevo_socket, &controlador_cpu);
+
+		escribir_log(respuesta);
 
 		if (controlador_cpu > 0)
 		{
@@ -161,7 +84,7 @@ void agregar_lista_cpu(int nuevo_socket)
 	t_cpu *nueva_cpu = malloc(sizeof(t_cpu));
 	nueva_cpu->socket_cpu = nuevo_socket;
 	nueva_cpu->program = malloc(sizeof(t_program));
-	nueva_cpu->ejecutando = false;
+	nueva_cpu->ejecutando = 0;
 	nueva_cpu->cpu_id = get_cpuId();
 
 	pthread_mutex_lock(&mutex_lista_cpus);
