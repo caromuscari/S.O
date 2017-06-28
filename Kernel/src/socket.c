@@ -174,3 +174,21 @@ void cerrar_conexion(int socket_)
 {
 	close(socket_);
 }
+int enviar_pcb(int socket_emisor, char *mensaje_a_enviar, int *controlador,int size)
+{
+	int ret;
+	signal(SIGPIPE, SIG_IGN);
+	*controlador = 0;
+
+	if ((ret = send(socket_emisor, mensaje_a_enviar,size, MSG_NOSIGNAL)) < 0)
+	{
+		//close(socket_emisor);
+		*controlador = 7;
+
+	} else
+	{
+		//Este mensaje debera esta en la funcion que invoque esta
+		//escribir_log_con_numero("Kernel - Exito al enviar mensaje a PID: ", *prog->PID);
+	}
+	return ret;
+}
