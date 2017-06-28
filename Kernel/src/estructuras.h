@@ -159,6 +159,8 @@ typedef struct
 typedef struct
 {
 	int value;
-	bool mutex_;
+	int mutex_;
+	t_queue *procesos;
 }t_vglobal;
+
 #endif /* ESTRUCTURAS_H_ */

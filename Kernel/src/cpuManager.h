@@ -10,5 +10,7 @@ t_program *programa_ejecutando(int socket_);
 int get_offset(char *mensaje);
 int get_fd(char *mensaje);
 void manejo_conexion_cpu();
+char *get_variable(char *mensaje);
+char *get_numero(char *mensaje);
 
 #endif /* CPUMANAGER_H_ */

@@ -9,6 +9,7 @@
 #include "mensaje.h"
 #include "socket.h"
 #include "log.h"
+#include "semaforos_vglobales.h"
 
 extern t_configuracion *config;
 extern t_list *list_cpus;
@@ -27,6 +28,8 @@ void responder_solicitud_cpu(int socket_, char *mensaje);
 t_program *programa_ejecutando(int socket_);
 int get_offset(char *mensaje);
 int get_fd(char *mensaje);
+char *get_variable(char *mensaje);
+char *get_numero(char *mensaje);
 
 void manejo_conexion_cpu()
 {
@@ -128,8 +131,9 @@ void realizar_handShake_cpu(int nuevo_socket)
 		}
 		else
 		{
+			char *header = get_header(respuesta);
 			//Aca deberia ir la validacion si el mensaje corresponde a cpu
-			if(comparar_header("P", respuesta))
+			if(comparar_header("P", header))
 			{
 				escribir_log("Se ha conectado una nueva CPU");
 				agregar_lista_cpu(nuevo_socket);
@@ -142,6 +146,7 @@ void realizar_handShake_cpu(int nuevo_socket)
 				enviar(nuevo_socket, mensaje, &controlador_cpu);
 				cerrar_conexion(nuevo_socket);
 			}
+			free(header);
 		}
 	}
 }
@@ -181,10 +186,11 @@ int get_cpuId()
 
 void responder_solicitud_cpu(int socket_, char *mensaje)
 {
-	if(comparar_header(mensaje, "P"))
+	char *header = get_header(mensaje);
+	if(comparar_header(header, "P"))
 	{
 		t_program *prog = programa_ejecutando(socket_);
-		char *cod = get_mensaje(mensaje);
+		char *cod = get_codigo(mensaje);
 		int codigo = atoi(cod);
 
 		switch(codigo) {
@@ -198,13 +204,27 @@ void responder_solicitud_cpu(int socket_, char *mensaje)
 				int fd = get_fd(mensaje);
 				mover_puntero(socket_, offset, fd, prog);
 				break;
+			case 9 : ;
+				escribir_log("Se recibió una petición de CPU para obtener valor de variable compartida");
+				break;
+
+			case 10 : ;
+				escribir_log("Se recibió una petición de CPU para setear valor de variable compartida");
+				char *variable = get_variable(mensaje);
+				char *numero = get_numero(mensaje);
+				int num = atoi(numero);
+				set_vglobal(variable, num, prog->PID);
+				free(variable);
+				free(numero);
+				break;
 			default : ;
 				//No se comprende el mensaje recibido por cpu
 				escribir_error_log("Se recibio una peticion de CPU desconocida");
 				char *msj_unknow = "K08";
 				enviar(socket_, msj_unknow, &controlador_cpu);
+				free(msj_unknow);
 				//if (controlador > 0) desconectar_consola(socket_);
-		}
+		} free(header);
 	}else
 		escribir_error_log("No se reconocio el mensaje de CPU"); //emisor no reconocido
 }
@@ -243,4 +263,20 @@ int get_offset(char *mensaje)
 	free(payload3);
 
 	return atoi(string_substring(mensaje ,(2+payload2+4), payload4));
+}
+
+char *get_variable(char *mensaje)
+{
+	char *payload = string_substring(mensaje, 3, 10);
+	int payload1 = atoi(payload);
+	free(payload);
+	return string_substring(mensaje, 13, payload1-4);
+}
+
+char *get_numero(char *mensaje)
+{
+	char *payload = string_substring(mensaje, 3, 10);
+	int desde = 13 + atoi(payload) - 4;
+	free(payload);
+	return string_substring(mensaje, desde, 4);
 }

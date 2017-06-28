@@ -39,6 +39,7 @@ void mostrar_cola(t_queue *, char *);
 void mostrar_listas(t_list *, char *);
 void obtener_informacion(int pid);
 void imprimir_tabla_archivos();
+int existe_pid(int pid);
 
 void leer_consola()
 {
@@ -89,6 +90,7 @@ void leer_consola()
 				free(input);
 				break;
 			case 4 :
+				printf("El grado actual de multiprogramacion es: %i\n", config->grado_multiprog);
 				printf("Indique el nuevo grado de multiprogramacion: ");
 				scanf("%ms", &input2);
 				int grado = atoi(input2);
@@ -100,8 +102,15 @@ void leer_consola()
 				printf("Indique el PID del proceso a finalizar: ");
 				scanf("%ms", &input2);
 				int numberKill = atoi(input2);
-				forzar_finalizacion(numberKill, 0, 0);
-				//falta algun tipo de chequeo por si el numero que puso no existe!!!
+
+				if(existe_pid(numberKill))
+				{
+					forzar_finalizacion(numberKill, 0, -10);
+					printf("El proceso ha sido eliminado\n");
+				}
+				else
+					printf("El proceso buscado no existe\n");
+
 				free(input);
 				free(input2);
 				break;
@@ -197,7 +206,7 @@ void obtener_informacion(int pid)
 	char *lista;
 	int encontrado = 0;
 	int i, size;
-	t_program *found = malloc(sizeof(t_program));
+	t_program *found;
 	found->PID = 0;
 
 	void _buscar_program(t_program *pr)
@@ -270,9 +279,10 @@ void obtener_informacion(int pid)
 		printf("Cantidad de allocations: %i\n", found->allocs);
 		printf("Cantidad de frees: %i\n", found->frees);
 		printf("Cantidad de Syscalls: %i\n", found->syscall);
+		printf("Cantidad de paginas: %i\n", found->pcb->cant_pag);
+		printf("Exit code: %i\n", found->pcb->exit_code);
 		free(lista);
 	}
-	free(found);
 }
 
 void imprimir_tabla_archivos()
@@ -299,4 +309,52 @@ void imprimir_menu()
 	printf("	5 - Finalizar proceso\n");
 	printf("	6 - Detener planificacion\n");
 	printf("	7 - Reanudar planificacion\n\n");
+}
+
+int existe_pid(int pid)
+{
+	int size, i;
+	int encontrado = 0;
+
+	void _buscar_program(t_program *pr)
+	{
+		if(pr->PID == pid)
+			encontrado = 1;
+	}
+
+	pthread_mutex_lock(&mutex_lista_ejecutando);
+	list_iterate(list_ejecutando, (void*)_buscar_program);
+	pthread_mutex_unlock(&mutex_lista_ejecutando);
+
+	pthread_mutex_lock(&mutex_lista_bloqueados);
+	list_iterate(list_bloqueados, (void*)_buscar_program);
+	pthread_mutex_unlock(&mutex_lista_bloqueados);
+
+	pthread_mutex_lock(&mutex_lista_finalizados);
+	list_iterate(list_finalizados, (void*)_buscar_program);
+	pthread_mutex_unlock(&mutex_lista_finalizados);
+
+	pthread_mutex_lock(&mutex_cola_nuevos);
+	size = queue_size(cola_nuevos);
+	for(i=0;i<size;i++)
+	{
+		t_program *pr = queue_pop(cola_nuevos);
+		_buscar_program(pr);
+		queue_push(cola_nuevos,pr);
+	}
+	size = 0; i = 0;
+	pthread_mutex_unlock(&mutex_cola_nuevos);
+
+	pthread_mutex_lock(&mutex_cola_listos);
+	size = queue_size(cola_listos);
+	for(i=0;i<size;i++)
+	{
+		t_program *pr = queue_pop(cola_listos);
+		_buscar_program(pr);
+		queue_push(cola_listos,pr);
+	}
+	size = 0; i = 0;
+	pthread_mutex_unlock(&mutex_cola_listos);
+
+	return encontrado;
 }

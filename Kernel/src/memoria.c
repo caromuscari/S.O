@@ -84,11 +84,11 @@ void reservar_memoria_din(t_program *program, int size_solicitado)
 
 void manejar_respuesta(char *respuesta)
 {
-	int codigo = get_codigo(respuesta);
-	char *mensaje = strdup("");
-	mensaje = get_mensaje(respuesta);
+	char *codigo = get_codigo(respuesta);
+	int cod = atoi(codigo);
+	char *mensaje = get_mensaje(respuesta);
 
-	switch (codigo)
+	switch (cod)
 	{
 		case 0:
 			tam_pagina = atoi(mensaje);
@@ -100,6 +100,7 @@ void manejar_respuesta(char *respuesta)
 			//desconectar de memoria????? o ke? que no pase esto plis
 	}
 	free(mensaje);
+	free(codigo);
 }
 
 int ubicar_bloque(t_pagina *pagina,int tam_sol, int *flag)//usa algoritmo first fit -> el resumen dice que es el mas kpo
