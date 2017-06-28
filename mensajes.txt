@@ -65,3 +65,7 @@ F05: guardar en archivo
 
 ------- Mensajes -------
 C01(tamaño del archivo)(texto del archivo)
+
+Errores customizados
+-10: Se ha forzado la finalizacion desde consola kernel
+-11: El semaforo no existe

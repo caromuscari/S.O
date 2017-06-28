@@ -8,6 +8,8 @@
 #include <commons/collections/queue.h>
 #include <commons/collections/dictionary.h>
 #include "estructuras.h"
+#include "planificador.h"
+#include "log.h"
 
 extern char *sem_id;
 extern char *sem_in;
@@ -16,8 +18,8 @@ extern t_dictionary *sems;
 extern t_dictionary *vglobales;
 
 void inicializar_sems();
-void sem_wait(int, char *);
-void sem_signal(int, char *);
+void sem_signal(t_program*, char *);
+void sem_wait(t_program *, char *);
 void inicializar_vglobales();
 int lock_vglobal(t_vglobal *vg, int prog);
 void unlock_vglobal();
@@ -71,7 +73,7 @@ void inicializar_vglobales()
 	free(ids);
 }
 
-void sem_wait(int proceso, char *sema)
+void sem_wait(t_program *proceso, char *sema)
 {
 	t_sem *sem = (t_sem *)dictionary_get(sems, sema);
 
@@ -79,7 +81,8 @@ void sem_wait(int proceso, char *sema)
 	{
 		if (sem->value  > 0)
 		{
-			//acá va un log
+			escribir_log_compuesto("Se realiza un wait al semaforo: ",sema);
+
 			sem->value --;
 		}else
 		{
@@ -93,23 +96,23 @@ void sem_wait(int proceso, char *sema)
 	}
 }
 
-void sem_signal(int proceso, char *sema)
+void sem_signal(t_program *prog, char *sema)
 {
 	t_sem *sem = (t_sem *)dictionary_get(sems, sema);
 
-	if (sem != NULL)
+	if((sem != NULL)||(strcmp(sema,"$")))
 	{
 		sem->value ++;
 
 		if (sem->value <= 0)
 		{
-			queue_pop(sem->procesos);
-			//desbloquear el proceso
-			//el proceso que sale de la cola deberia ser insertado en la cola de ready
+			int proc = (int)queue_pop(sem->procesos);
+			desbloquear_proceso(proc);
 		}
 	}else
 	{
 		//eliminar el proceso, signal a semaforo invalido
+		forzar_finalizacion(prog->PID, 0, -11);
 	}
 }
 

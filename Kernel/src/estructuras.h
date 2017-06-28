@@ -53,33 +53,7 @@ typedef struct
 	int offset;
 	int size;
 }__attribute__((__packed__))t_memoria;
-/*
-typedef struct
-{
-	int *instruccion;
-	int *offset_inicio;
-	int *offset_fin;
-}t_sentencia;
 
-typedef struct
-{
-	char ID; //no estoy segura que sea necesario
-	int pag;
-	int offset;
-	int size;
-}t_memoria;
-
-typedef struct
-{
-	int PID;
-	int PC;
-	int cant_pag;
-	t_sentencia *in_cod;
-	t_dictionary *in_et;
-	t_list *in_stack;  //lista de t_stack_element
-	int exit_code;
-}t_PCB;
-*/
 typedef struct
 {
 	int FD;
@@ -95,6 +69,7 @@ typedef struct
 	int allocs;
 	int frees;
 	t_PCB *pcb;
+	t_list *semaforos;
 	t_list *TAP; //tabla de archivo por proceso
 	t_list *memoria_dinamica; //lista de paginas pedidas de manera dinámica
 }t_program; //cada vez que se crea un programa, además del pcb esta estructura de control

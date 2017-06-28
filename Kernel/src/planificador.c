@@ -14,6 +14,7 @@
 #include <commons/string.h>
 #include <pthread.h>
 #include "estructuras.h"
+#include "semaforos_vglobales.h"
 #include "mensaje.h"
 #include "metadata.h"
 #include "socket.h"
@@ -42,6 +43,7 @@ void bloquear_proceso(int pid);
 void programas_nuevos_A_listos();
 void programas_listos_A_ejecutar();
 int calcular_pag(char *mensaje);
+void forzar_finalizacion(int pid, int cid, int codigo_finalizacion);
 
 void programas_listos_A_ejecutar()
 {
@@ -145,6 +147,7 @@ void agregar_nueva_prog(int id_consola, int pid, char *mensaje)
 	programa->syscall = 0;
 	programa->memoria_dinamica = list_create();
 	programa->TAP = list_create();
+	programa->semaforos = list_create();
 	programa->pcb = malloc(sizeof(t_PCB));
 	programa->pcb->PC = 0;
 	programa->pcb->PID = pid;
@@ -185,7 +188,7 @@ void desbloquear_proceso(int pid)
 {
 	int _buscar_proceso(t_PCB *un_proceso)
 	{
-		return !(pid == un_proceso->PID);
+		return (pid == un_proceso->PID);
 	}
 
 	pthread_mutex_lock(&mutex_lista_bloqueados);
@@ -251,9 +254,11 @@ void forzar_finalizacion(int pid, int cid, int codigo_finalizacion)
 	void _procesar_program(t_program *pr)
 	{
 		pr->pcb->exit_code = codigo_finalizacion;
+		sem_signal(pr, "$");
 		pthread_mutex_lock(&mutex_lista_finalizados);
 		list_add(list_finalizados,pr);
 		pthread_mutex_unlock(&mutex_lista_finalizados);
+
 	}
 
 	contador = list_count_satisfying(list_ejecutando, (void*)_buscar_program);
