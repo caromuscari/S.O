@@ -255,7 +255,7 @@ t_valor_variable asignarValorCompartida(t_nombre_compartida variable,t_valor_var
 	char * mensaje = malloc(13+strlen(variable)+4);
 	int desplazamiento = 0;
 	char * aux_ceros;
-	char * leng = string_itoa(strlen(variable));
+	char * leng = string_itoa(strlen(variable)+4);
 	char * str_valor = string_itoa(valor);
 	int controlador = 0;
 	// COD

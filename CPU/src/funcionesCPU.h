@@ -10,7 +10,7 @@
 #include <commons/collections/dictionary.h>
 #include "estructuras.h"
 
-int handshakeKernel(int sok);
+int handshakeKernel(int );
 int handshakeMemoria(int );
 t_dictionary* armarDiccionarioEtiquetas(char *etiquetas_serializadas);
 char* serializarPCB_CPUKer (t_PCB_CPU* pcb,int *);

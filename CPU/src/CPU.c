@@ -25,9 +25,18 @@ t_PCB_CPU* pcb;
 char* programa;
 int n;
 static const char* bobo_ansisop =
+		"#!/usr/bin/ansisop\n"
 		"begin\n"
 		"variables a\n"
 		"a = 2\n"
+		"end\n"
+		"\n";
+static const char* compartida_ansisop =
+		"#!/usr/bin/ansisop\n"
+		"begin\n"
+		"variables a\n"
+		"a = 2\n"
+		"!colas = a\n"
 		"end\n"
 		"\n";
 static const char* facil_ansisop =
@@ -91,6 +100,7 @@ int main(int argc, char *argv[])
 		cerrar_conexion(sockKerCPU);
 		escribir_log("CPU finalizada por error en conexión con Kernel",2);
 		chau=1;
+		goto fin;
 	}
 
 	res = conexion_Memoria(puertoM,ipM);
@@ -98,33 +108,42 @@ int main(int argc, char *argv[])
 		cerrar_conexion(sockMemCPU);
 		escribir_log("CPU finalizada por error en conexión con Memoria",2);
 		chau=1;
+		goto fin;
 	}
 
 	int controlador = 0;
 	while(chau!=1){
-		char *buff = malloc (13); memset(buff,'0',13);
-		char *idmensaje = malloc(2);memset(idmensaje,'0',2);
-		//char *sizemensaje= malloc (10);
-		//int largomensaje  = 0;
+		char* buff = malloc (13);
+		char* idmensaje = malloc(2);
+		char* sizemensaje= malloc (10);
+		int largomensaje  = 0;
 		escribir_log("Esperando mensajes del Kernel para ponerme a trabajar...",1);
 		recibir(sockKerCPU,&controlador,buff,13);
+		//controlador = recv(sockKerCPU,buff,13,0);
 
 		if(controlador != 0){
 			escribir_log("error recibiendo mensaje del Kernel, bai",2);
 			chau = 1;
 		}
 		memcpy(idmensaje,buff+1,2);
-
+		//idmensaje= string_substring(buff,1,2);
+		char * aux = string_from_format("mensaje recibido %s",buff);
+		escribir_log(aux,1);
+		free(aux);
+		printf("%d",atoi(idmensaje));
 		switch (atoi(idmensaje)){
-		case 7:
+		case 07:
 			escribir_log("CASE N° 7: iniciar procesamiento de PCB",1);
-			iniciar_pcb_falsa();
-			/*memcpy(sizemensaje,buff+3,10);largomensaje = atoi(sizemensaje);
-			free(sizemensaje);
+			//iniciar_pcb_falsa();
+			char * aux = string_from_format("sizemensaje (resto del mensaje) :%s-%d",sizemensaje,atoi(sizemensaje));
+			escribir_log(aux,1);
+			free(aux);
+			memcpy(sizemensaje,buff+3,10);largomensaje = atoi(sizemensaje);
+			//free(sizemensaje);
 			char *mensajeEntero = malloc(largomensaje);
 			recibir(sockKerCPU,&controlador,mensajeEntero,largomensaje);
 			//printf("hola\n");
-			pcb = deserializarPCB_KerCPU(mensajeEntero);*/
+			pcb = deserializarPCB_KerCPU(mensajeEntero);
 			procesar();
 			break;
 		default:
@@ -134,10 +153,11 @@ int main(int argc, char *argv[])
 		}
 		free(buff);
 		free(idmensaje);
-		//free(sizemensaje);
+		free(sizemensaje);
 
 	}
 //printf("Me fui\n");
+	fin:
 free(programa);
 free(ipK);free(ipM);
 
@@ -149,8 +169,6 @@ void leerArchivoConfiguracion(char* argv)
 
 	t_config *configuracion;
 	configuracion = config_create(argv);
-	//ipK = malloc(12);
-	//ipM = malloc(10);
 	if(config_has_property(configuracion,"PUERTO_KERNEL")&&
 			config_has_property(configuracion,"PUERTO_MEMORIA")&&
 			config_has_property(configuracion,"IP_KERNEL")&&
@@ -197,10 +215,11 @@ int conexion_Kernel(int puertoK, char* ipK) {
 	int controladorConexion = 0;
 	sockKerCPU = iniciar_socket_cliente(ipK, puertoK, &controladorConexion);
 	if (controladorConexion == 0) {
-		escribir_log("Exitos conectandose al Kernel", 1);
+		escribir_log("Exitos conectandose al Kernel, falta realizar handshake", 1);
 	} else {
 		escribir_log(string_itoa(controladorConexion),2);
 	}
+	printf("Socket para Kernel %d\n",sockKerCPU);
 	int resultado = handshakeKernel(sockKerCPU);
 	return resultado;
 }

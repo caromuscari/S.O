@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/socket.h>
 #include <commons/string.h>
 #include "funcionesCPU.h"
 #include "socket.h"
@@ -186,7 +187,8 @@ t_PCB_CPU* deserializarPCB_KerCPU (char * pcbserializado){
 			desplazamiento += sizeof(int);
 			memcpy(&pcb->quantum_sleep,pcbserializado+desplazamiento,sizeof(int));
 			desplazamiento += sizeof(int);
-			memcpy(&pcb->algoritmo,pcbserializado+desplazamiento,sizeof(char)*2);
+			pcb->algoritmo = malloc(2);
+			memcpy(pcb->algoritmo,pcbserializado+desplazamiento,sizeof(char)*2);
 			desplazamiento += sizeof(char)*2;
 			memcpy(&size_in_cod,pcbserializado+desplazamiento,sizeof(int));
 			desplazamiento += sizeof(int);
@@ -271,21 +273,20 @@ t_PCB_CPU* deserializarPCB_KerCPU (char * pcbserializado){
 
 
 int handshakeKernel(int socketKP){
-	char *handshake = malloc(4);
-	memset(handshake,'\0',4);
+	char *handshake = malloc(3);
 	int control=0;
 	recibir(socketKP,&control,handshake,3);
 	if (control !=0 ){
 		escribir_log("error recibiendo mensaje del Kernel",2);
 	}else {
 
-		if(strcmp(handshake,"K00") == 0){
+		if(strncmp(handshake,"K00",3) == 0){
+
 			escribir_log("mensaje de conexion con Kernel recibido",1);
-			memcpy(handshake,"P00",3);
-			enviar(socketKP,handshake,&control,3);
+			char * k= strdup("P00");
+			enviar(socketKP,k,&control,3);
 			if(control != 0){
 				escribir_log("error enviando mensaje al Kernel",2);
-
 			}
 			escribir_log("handshake Kernel realizado exitosamente",1);
 		}

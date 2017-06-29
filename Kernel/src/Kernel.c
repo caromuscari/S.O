@@ -60,7 +60,6 @@ void crear_conexiones();
 void inicializar_semaforos();
 void programas_listos_A_ejecutar();
 void programas_nuevos_A_listos();
-void manejo_conexiones();
 
 int main(int argc, char*argv[])
 {
