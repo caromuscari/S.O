@@ -60,6 +60,7 @@ void crear_conexiones();
 void inicializar_semaforos();
 void programas_listos_A_ejecutar();
 void programas_nuevos_A_listos();
+void manejo_conexiones();
 
 int main(int argc, char*argv[])
 {
@@ -148,7 +149,7 @@ void crear_conexiones()
 	//escribir_log("Conectando con FS");
 	//config->cliente_fs = iniciar_socket_cliente(config->ip_fs, config->puerto_fs, &controlador);
 	escribir_log("Conectando con Memoria");
-	//config->cliente_memoria = iniciar_socket_cliente(config->ip_memoria, config->puerto_memoria, &controlador);
+	config->cliente_memoria = iniciar_socket_cliente(config->ip_memoria, config->puerto_memoria, &controlador);
 }
 
 void inicializar_semaforos()

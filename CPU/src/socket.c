@@ -42,6 +42,7 @@ int iniciar_socket_cliente(char *ip, int puerto_conexion, int *control)
 
 int enviar(int socket_emisor,void * mensaje_a_enviar, int *controlador,int size)
 {
+	printf("mensaje_a_enviar: %s\n", mensaje_a_enviar);
 	int ret;
 	//signal(SIGPIPE, SIG_IGN);
 	*controlador = 0;
@@ -77,7 +78,7 @@ void recibir(int socket_receptor, int *controlador,void *buff,int size)
 		*controlador = 1;
 		//close(socket_receptor);
 	}
-
+	printf("recibido: %s\n", (char*)buff);
 }
 
 void cerrar_conexion(int socket_)

@@ -187,7 +187,7 @@ void leerArchivoConfiguracion(char* argv)
 	config_destroy(configuracion);
 }
 void procesar(){
-	if(string_equals_ignore_case(pcb->algoritmo,"RR") == 1){
+	if(strncmp(pcb->algoritmo,"RR",2) == 0){
 		//PROCESAR SEGUN QUANTUM/QUANTUM_SLEEP EL PCB
 		int ins_realizada=0;
 		while(ins_realizada < pcb->quantum){
@@ -199,11 +199,13 @@ void procesar(){
 			pcb->PC++;
 			//sleep(pcb->quantum_sleep);
 		}
-	}if(string_equals_ignore_case(pcb->algoritmo,"FF") == 1){
+	}if(strncmp(pcb->algoritmo,"FF",2) == 0){
 
 		// PROCESAR SEGUN FIFO
 		n=0;
 		while(n == 0){
+			//@MARU! estan pasando cosas raras aca!!! llamo como 3 veces al "pedir_linea_memoria"
+			//y este devolvio char vacios! y despues pincho con strcpy!!
 			char *linea = pedir_linea_memoria();
 			analizadorLinea(linea,&funcionesTodaviaSirve,&funcionesKernelTodaviaSirve);
 			free(linea);

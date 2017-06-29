@@ -61,8 +61,11 @@ void programas_listos_A_ejecutar()
 		{
 			listos = queue_size(cola_listos);
 
+			cpus_disponibles = list_count_satisfying(list_cpus, (void*)_cpuLibre);
+
 			if((listos>0)&&(cpus_disponibles>0))
 			{
+				escribir_log("ENTRE EN EL COSO DEL IF");
 				pthread_mutex_lock(&mutex_cola_listos);
 				t_program *program = queue_pop(cola_listos);
 				pthread_mutex_unlock(&mutex_cola_listos);
@@ -70,6 +73,8 @@ void programas_listos_A_ejecutar()
 				pthread_mutex_lock(&mutex_lista_cpus);
 				t_cpu *cpu_disponible = list_remove_by_condition(list_cpus, (void*)_cpuLibre);
 				pthread_mutex_unlock(&mutex_lista_cpus);
+
+				escribir_log("ENTRE EN EL COSO DEL IF");
 
 				char *pcb_serializado = serializarPCB_KerCPU(program->pcb,config->algoritmo,config->quantum,config->quantum_sleep,&tam_prog);
 				printf("%s\n",pcb_serializado);
