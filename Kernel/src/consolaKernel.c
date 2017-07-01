@@ -31,6 +31,10 @@ extern pthread_mutex_t mutex_cola_nuevos;
 extern pthread_mutex_t mutex_cola_listos;
 extern t_configuracion *config;
 extern int flag_planificador;
+//A partir de aca son cosas de mas para monitoreo
+extern t_list *list_cpus;
+extern t_list *list_consolas;
+
 
 void generar_listados(int lista);
 void leer_consola();
@@ -40,6 +44,8 @@ void mostrar_listas(t_list *, char *);
 void obtener_informacion(int pid);
 void imprimir_tabla_archivos();
 int existe_pid(int pid);
+
+void imprimir_info();
 
 void leer_consola()
 {
@@ -73,6 +79,8 @@ void leer_consola()
 				{
 					printf("No se ingreso un numero valido\n");
 				}
+
+				imprimir_info();
 
 				free(input);
 				free(input2);
@@ -357,4 +365,25 @@ int existe_pid(int pid)
 	pthread_mutex_unlock(&mutex_cola_listos);
 
 	return encontrado;
+}
+
+void imprimir_info()
+{
+	escribir_log("Lista de CPU's\n\n");
+	void _imprimir_cpu(t_cpu *cpu)
+	{
+		escribir_log_con_numero("Numero de CPU: ",cpu->cpu_id);
+		escribir_log_con_numero("Estado de ejecutando: ",cpu->ejecutando);
+		printf("\n");
+	}
+	list_iterate(list_cpus, (void*)_imprimir_cpu);
+
+	escribir_log("Lista de Consolas\n\n");
+	void _imprimir_consola(t_consola *consola)
+	{
+		escribir_log_con_numero("Numero de Consola: ",consola->CID);
+		printf("\n");
+	}
+
+	list_iterate(list_consolas, (void*)_imprimir_consola);
 }
