@@ -91,6 +91,8 @@ void escuchar_mensaje()
 				char *size = get_payload(mensaje);
 				tamAimprimir= atoi(size);
 
+				escribir_log_compuesto("El mensaje recibido es: ",get_mensaje(mensaje));
+
 				smod=dictionary_get(sem,pid);
 				smod->valor=1;
 
