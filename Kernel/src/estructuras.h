@@ -65,6 +65,7 @@ typedef struct
 {
 	int PID;
 	int CID;
+	int socket_consola;
 	int syscall;
 	int allocs;
 	int frees;

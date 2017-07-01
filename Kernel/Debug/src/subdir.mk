@@ -11,6 +11,7 @@ C_SRCS += \
 ../src/cpuManager.c \
 ../src/fileSystem.c \
 ../src/log.c \
+../src/manejo_conexiones.c \
 ../src/manejo_errores.c \
 ../src/memoria.c \
 ../src/mensaje.c \
@@ -27,6 +28,7 @@ OBJS += \
 ./src/cpuManager.o \
 ./src/fileSystem.o \
 ./src/log.o \
+./src/manejo_conexiones.o \
 ./src/manejo_errores.o \
 ./src/memoria.o \
 ./src/mensaje.o \
@@ -43,6 +45,7 @@ C_DEPS += \
 ./src/cpuManager.d \
 ./src/fileSystem.d \
 ./src/log.d \
+./src/manejo_conexiones.d \
 ./src/manejo_errores.d \
 ./src/memoria.d \
 ./src/mensaje.d \

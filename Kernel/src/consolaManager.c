@@ -170,7 +170,7 @@ void responder_peticion_prog(int socket, char *mensaje)
 		escribir_log("Se puede guardar codigo en memoria");
 		ultimo_pid ++;
 		int consola = buscar_consola(socket);
-		agregar_nueva_prog(consola, ultimo_pid, mensaje);
+		agregar_nueva_prog(consola, ultimo_pid, mensaje, socket);
 
 		char *mensaje_conf =  armar_mensaje("K04", string_itoa(ultimo_pid));
 		escribir_log_compuesto("este es el mensaje de un proceso recien creado: ",mensaje_conf);

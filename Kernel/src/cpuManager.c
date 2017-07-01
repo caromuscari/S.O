@@ -140,6 +140,15 @@ void responder_solicitud_cpu(int socket_, char *mensaje)
 				free(variable);
 				free(numero);
 				break;
+			case 11: ;
+				int controlador;
+				char *mensaje_recibido = get_mensaje(mensaje);
+				char *mensaje_enviar = armar_mensaje("K09",mensaje_recibido);
+				enviar(prog->socket_consola, mensaje_enviar, &controlador);
+				enviar(socket_, "ok", &controlador);
+				free(mensaje_recibido);
+				free(mensaje_enviar);
+				break;
 			default : ;
 				//No se comprende el mensaje recibido por cpu
 				escribir_error_log("Se recibio una peticion de CPU desconocida");
