@@ -16,10 +16,12 @@
 #include "estructuras.h"
 #include "semaforos_vglobales.h"
 #include "mensaje_consola.h"
+#include "cpuManager.h"
 #include "mensaje.h"
 #include "metadata.h"
 #include "socket.h"
 #include "log.h"
+
 
 extern t_list *list_cpus;
 extern t_list *list_ejecutando;
@@ -249,6 +251,7 @@ int calcular_pag(char *mensaje)
 void forzar_finalizacion(int pid, int cid, int codigo_finalizacion)
 {
 	t_list *encontrados = list_create();
+	t_list *encontrados_ejec = list_create();
 	int i, contador = 0;
 
 	bool _buscar_program(t_program *pr)
@@ -259,11 +262,17 @@ void forzar_finalizacion(int pid, int cid, int codigo_finalizacion)
 			return pr->CID == cid;
 	}
 
-	void _procesar_program(t_program *pr)
+	void _procesar_finalizacion(t_program *pr)
+	{
+		avisar_consola_proceso_murio(pr);
+		pedir_pcb_error(pr,codigo_finalizacion);
+	}
+
+	void _terminar_programa(t_program *pr)
 	{
 		pr->pcb->exit_code = codigo_finalizacion;
 		avisar_consola_proceso_murio(pr);
-		//sem_signal(pr, "$");
+
 		pthread_mutex_lock(&mutex_lista_finalizados);
 		list_add(list_finalizados,pr);
 		pthread_mutex_unlock(&mutex_lista_finalizados);
@@ -273,7 +282,7 @@ void forzar_finalizacion(int pid, int cid, int codigo_finalizacion)
 	while(contador)
 	{
 		pthread_mutex_lock(&mutex_lista_ejecutando);
-		list_add(encontrados, list_remove_by_condition(list_ejecutando, (void*)_buscar_program));
+		list_add(encontrados_ejec, list_remove_by_condition(list_ejecutando, (void*)_buscar_program));
 		pthread_mutex_unlock(&mutex_lista_ejecutando);
 		contador --;
 	}
@@ -331,8 +340,10 @@ void forzar_finalizacion(int pid, int cid, int codigo_finalizacion)
 		}
 	}
 
-	list_iterate(encontrados, (void*)_procesar_program);
+	list_iterate(encontrados_ejec, (void*)_procesar_finalizacion);
+	list_iterate(encontrados, (void*)_terminar_programa);
 	list_destroy(encontrados);
+	list_destroy(encontrados_ejec);
 }
 
 void finalizar_quantum(int pid)

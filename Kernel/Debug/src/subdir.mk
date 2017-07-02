@@ -15,6 +15,7 @@ C_SRCS += \
 ../src/manejo_errores.c \
 ../src/memoria.c \
 ../src/mensaje.c \
+../src/mensaje_consola.c \
 ../src/metadata.c \
 ../src/planificador.c \
 ../src/semaforos_vglobales.c \
@@ -32,6 +33,7 @@ OBJS += \
 ./src/manejo_errores.o \
 ./src/memoria.o \
 ./src/mensaje.o \
+./src/mensaje_consola.o \
 ./src/metadata.o \
 ./src/planificador.o \
 ./src/semaforos_vglobales.o \
@@ -49,6 +51,7 @@ C_DEPS += \
 ./src/manejo_errores.d \
 ./src/memoria.d \
 ./src/mensaje.d \
+./src/mensaje_consola.d \
 ./src/metadata.d \
 ./src/planificador.d \
 ./src/semaforos_vglobales.d \

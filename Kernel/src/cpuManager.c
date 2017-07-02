@@ -8,7 +8,9 @@
 #include "estructuras.h"
 #include "mensaje.h"
 #include "socket.h"
+#include "planificador.h"
 #include "log.h"
+#include "metadata.h"
 #include "semaforos_vglobales.h"
 
 extern t_list *list_cpus;
@@ -24,11 +26,12 @@ void agregar_lista_cpu(int);
 int get_cpuId();
 void actualizar_pcb();
 void responder_solicitud_cpu(int socket_, char *mensaje);
-t_program *programa_ejecutando(int socket_);
+t_cpu *programa_ejecutando(int socket_);
 int get_offset(char *mensaje);
 int get_fd(char *mensaje);
 char *get_variable(char *mensaje);
 char *get_numero(char *mensaje);
+void pedir_pcb_error(t_program *prg, int exit_code);
 
 void realizar_handShake_cpu(int nuevo_socket) {
 	//Envio mensaje a CPU pidiendo sus datos
@@ -64,8 +67,11 @@ void realizar_handShake_cpu(int nuevo_socket) {
 	}
 }
 
-void actualizar_pcb() {
-
+void actualizar_pcb(t_program *programa, t_PCB *pcb)
+{
+	free(programa->pcb);
+	programa->pcb = malloc(sizeof(t_PCB));
+	programa->pcb = pcb;
 }
 
 void agregar_lista_cpu(int nuevo_socket) {
@@ -94,8 +100,10 @@ int get_cpuId() {
 
 void responder_solicitud_cpu(int socket_, char *mensaje) {
 	char *header = get_header(mensaje);
-	if (comparar_header(header, "P")) {
-		t_program *prog = programa_ejecutando(socket_);
+	if (comparar_header(header, "P"))
+	{
+		t_cpu *cpu_ejecutando = programa_ejecutando(socket_);
+		t_program *prog = cpu_ejecutando->program;
 		char *cod = get_codigo(mensaje);
 		int codigo = atoi(cod);
 
@@ -111,16 +119,13 @@ void responder_solicitud_cpu(int socket_, char *mensaje) {
 			int fd = get_fd(mensaje);
 			mover_puntero(socket_, offset, fd, prog);
 			break;
-		case 9:
-			;
-			escribir_log(
-					"Se recibió una petición de CPU para obtener valor de variable compartida");
+		case 9:	;
+			escribir_log("Se recibió una petición de CPU para obtener valor de variable compartida");
 			break;
 
 		case 10:
 			;
-			escribir_log(
-					"Se recibió una petición de CPU para setear valor de variable compartida");
+			escribir_log("Se recibió una petición de CPU para setear valor de variable compartida");
 			char *variable = get_variable(mensaje);
 			char *numero = get_numero(mensaje);
 			int num = atoi(numero);
@@ -138,6 +143,26 @@ void responder_solicitud_cpu(int socket_, char *mensaje) {
 			free(mensaje_recibido);
 			free(mensaje_enviar);
 			break;
+		case 12 : ;
+			char *mensaje_r = get_mensaje(mensaje);
+			t_PCB *pcb_actualizado =deserializarPCB_CPUKer(mensaje_r);
+			actualizar_pcb(prog, pcb_actualizado);
+			finalizar_quantum(pcb_actualizado->PID);
+
+			free(cpu_ejecutando->program);
+			cpu_ejecutando->program = malloc(sizeof(t_program));
+			cpu_ejecutando->ejecutando = 0;
+			break;
+		case 13: ;
+			char *mensaje_r2 = get_mensaje(mensaje);
+			t_PCB *pcb_actualizado2 =deserializarPCB_CPUKer(mensaje_r2);
+			actualizar_pcb(prog, pcb_actualizado2);
+			finalizar_proceso(pcb_actualizado2->PID, pcb_actualizado2->exit_code);
+
+			free(cpu_ejecutando->program);
+			cpu_ejecutando->program = malloc(sizeof(t_program));
+			cpu_ejecutando->ejecutando = 0;
+			break;
 		default:
 			;
 			//No se comprende el mensaje recibido por cpu
@@ -152,27 +177,30 @@ void responder_solicitud_cpu(int socket_, char *mensaje) {
 		escribir_error_log("No se reconocio el mensaje de CPU"); //emisor no reconocido
 }
 
-t_program *programa_ejecutando(int socket_) {
-	pthread_mutex_lock(&mutex_lista_cpus);
-	t_list *cpus_aux = list_cpus;
-	pthread_mutex_unlock(&mutex_lista_cpus);
-
-	bool _cpu_por_socket(t_cpu *cpu) {
+t_cpu *programa_ejecutando(int socket_)
+{
+	bool _cpu_por_socket(t_cpu *cpu)
+	{
 		return !(cpu->socket_cpu == socket_);
 	}
 
-	t_cpu *cpu_ejecutando = list_find(cpus_aux, (void *) _cpu_por_socket);
-	return cpu_ejecutando->program;
+	pthread_mutex_lock(&mutex_lista_cpus);
+	t_cpu *cpu_ejecutando = list_find(list_cpus, (void *) _cpu_por_socket);
+	pthread_mutex_unlock(&mutex_lista_cpus);
+
+	return cpu_ejecutando;
 }
 
-int get_fd(char *mensaje) {
+int get_fd(char *mensaje)
+{
 	char *payload = string_substring(mensaje, 0, 2);
 	int payload2 = atoi(payload);
 	free(payload);
 	return atoi(string_substring(mensaje, 3, payload2));
 }
 
-int get_offset(char *mensaje) {
+int get_offset(char *mensaje)
+{
 	char *payload = string_substring(mensaje, 0, 2);
 	int payload2 = atoi(payload);
 	char *payload3 = string_substring(mensaje, 2 + payload2, 4);
@@ -184,16 +212,40 @@ int get_offset(char *mensaje) {
 	return atoi(string_substring(mensaje, (2 + payload2 + 4), payload4));
 }
 
-char *get_variable(char *mensaje) {
+char *get_variable(char *mensaje)
+{
 	char *payload = string_substring(mensaje, 3, 10);
 	int payload1 = atoi(payload);
 	free(payload);
 	return string_substring(mensaje, 13, payload1 - 4);
 }
 
-char *get_numero(char *mensaje) {
+char *get_numero(char *mensaje)
+{
 	char *payload = string_substring(mensaje, 3, 10);
 	int desde = 13 + atoi(payload) - 4;
 	free(payload);
 	return string_substring(mensaje, desde, 4);
+}
+
+void pedir_pcb_error(t_program *prg, int exit_code)
+{
+	int controlador;
+
+	bool _encontrame_cpu(t_cpu *cpu)
+	{
+		return cpu->program->PID == prg->PID;
+	}
+
+	t_cpu *cpu = list_find(list_cpus, (void*)_encontrame_cpu);
+
+	char *pid_aux = string_itoa(exit_code);
+	int size_pid = string_length(pid_aux);
+	char *completar = string_repeat('0', 4 - size_pid);
+
+	char *mensaje = strdup("K21");
+	string_append(&mensaje, completar);
+	string_append(&mensaje, pid_aux);
+
+	enviar(cpu->socket_cpu, mensaje, &controlador);
 }
