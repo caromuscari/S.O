@@ -15,7 +15,7 @@
 extern t_configuracion *config;
 extern t_list *list_consolas;
 extern pthread_mutex_t mutex_lista_consolas;
-
+extern int tam_pagina;
 fd_set master;
 fd_set read_fds;
 int fdmax;
@@ -149,9 +149,7 @@ void eliminar_consola(int consola_id)
 
 void responder_peticion_prog(int socket, char *mensaje)
 {
-	char *identificador = "K06";
-	char *codigo = get_mensaje(mensaje);
-	char *mensaje_envio =  armar_mensaje(identificador, codigo);
+	char *mensaje_envio =  armar_mensaje_memoria(mensaje);
 
 	//envio del codigo a memoria para ver si hay espacio
 	enviar(config->cliente_memoria, mensaje_envio, &controlador);
@@ -170,18 +168,25 @@ void responder_peticion_prog(int socket, char *mensaje)
 	else
 	{
 		escribir_log("Se puede guardar codigo en memoria");
+		char *codigo_new = get_mensaje(mensaje);
+		char *msj_enviar = armar_mensaje("K20",codigo_new);
+		char *ult_pid = string_itoa(ultimo_pid);
+		string_append(&msj_enviar, ult_pid);
+
 		int consola = buscar_consola(socket);
 		agregar_nueva_prog(consola, ultimo_pid, mensaje, socket);
 
-		char *mensaje_conf =  armar_mensaje("K04", string_itoa(ultimo_pid));
+		char *mensaje_conf =  armar_mensaje("K04", ult_pid);
 		escribir_log_compuesto("este es el mensaje de un proceso recien creado: ",mensaje_conf);
 		enviar(socket, mensaje_conf, &controlador);
+		free(codigo_new);
+		free(msj_enviar);
 		free(mensaje_conf);
+		free(ult_pid);
 		ultimo_pid ++;
 	}
 	if(controlador > 0) cerrar_conexion(socket);
 
-	free(codigo);
 	free(mensaje_envio);
 	free(mensaje_recibido);
 	free(cod);
