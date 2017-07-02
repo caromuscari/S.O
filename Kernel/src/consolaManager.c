@@ -28,6 +28,7 @@ void responder_solicitud_consola(int socket, char *mensaje);
 void responder_peticion_prog(int socket, char *mensaje);
 int buscar_consola(int socket);
 int calcular_pag_stack();
+char *armar_mensaje_memoria(char *mensaje_recibido);
 
 void realizar_handShake_consola(int nuevo_socket)
 {
