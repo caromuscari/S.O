@@ -19,16 +19,15 @@
 #include "log.h"
 #include "mensaje.h"
 
-
-extern int socket_;
-pthread_t hiloPrograma;
 extern t_dictionary * p_pid;
 extern t_dictionary * h_pid;
 extern t_dictionary * sem;
 extern t_dictionary * impresiones;
-extern int tamAimprimir;
 extern sem_t semaforo;
 extern int flag;
+extern int socket_;
+extern int tamAimprimir;
+pthread_t hiloPrograma;
 
 void escuchar_mensaje();
 
@@ -47,9 +46,9 @@ void escuchar_mensaje()
 		t_chequeo *smod = malloc(sizeof(t_chequeo));
 		t_impresiones *cant = malloc(sizeof(t_impresiones));
 		t_hilo *hilo = malloc(sizeof(t_hilo));
-		mensaje=recibir(socket_,13);
+		mensaje = recibir(socket_,13);
 		escribir_log(mensaje);
-		mensaje2=get_codigo(mensaje);
+		mensaje2 = get_codigo(mensaje);
 		escribir_log(mensaje2);
 
 		switch(atoi(mensaje2))
@@ -59,14 +58,13 @@ void escuchar_mensaje()
 
 				sema->valor=0;
 				cant->cantidad=0;
+
+				pid = recibir(socket_,1);
+
+				pthread_create(&hiloPrograma,NULL,(void*)programa,pid);
 				hilo->hilo= hiloPrograma;
 
-				pid=recibir(socket_,1);
-				escribir_log(pid);
-
-				pthread_create(&hiloPrograma, NULL, (void*) programa, pid);
-
-				escribir_log("Se inicio el programa");
+				escribir_log_con_numero("Se inicio el programa: ", atoi(pid));
 
 				dictionary_put(p_pid,pid,hilo);
 				dictionary_put(h_pid,string_itoa(hiloPrograma),pid);
@@ -75,39 +73,35 @@ void escuchar_mensaje()
 
 				break;
 			case 5:
-				printf("%s","no se pudo iniciar el programa");
 				escribir_log("No se pudo iniciar el programa");
-
 				free(sema);
 				free(cant);
 				free(smod);
 				free(hilo);
-
 				break;
 			case 9: ;
-				char * pid2;
-
-				pid2=recibir(socket_,1);
+				char *pid2 = recibir(socket_,1);
 				char *size = get_payload(mensaje);
+				char *codigo = get_mensaje(mensaje);
 				tamAimprimir= atoi(size);
 
-				escribir_log_compuesto("El mensaje recibido es: ",get_mensaje(mensaje));
+				escribir_log_compuesto("El mensaje recibido es: ",codigo);
 
 				smod=dictionary_get(sem,pid);
 				smod->valor=1;
 
+				free(codigo);
 				free(sema);
 				free(cant);
 				free(hilo);
 				free(pid2);
-
 				break;
 			case 10: ;
-				char * pid3;
-				char * hpid=strdup("");
+				char *pid3;
+				char *hpid = strdup("");
 
-				pid3=recibir(socket_,1);
-				hpid=dictionary_get(p_pid,pid3);
+				pid3 = recibir(socket_,1);
+				hpid = dictionary_get(p_pid,pid3);
 				finalizar_programa(hpid, socket_);
 
 				free(sema);

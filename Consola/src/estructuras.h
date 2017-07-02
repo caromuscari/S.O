@@ -25,6 +25,11 @@ typedef struct{
 	pthread_t hilo;
 }t_hilo;
 
-
+typedef struct{
+	int valor_chequeo;
+	int cantidad_impresiones;
+	int hilo;
+	time_t *tiempoInicial;
+}t_data;
 
 #endif /* ESTRUCTURAS_H_ */

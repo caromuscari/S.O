@@ -44,8 +44,9 @@ void abrir_crear(char *mensaje, t_program *prog, int socket_cpu)
 
 	if(string_contains(flag, "c"))
 	{
-		crear_archivo(socket_cpu,path, flag, prog);
-	} else
+		crear_archivo(socket_cpu, path, flag, prog);
+	}
+	else
 	{
 		char *mensaje = armar_mensaje("K12", path);
 		int controlador;
@@ -59,12 +60,12 @@ void abrir_crear(char *mensaje, t_program *prog, int socket_cpu)
 
 int abrir_archivo(char *path, char* flag, t_program *prog)
 {
-	t_TAG *ag = malloc (sizeof(t_TAG));
-
+	t_TAG *ag = malloc(sizeof(t_TAG));
+	ag->FD = 0;
 	ag = buscar_archivo_TAG(path);
 
 	//agrega a la tabla de archivos globales
-	if (ag == NULL)
+	if(ag->FD == 0)
 	{
 		ag->open = 1;
 		ag->FD = list_size(global_fd) + 3;
@@ -74,7 +75,7 @@ int abrir_archivo(char *path, char* flag, t_program *prog)
 	}else ag->open ++;
 
 	//agrega a la tabla de archivos del proceso
-	t_TAP *ar_p = malloc (sizeof(t_TAP)); //armar para la función para los free :)
+	t_TAP *ar_p = malloc(sizeof(t_TAP)); //armar para la función para los free :)
 	ar_p->flag = strdup(flag);
 	ar_p->GFD = ag->FD;
 	ar_p->FD = list_size(prog->TAP) + 3;
@@ -90,10 +91,10 @@ t_TAG *buscar_archivo_TAG(char *path)
 {
 	bool _archivo_solicitado(t_TAG ag)
 	{
-		return !strcmp(ag.path, path);
+		return strcmp(ag.path, path);
 	}
-	t_TAG *ag_encontrado = list_find(global_fd, (void *)_archivo_solicitado);
 
+	t_TAG *ag_encontrado = list_find(global_fd, (void *)_archivo_solicitado);
 	return ag_encontrado;
 }
 
@@ -102,12 +103,11 @@ void crear_archivo(int socket_cpu, char *path, char *flag, t_program *prog)
 	int controlador;
 	char *mensaje;
 
-	mensaje= armar_mensaje("K12",path);
+	mensaje = armar_mensaje("K12",path);
 	enviar(config->cliente_fs, mensaje, &controlador);
 	free(mensaje);
 
 	chequear_respuesta(socket_cpu, path, flag, prog);
-
 }
 
 void pedido_lectura(t_program *prog, int fd, int offs, int size, char *path, int socket_cpu)
@@ -299,18 +299,18 @@ void cerrar_file(t_list *tap, int fd)
 
 char *get_path_msg(char *mensaje, int *payload1)
 {
-	char *payload = string_substring(mensaje, 0, 3);
+	char *payload = string_substring(mensaje, 13, 4);
 	*payload1 = atoi(payload);
 	free(payload);
-	return string_substring(mensaje, 4, *payload1);
+	return string_substring(mensaje, 17, *payload1);
 }
 
 char *get_info(char *mensaje, int payload1, int tam_info)
 {
-	char *payload = string_substring(mensaje, (4+payload1), tam_info);
+	char *payload = string_substring(mensaje, (17+payload1), tam_info);
 	int payload2 = atoi(payload);
 	free(payload);
-	return string_substring(mensaje, (4+payload1+tam_info), payload2);
+	return string_substring(mensaje, (17+payload1+tam_info), payload2);
 }
 
 void chequear_respuesta(int socket_cpu, char *path, char *flag, t_program *prog)
@@ -318,18 +318,30 @@ void chequear_respuesta(int socket_cpu, char *path, char *flag, t_program *prog)
 	int controlador;
 	char *mensaje_recibido = recibir(config->cliente_fs, &controlador);
 	char *header = get_header(mensaje_recibido);
+
 	if(comparar_header(header, "F"))
 	{
 		char *info = get_mensaje(mensaje_recibido);
 		if(!strcmp(info,"ok"))
 		{
 			int fd = abrir_archivo(path, flag, prog);
-			char *mensaje = armar_mensaje("K16", string_itoa(fd));
+			char *fd_char = string_itoa(fd);
+			char *mensaje = armar_mensaje("K16", fd_char);
 			enviar(socket_cpu, mensaje, &controlador);
 			free(mensaje);
+			free(fd_char);
 		}
 		free(info);
-	}else; //cerrar conexión
+	}
+	else
+	{
+		char *fd_char = string_itoa(-2);
+		char *mensaje = armar_mensaje("K16", fd_char);
+		enviar(socket_cpu, mensaje, &controlador);
+		free(mensaje);
+		free(fd_char);
+	}
+
 	free(mensaje_recibido);
 	free(header);
 }

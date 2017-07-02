@@ -26,7 +26,6 @@ extern t_dictionary * impresiones;
 extern t_dictionary * tiempo;
 extern int flag;
 
-
 char* leer_archivo(char*);
 void iniciar_programa(char * ruta, int socket_);
 void finalizar_programa(char * pid, int socket_);
@@ -35,7 +34,7 @@ void cerrar_programas(char* key, void* data);
 void tiempofinal_impresiones(char* pid);
 void mostrar_pids(char* key, void* data);
 
-void hilousuario ()
+void hilousuario()
 {
 	//t_dictionary* switch_;
 	//cargar_switch(switch_);
@@ -68,40 +67,39 @@ void hilousuario ()
 			}
 		 */
 
-		if(!strcmp(ingreso, "iniciar_programa")){
+		if(!strcmp(ingreso, "iniciar_programa"))
+		{
 			printf("ingresar la ruta del programa: ");
 			scanf("%ms",&identi);
 			iniciar_programa(identi,socket_);
 			free(identi);
 		}
-		else{
-			if(!strcmp(ingreso, "finalizar_programa")){
-				dictionary_iterator(p_pid,(void *)mostrar_pids);
+		else if(!strcmp(ingreso, "finalizar_programa"))
+		{
+			dictionary_iterator(p_pid,(void *)mostrar_pids);
+			dictionary_iterator(h_pid,(void *)mostrar_pids);
 
-				printf("ingresar el pid del hilo: ");
-				scanf("%ms",&identi);
+			printf("ingresar el pid del hilo: ");
+			scanf("%ms",&identi);
 
-				finalizar_programa(identi,socket_);
-				free(identi);
-			}
-			else{
-				if(!strcmp(ingreso, "desconectar_consola")){
-					desconectar_consola();
-				}
-				else{
-					if(!strcmp(ingreso, "limpiar_consola")){
-						system("clear");
-					}
-					else{
-						escribir_log("No se reconoce el pedido");
-					}
-				}
-			}
+			finalizar_programa(identi,socket_);
+			free(identi);
 		}
+		else if(!strcmp(ingreso, "desconectar_consola"))
+		{
+			desconectar_consola();
+		}
+		else if(!strcmp(ingreso, "limpiar_consola"))
+		{
+			system("clear");
+		}
+		else
+		{
+			printf("No se reconoce el pedido\n");
+		}
+
 		free(ingreso);
 	}
-
-
 }
 
 /*void cargar_switch(t_dictionary * switch_){
@@ -112,7 +110,8 @@ void hilousuario ()
 	dictionary_put(switch_,"limpiar_consola",4);
 }*/
 
-void iniciar_programa(char * ruta, int socket_){
+void iniciar_programa(char *ruta, int socket_)
+{
 	char * mensaje_armado;
 	char * mensaje;
 	mensaje = leer_archivo(ruta);
@@ -121,10 +120,10 @@ void iniciar_programa(char * ruta, int socket_){
 
 	free(mensaje);
 	free(mensaje_armado);
-
 }
 
-char * leer_archivo(char * ruta){
+char *leer_archivo(char *ruta)
+{
 	FILE* archivo;
 	long int final;
 
@@ -142,7 +141,7 @@ char * leer_archivo(char * ruta){
 	return r;
 }
 
-void finalizar_programa(char * pid, int socket_)
+void finalizar_programa(char *pid, int socket_)
 {
 	char * mensaje;
 	char* pid2;
@@ -155,7 +154,7 @@ void finalizar_programa(char * pid, int socket_)
 		pid2=dictionary_get(h_pid,pid);
 		mensaje = armar_mensaje("C02",pid2);
 		enviar(socket_, mensaje, string_length(mensaje));
-		escribir_log_con_numero("Se finalizo el programa", pid3);
+		escribir_log_con_numero("Se finalizo el programa: ", pid3);
 		tiempofinal_impresiones(pid2);
 
 		free(dictionary_remove(h_pid,pid));
@@ -165,30 +164,25 @@ void finalizar_programa(char * pid, int socket_)
 		free(dictionary_remove(tiempo,pid2));
 		free(mensaje);
 	}
-
 	else(escribir_log("No se pudo finalizar el programa"));
-
 }
 
 void mostrar_pids(char* key, void* data)
 {
-	char * pid = strdup("");
-	char * hpid = strdup("");
+	char *pid = strdup("");
 
-	string_append(&pid,"PID=");
+	string_append(&pid,"PID: ");
 	string_append(&pid,key);
-	string_append(&pid,"     ");
+	string_append(&pid,"	PID HILO: ");
+	string_append(&pid,data);
 
-	string_append(&hpid,"PID HILO=");
-	string_append(&hpid,data);
-
-	escribir_log_compuesto(pid,hpid);
+	printf(pid);printf("\n");
 
 	free(pid);
-	free(hpid);
 }
 
-void tiempofinal_impresiones(char* pid){
+void tiempofinal_impresiones(char* pid)
+{
 	time_t *tiempoFinal= malloc(sizeof(time_t));
 	t_impresiones * cant;
 	time_t *tiempoinicial;
@@ -209,7 +203,8 @@ void tiempofinal_impresiones(char* pid){
 	free(tiempoFinal);
 }
 
-void desconectar_consola(){
+void desconectar_consola()
+{
 	char *mensaje;
 	dictionary_iterator(h_pid,(void*)cerrar_programas);
 	mensaje = armar_mensaje("C03", "");
@@ -220,9 +215,8 @@ void desconectar_consola(){
 	flag = 1;
 	pthread_exit(NULL);
 }
-void cerrar_programas(char* key, void* data){
+
+void cerrar_programas(char *key, void *data)
+{
 	finalizar_programa(key,socket_);
 }
-
-
-

@@ -140,12 +140,13 @@ void programas_nuevos_A_listos()
 	}
 }
 
-void agregar_nueva_prog(int id_consola, int pid, char *mensaje)
+void agregar_nueva_prog(int id_consola, int pid, char *mensaje, int socket_con)
 {
 	char *codigo = get_mensaje(mensaje);
 
 	t_program *programa = malloc(sizeof(t_program));
 	programa->PID = pid;
+	programa->socket_consola = socket_con;
 	programa->CID = id_consola;
 	programa->allocs = 0;
 	programa->frees = 0;

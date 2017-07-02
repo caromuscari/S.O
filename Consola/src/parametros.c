@@ -17,6 +17,7 @@ extern t_dictionary * h_pid;
 extern t_dictionary * sem;
 extern t_dictionary * tiempo;
 extern t_dictionary * impresiones;
+extern t_dictionary * procesos;
 extern t_consola * arch_config;
 
 void inicializar_parametros()
@@ -25,6 +26,7 @@ void inicializar_parametros()
 	arch_config->ip= strdup("");
 	p_pid = dictionary_create();
 	h_pid = dictionary_create();
+	procesos = dictionary_create();
 	sem = dictionary_create();
 	impresiones = dictionary_create();
 	tiempo = dictionary_create();
@@ -43,6 +45,8 @@ void liberar_memoria()
 	dictionary_destroy(tiempo);
 	dictionary_clean(impresiones);
 	dictionary_destroy(impresiones);
+	dictionary_clean(procesos);
+	dictionary_destroy(procesos);
 	free(arch_config);
 	liberar_log();
 }
