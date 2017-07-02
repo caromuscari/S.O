@@ -61,6 +61,9 @@ void escuchar_mensaje()
 
 				pid = recibir(socket_,1);
 
+				dictionary_put(sem,pid,sema);
+				dictionary_put(impresiones,pid,cant);
+
 				pthread_create(&hiloPrograma,NULL,(void*)programa,pid);
 				hilo->hilo= hiloPrograma;
 
@@ -68,8 +71,7 @@ void escuchar_mensaje()
 
 				dictionary_put(p_pid,pid,hilo);
 				dictionary_put(h_pid,string_itoa(hiloPrograma),pid);
-				dictionary_put(sem,pid,sema);
-				dictionary_put(impresiones,pid,cant);
+
 
 				break;
 			case 5:
@@ -98,11 +100,9 @@ void escuchar_mensaje()
 				break;
 			case 10: ;
 				char *pid3;
-				char *hpid = strdup("");
 
 				pid3 = recibir(socket_,1);
-				hpid = dictionary_get(p_pid,pid3);
-				finalizar_programa(hpid, socket_);
+				finalizar_programa(pid3, socket_);
 
 				free(sema);
 				free(cant);
@@ -125,4 +125,5 @@ void escuchar_mensaje()
 		free(mensaje2);
 	}
 
+	desconectar_consola();
 }

@@ -17,5 +17,6 @@ int agregar_bloque();
 void modificar_archivo(char* path, int tamanio, char* bloques);
 char * crear_string_bloques(char ** bloques, char * bloques_nuevos);
 t_datos * recuperar_datos(char * codigo, char * mensaje);
+char * sacar_archivo(char * mensaje);
 
 #endif /* FSECUNDARIAS_H_ */

@@ -25,18 +25,19 @@
 #include <sys/mman.h>
 #include <commons/collections/dictionary.h>
 #include "estructuras.h"
+#include "fsecundarias.h"
 
 int puerto;
 char *ip;
 char *montaje;
 int flagsocket;
 int socketfs;
-t_log * log;
+t_log * log_;
 int tBloques;
 int cantBloques;
 char *magic_number;
 t_bitarray * bitmap;
-t_dictionary *archivos;
+char* posicion;
 
 struct stat mystat;
 
@@ -61,10 +62,9 @@ int main(int argc, char *argv[])
 	bitmap = abrir_bitmap();
 	if(bitmap == -1) goto finalizar;
 
+	posicion = malloc(cantBloques);
 	flagsocket=0;
 	socketfs =iniciar_socket_server(ip,puerto,&flagsocket);
-
-	//aceptar conexiones
 
 	handshake1();
 
@@ -97,8 +97,9 @@ int main(int argc, char *argv[])
 			case 14: ;
 				t_datos * est;
 				mensaje2 = get_mensaje(mensaje);
-				est =recuperar_datos(codigo);
+				est =recuperar_datos(codigo,mensaje2);
 				obtener_datos(est->path,est->offset,est->size);
+				free(est);
 				free(mensaje2);
 				break;
 			case 15: ;
@@ -107,6 +108,7 @@ int main(int argc, char *argv[])
 				estruct = recuperar_datos(codigo,mensaje2);
 				guardar_datos(estruct->path,estruct->offset,estruct->size,estruct->buffer);
 				free(mensaje2);
+				free(estruct);
 				break;
 			default:
 				escribir_log("Mensaje incorrecto");
@@ -164,6 +166,8 @@ void liberar_memoria()
 	free(montaje);
 	free(ip);
 	free(magic_number);
+	memcpy(posicion,bitmap,cantBloques);
+	bitarray_destroy(bitmap);
 	munmap(&mystat,mystat.st_size);
 	liberar_log();
 }

@@ -24,6 +24,7 @@ extern int cantBloques;
 extern char *magic_number;
 extern t_bitarray * bitmap;
 extern struct stat mystat;
+extern char * posicion;
 
 void archivoDeCofiguracion(char* argv)
 {
@@ -43,22 +44,43 @@ void archivoDeCofiguracion(char* argv)
 	config_destroy(configuracion);
 }
 
-int leer_metadata() //preguntar si se puede hacer como archivo de configuracion
+int leer_metadata()
 {
 	char *ruta = strdup("");
-	char *mensaje = strdup("");
-	FILE *metadata;
-	long int final;
-	char **split;
+	t_config *configuracion;
+	//char *mensaje = strdup("");
+	//FILE *metadata;
+	//long int final;
+	//char **split;
+
 	string_append(&ruta,montaje);
 	string_append(&ruta,"Metadata/Metadata.bin");
-	metadata = fopen(ruta, "r");
+
+	/*metadata = fopen(ruta, "r");
 	if(metadata == NULL) escribir_log("No se pudo abrir el archivo de metadata");
 	fseek( metadata, 0L, SEEK_END );
 	final = ftell( metadata );
-	fseek(metadata,0,0);
+	fseek(metadata,0,0);*/
 
-	fgets(mensaje,final,metadata);
+	configuracion = config_create(ruta);
+
+	tBloques = config_get_int_value(configuracion, "TAMANIO_BLOQUES");
+	cantBloques = config_get_int_value(configuracion, "CANTIDAD_BLOQUES");
+	string_append(&magic_number, config_get_string_value(configuracion, "MAGIC_NUMBER"));
+
+	if(strcmp(magic_number, "SADICA"))
+	{
+		config_destroy(configuracion);
+		return -1;
+	}
+
+	escribir_log_con_numero("Tamanio de Bloques: ", tBloques);
+	escribir_log_con_numero("Cantidad de bloques: ", cantBloques);
+	escribir_log_compuesto("Magic Number: ",magic_number);
+
+	config_destroy(configuracion);
+
+	/*fgets(mensaje,final,metadata);
 	split = string_split(mensaje,"=");
 	tBloques = atoi(split[1]);
 
@@ -81,14 +103,14 @@ int leer_metadata() //preguntar si se puede hacer como archivo de configuracion
 	escribir_log_con_numero("Cantidad de Bloques: ", cantBloques);
 	escribir_log_compuesto("Magic number: ", magic_number);
 
-	fclose(metadata);
+	fclose(metadata);*/
 	return 0;
 }
 
 int abrir_bitmap()
 {
 	char *ruta = strdup("");
-	char* posicion = malloc(cantBloques);
+
 	string_append(&ruta,montaje);
 	string_append(&ruta,"Metadata/Bitmap.bin");
 	int fdbitmap = open(ruta,O_RDWR);
@@ -103,7 +125,6 @@ int abrir_bitmap()
 		return -1;
 	}
 	bitmap = bitarray_create_with_mode(posicion,cantBloques,LSB_FIRST);
-	//free (posicion);
 	return 0;
 
 }

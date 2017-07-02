@@ -34,10 +34,19 @@ void programa(char* pid)
 	char *mensaje;
 	t_chequeo *semp;
 	t_impresiones *impresiones2;
+	//struct tm* tm_info;
+	t_tiempo * tiempo2;
 
+	tiempo2 = malloc(sizeof(t_tiempo));
 	tiempoInicial = malloc(sizeof(time_t));
+	tiempo2->tiempo = malloc(sizeof(time_t));
+
 	*tiempoInicial = time(NULL);
-	dictionary_put(tiempo,pid,tiempoInicial);
+	tiempo2->tm_info = localtime(tiempoInicial);
+	strftime(tiempo2->buffer, 26, "%Y-%m-%d %H:%M:%S", tiempo2->tm_info);
+
+	tiempo2->tiempo = tiempoInicial;
+	dictionary_put(tiempo,pid,tiempo2);
 
 	impresiones2 = dictionary_get(impresiones,pid);
 	semp = dictionary_get(sem,pid);
@@ -54,4 +63,5 @@ void programa(char* pid)
 		}
 	}
 	free(tiempoInicial);
+	free(tiempo2);
 }
