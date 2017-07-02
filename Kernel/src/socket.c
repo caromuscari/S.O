@@ -130,7 +130,9 @@ int enviar(int socket_emisor, char *mensaje_a_enviar, int *controlador) {
 
 	if ((ret = send(socket_emisor, buffer, sbuffer, MSG_NOSIGNAL)) < 0) {
 		*controlador = 7;
-		error_sockets(controlador, string_itoa(socket_emisor));
+		char *emisor = string_itoa(socket_emisor);
+		error_sockets(controlador, emisor);
+		free(emisor);
 	}
 
 	free(buffer);
@@ -148,7 +150,9 @@ char *recibir(int socket_receptor, int *controlador) {
 		//printf("error receiving or connection lost \n");
 		if (ret == 0) {
 			*controlador = 8;
-			error_sockets(controlador, string_itoa(socket_receptor));
+			char *receptor = string_itoa(socket_receptor);
+			error_sockets(controlador, receptor);
+			free(receptor);
 		}
 		*controlador = 1;
 		error_sockets(controlador, "");
@@ -160,11 +164,13 @@ char *recibir(int socket_receptor, int *controlador) {
 	return buffer_aux;
 }
 
-void cerrar_conexion(int socket_) {
+void cerrar_conexion(int socket_)
+{
 	close(socket_);
 }
-int enviar_pcb(int socket_emisor, char *mensaje_a_enviar, int *controlador,
-		int size) {
+
+int enviar_pcb(int socket_emisor, char *mensaje_a_enviar, int *controlador,int size)
+{
 	int ret;
 	signal(SIGPIPE, SIG_IGN);
 	*controlador = 0;

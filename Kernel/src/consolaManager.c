@@ -27,6 +27,7 @@ void desconectar_consola(int socket);
 void responder_solicitud_consola(int socket, char *mensaje);
 void responder_peticion_prog(int socket, char *mensaje);
 int buscar_consola(int socket);
+int calcular_pag_stack();
 
 void realizar_handShake_consola(int nuevo_socket)
 {
@@ -164,11 +165,11 @@ void responder_peticion_prog(int socket, char *mensaje)
 	{
 		escribir_log("No se puede guardar codigo en memoria");
 		enviar(socket, "K05", &controlador);
+
 	}
 	else
 	{
 		escribir_log("Se puede guardar codigo en memoria");
-		ultimo_pid ++;
 		int consola = buscar_consola(socket);
 		agregar_nueva_prog(consola, ultimo_pid, mensaje, socket);
 
@@ -176,6 +177,7 @@ void responder_peticion_prog(int socket, char *mensaje)
 		escribir_log_compuesto("este es el mensaje de un proceso recien creado: ",mensaje_conf);
 		enviar(socket, mensaje_conf, &controlador);
 		free(mensaje_conf);
+		ultimo_pid ++;
 	}
 	if(controlador > 0) cerrar_conexion(socket);
 
@@ -208,4 +210,52 @@ void desconectar_consola(int socket)
 		eliminar_consola(consola_muere);
 	}
 	cerrar_conexion(socket);
+}
+
+char *armar_mensaje_memoria(char *mensaje_recibido)
+{
+	char *resultado = strdup("K06");
+
+	char *pid_aux = string_itoa(ultimo_pid);
+	int size_pid = string_length(pid_aux);
+	char *completar = string_repeat('0', 4 - size_pid);
+
+	int paginas = calcular_pag(mensaje_recibido);
+	char *pag_char = string_itoa(paginas);
+	int size_paginas = string_length(pag_char);
+	char *completar2 = string_repeat('0', 4 - size_paginas);
+
+	int paginas_stack = calcular_pag_stack();
+	char *pag_st = string_itoa(paginas_stack);
+	int size_pag_st = string_length(pag_st);
+	char *completar3 = string_repeat('0', 4 - size_pag_st);
+
+	string_append(&resultado, completar);
+	string_append(&resultado, pid_aux);
+	string_append(&resultado, completar2);
+	string_append(&resultado, pag_char);
+	string_append(&resultado, completar3);
+	string_append(&resultado, pag_st);
+
+	free(pid_aux);
+	free(completar);
+	free(completar2);
+	free(pag_char);
+	free(pag_st);
+	free(completar3);
+
+	return resultado;
+}
+
+int calcular_pag_stack()
+{
+	int tamanio = config->stack_size;
+	int paginas = (int)(tamanio/tam_pagina);
+
+	if (tamanio % tam_pagina > 0)
+	{
+		paginas ++;
+	}
+
+	return paginas;
 }
