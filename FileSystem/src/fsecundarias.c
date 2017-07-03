@@ -23,15 +23,18 @@ void armar_archivo(FILE * archivo)
 	char * tamanio = "TAMANIO=0\n";
 	char * bloques =strdup("");
 	int bit;
+	char * var;
 	bit = agregar_bloque();
 
 	if(bit != -1){
+		var = string_itoa(bit);
 		string_append(&bloques, "BLOQUES=[");
-		string_append(&bloques, string_itoa(bit));
+		string_append(&bloques, var);
 		string_append(&bloques, "]");
 
 		fwrite(tamanio,sizeof(char),string_length(tamanio),archivo);
 		fwrite(bloques,sizeof(char),string_length(bloques),archivo);
+		free(var);
 	}
 
 	free(bloques);
@@ -48,7 +51,7 @@ char * armar_pathBloque(char *path,int bloqueSig,t_arch *archivo)
 	return path2;
 }
 
-char * armar_pathBloqueNuevo(char *path,int bloqueSig,t_arch *archivo)
+char * armar_pathBloqueNuevo(char *path,int bloqueSig)
 {
 	char *path2 =strdup("");
 	char *var= string_itoa(bloqueSig);
@@ -125,20 +128,27 @@ char * crear_string_bloques(char ** bloques, char * bloques_nuevos)
 {
 	char * bloque = strdup("");
 	int i = 0;
+	int j=0;
 
 	string_append(&bloque,"[");
 
-	while(bloques[i] != '\0')
+	while (bloques[j] != '\0') j++;
+
+	j -= 2;
+
+	while(i <= j)
 	{
 		string_append(&bloque,bloques[i]);
 		string_append(&bloque,",");
 		i++;
 	}
+	string_append(&bloque,bloques[i]);
 
 	if(!strcmp(bloques_nuevos,"")){
 		string_append(&bloque,"]");
 	}
 	else{
+		string_append(&bloque,",");
 		string_append(&bloque,bloques_nuevos);
 		string_append(&bloque,"]");
 	}

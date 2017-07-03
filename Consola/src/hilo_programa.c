@@ -57,6 +57,7 @@ void programa(char* pid)
 		{
 			sem_wait(&semaforo);
 			mensaje = recibir(socket_,tamAimprimir);
+			escribir_log(mensaje);
 			printf("%s", mensaje);
 			impresiones2->cantidad++;
 			free(mensaje);

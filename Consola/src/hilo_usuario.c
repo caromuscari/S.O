@@ -16,12 +16,13 @@
 #include "log.h"
 #include <commons/log.h>
 #include "estructuras.h"
+#include <signal.h>
 
 extern int socket_;
 extern t_dictionary * p_pid;
 extern t_dictionary * h_pid;
 extern pthread_t hiloMensaje;
-extern pthread_t hiloUsuario;
+//extern pthread_t hiloUsuario;
 extern t_dictionary * sem;
 extern t_dictionary * impresiones;
 extern t_dictionary * tiempo;
@@ -82,13 +83,15 @@ void hilousuario()
 			if(dictionary_is_empty(p_pid)){
 				escribir_log("No hay programas abiertos");
 			}
-			else{
+			else
+			{
 				dictionary_iterator(p_pid,(void *)mostrar_pids);
 
 				printf("ingresar el pid del hilo: ");
 				scanf("%ms",&identi);
 
 				finalizar_programa(identi,socket_);
+
 				free(identi);
 			}
 		}
@@ -154,7 +157,6 @@ void finalizar_programa(char *pid, int socket_)
 	char * mensaje;
 	char* pid2;
 	t_hilo * hilo = dictionary_get(p_pid,pid);
-	//pid3 = atol(pid);
 	int pid3 = atoi(pid);
 	char * var = string_itoa(hilo->hilo);
 
@@ -173,7 +175,9 @@ void finalizar_programa(char *pid, int socket_)
 		free(dictionary_remove(tiempo,pid2));
 		free(mensaje);
 	}
-	else(escribir_log("No se pudo finalizar el programa"));
+	else{
+		escribir_log("No se pudo finalizar el programa");
+	}
 }
 
 void mostrar_pids(char* key, void* data)
@@ -233,8 +237,11 @@ void desconectar_consola()
 	enviar(socket_, mensaje, string_length(mensaje));
 	escribir_log("Se desconecta la consola");
 	free(mensaje);
-	pthread_cancel(hiloMensaje);
-	pthread_cancel(hiloUsuario);
+	//pthread_cancel(hiloMensaje);
+	pthread_kill(hiloMensaje,SIGKILL);
+	//pthread_cancel(hiloUsuario);
+	//flag = 1;
+	pthread_exit(NULL);
 }
 
 void cerrar_programas(char *key, void *data)

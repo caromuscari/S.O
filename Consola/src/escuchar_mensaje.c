@@ -18,11 +18,13 @@
 #include "estructuras.h"
 #include "log.h"
 #include "mensaje.h"
+#include <signal.h>
 
 extern t_dictionary * p_pid;
 extern t_dictionary * h_pid;
 extern t_dictionary * sem;
 extern t_dictionary * impresiones;
+extern t_dictionary * tiempo;
 extern sem_t semaforo;
 extern int flag;
 extern int socket_;
@@ -30,9 +32,12 @@ extern int tamAimprimir;
 pthread_t hiloPrograma;
 
 void escuchar_mensaje();
+void finalizar(char *pid, int socket_);
+void senial();
 
 void escuchar_mensaje()
 {
+	signal(SIGKILL,senial);
 	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE,NULL);
 	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,NULL);
 	char *mensaje;
@@ -84,15 +89,11 @@ void escuchar_mensaje()
 			case 9: ;
 				char *pid2 = recibir(socket_,1);
 				char *size = get_payload(mensaje);
-				char *codigo = get_mensaje(mensaje);
 				tamAimprimir= atoi(size);
-
-				escribir_log_compuesto("El mensaje recibido es: ",codigo);
 
 				smod=dictionary_get(sem,pid);
 				smod->valor=1;
 
-				free(codigo);
 				free(sema);
 				free(cant);
 				free(hilo);
@@ -102,7 +103,7 @@ void escuchar_mensaje()
 				char *pid3;
 
 				pid3 = recibir(socket_,1);
-				finalizar_programa(pid3, socket_);
+				finalizar(pid3, socket_);
 
 				free(sema);
 				free(cant);
@@ -126,4 +127,34 @@ void escuchar_mensaje()
 	}
 
 	desconectar_consola();
+	pthread_exit(NULL);
+}
+
+void finalizar(char *pid, int socket_)
+{
+	char* pid2;
+	t_hilo * hilo = dictionary_get(p_pid,pid);
+	int pid3 = atoi(pid);
+	char * var = string_itoa(hilo->hilo);
+
+	if(pthread_cancel(hilo->hilo)==0)
+	{
+		pid2=dictionary_get(h_pid,var);
+		escribir_log_con_numero("Se finalizo el programa: ", pid3);
+		tiempofinal_impresiones(pid2);
+
+		free(dictionary_remove(h_pid,var));
+		free(dictionary_remove(p_pid,pid2));
+		free(dictionary_remove(impresiones,pid2));
+		free(dictionary_remove(sem,pid2));
+		free(dictionary_remove(tiempo,pid2));
+	}
+	else{
+		escribir_log("No se pudo finalizar el programa");
+	}
+}
+
+void senial()
+{
+	pthread_exit(NULL);
 }

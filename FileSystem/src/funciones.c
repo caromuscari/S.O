@@ -226,7 +226,7 @@ void guardar_datos(char *path, int offset, int size, char *buffer)
 				if(archivo->bloques[bloqueSig+1] != '\0')
 				{
 					bloqueSig ++;
-					pathBloque = armar_pathBloqueNuevo(path2,bloqueSig,archivo);
+					pathBloque = armar_pathBloqueNuevo(path2,bloqueSig);
 					bloques =fopen(pathBloque,"w");
 					bloque.rem = 0;
 				}
@@ -236,7 +236,7 @@ void guardar_datos(char *path, int offset, int size, char *buffer)
 
 					if(bloqueSig != -1)
 					{
-						pathBloque = armar_pathBloqueNuevo(path2,bloqueSig,archivo);
+						pathBloque = armar_pathBloqueNuevo(path2,bloqueSig);
 						bloques =fopen(pathBloque,"w");
 						bloque.rem = 0;
 
@@ -291,7 +291,7 @@ void guardar_datos(char *path, int offset, int size, char *buffer)
 
 				if(bloqueSig != -1)
 				{
-					pathBloque = armar_pathBloqueNuevo(path2,bloqueSig,archivo);
+					pathBloque = armar_pathBloqueNuevo(path2,bloqueSig);
 					bloques =fopen(pathBloque,"w");
 					bloque.rem = 0;
 

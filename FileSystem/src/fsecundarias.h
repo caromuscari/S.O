@@ -10,7 +10,7 @@
 
 void armar_archivo(FILE * archivo);
 char * armar_pathBloque(char *path,int bloqueSig,t_arch *archivo);
-char * armar_pathBloqueNuevo(char *path,int bloqueSig,t_arch *archivo);
+char * armar_pathBloqueNuevo(char *path,int bloqueSig);
 t_arch *leer_archivo(char * path);
 char * armar_path(char *mensaje);
 int agregar_bloque();
