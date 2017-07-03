@@ -346,6 +346,8 @@ void esperar_mensaje(void *i) {
 
 												printf("\n Solicitar Bytes \nPID:%d \nPAG:%d \nOFFSET:%d \nTAM:%d\n",pid, pag, offset,tam);
 												char * Buffer = solicitarBytes(pid, pag, offset, tam);
+												printf("\n%s\n", Buffer);
+												//armarmensaje y sale-
 												enviar(cliente,Buffer, &controlador);
 
 												free(ppid);
@@ -562,7 +564,12 @@ int pos = posFrameEnMemoria(a);
 char * dataFrame = malloc (tamanioMarco); memset(dataFrame,'\0',tamanioMarco);
 //dataFrame[tamanioMarco]='\0';
 memcpy(dataFrame,Memoria+pos,tamanioMarco);
-printf("|%s| - %d \n",dataFrame,a);
+//
+//printf("|%s| - %d \n",dataFrame,a);
+char * imp = string_from_format("|%s| - %d \n",dataFrame,a);
+escribir_log(imp);
+free(imp);
+
 free(dataFrame);
 }
 printf("\n ------------------------------------------- \n");
