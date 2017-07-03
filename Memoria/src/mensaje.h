@@ -15,7 +15,7 @@ char *armar_mensaje(char *identificador, char *mensaje);
 char *get_header(char *mensaje);
 
 //Devuelve el codigo del mensaje
-int get_codigo(char *mensaje);
+char *get_codigo(char *mensaje);
 
 //Obtiene el mensaje
 char * get_mensaje(char *mensaje);
