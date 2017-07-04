@@ -9,7 +9,10 @@
 #define SEMAFOROS_H_
 
 void inicializar_sems();
-void sem_wait(int, char *);
-void sem_signal(int, char *);
+int lock_vglobal(t_vglobal *vg, int prog);
+void set_vglobal(char *vglobal, int num, int prog);
+void unlock_vglobal(t_vglobal *vg);
+void sem_signal(t_program*, char *);
+void sem_wait(t_program *, char *);
 
 #endif /* SEMAFOROS_H_ */

@@ -10,7 +10,7 @@
 #include "log.h"
 #include "manejo_errores.h"
 
-extern t_log *log;
+//extern t_log *log;
 
 int iniciar_socket_cliente(char *ip, int puerto_conexion, int *control)
 {
@@ -24,7 +24,7 @@ int iniciar_socket_cliente(char *ip, int puerto_conexion, int *control)
 		*control = 1;
 		error_sockets(control, "");
 	}
-	else escribir_log("Kernel - Socket creado");
+	else escribir_log("FS - Socket creado");
 
 	dest.sin_family = AF_INET;
 	dest.sin_port = htons( puerto_conexion );
@@ -68,7 +68,7 @@ int iniciar_socket_server(char *ip, int puerto_conexion, int *controlador)
 	}
 	else
 	{
-		escribir_log("Kernel - Socket server creado");
+		escribir_log("FS - Socket server creado");
 	}
 
 	//Listening socket
@@ -105,7 +105,7 @@ int escuchar_conexiones(int socketServidor, int *controlador)
 		error_sockets(controlador, "");
 	}
 	else
-	escribir_log_con_numero("Kernel - Nueva conexion aceptada para socket: ", client_sock_accepted);
+	escribir_log_con_numero("FS - Nueva conexion aceptada para socket: ", client_sock_accepted);
 
 	return client_sock_accepted;
 }
@@ -122,7 +122,7 @@ int aceptar_conexion(int socketServidor, int *controlador)
 		error_sockets(controlador, "");
 	}
 	else
-	escribir_log_con_numero("Kernel - Nueva conexion aceptada para socket: ", client_sock_accepted);
+	escribir_log_con_numero("FS - Nueva conexion aceptada para socket: ", client_sock_accepted);
 
 	return client_sock_accepted;
 }
@@ -139,7 +139,7 @@ int enviar(int socket_emisor, char *mensaje_a_enviar, int *controlador)
 	if ((ret = send(socket_emisor, buffer, sbuffer, MSG_NOSIGNAL)) < 0)
 	{
 		*controlador = 7;
-		error_sockets(controlador, atoi(socket_emisor));
+		error_sockets(controlador, string_itoa(socket_emisor));
 	}
 
 	free(buffer);
@@ -160,7 +160,7 @@ char *recibir(int socket_receptor, int *controlador)
 		if (ret == 0)
 		{
 			*controlador = 8;
-			error_sockets(controlador, atoi(socket_receptor));
+			error_sockets(controlador, string_itoa(socket_receptor));
 		}
 		*controlador = 1;
 		error_sockets(controlador, "");

@@ -35,7 +35,7 @@ void error_sockets(int *controlador, char *proceso)
 			escribir_log_error_compuesto("Kernel - Error al enviar mensaje a: ", proceso);
 			break;
 		case 8:
-			escribir_log_error_compuesto("Kernel - Error, socket desconectado", proceso);
+			escribir_log_error_compuesto("Kernel - Error, socket desconectado: ", proceso);
 			break;
 		case 9:
 			escribir_log_error_compuesto("Kernel - Error recibiendo mensaje de: ", proceso);

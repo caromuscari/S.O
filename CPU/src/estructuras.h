@@ -3,6 +3,8 @@
 #include <commons/collections/list.h>
 #include <commons/collections/dictionary.h>
 
+#define FINALIZAR_PROGRAMA 1
+
 typedef struct
 {
 	int offset_inicio;
@@ -30,7 +32,7 @@ typedef struct
 	char* in_et;
 	t_list* in_stack;  //lista de t_stack_element
 	int exit_code;
-	char algoritmo[2];
+	char* algoritmo;
 	int quantum;
 	int quantum_sleep;
 

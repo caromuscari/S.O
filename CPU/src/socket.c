@@ -40,13 +40,14 @@ int iniciar_socket_cliente(char *ip, int puerto_conexion, int *control)
 	return connected_socket;
 }
 
-int enviar(int socket_emisor, void *mensaje_a_enviar, int *controlador,int size)
+int enviar(int socket_emisor,void * mensaje_a_enviar, int *controlador,int size)
 {
+
 	int ret;
-	signal(SIGPIPE, SIG_IGN);
+	//signal(SIGPIPE, SIG_IGN);
 	*controlador = 0;
 
-	if ((ret = send(socket_emisor, mensaje_a_enviar,size, MSG_NOSIGNAL)) < 0)
+	if ((ret = send(socket_emisor, mensaje_a_enviar,size, 0)) <= 0)
 	{
 		//close(socket_emisor);
 		*controlador = 7;
@@ -65,7 +66,7 @@ void recibir(int socket_receptor, int *controlador,void *buff,int size)
 
 	*controlador = 0;
 
-	if ((ret = recv(socket_receptor, buff, size, 0)) <= 0)
+	if ((ret = recv(socket_receptor, buff, size,0)) <= 0)
 	{
 		//printf("error receiving or connection lost \n");
 		if (ret == 0)
@@ -77,7 +78,6 @@ void recibir(int socket_receptor, int *controlador,void *buff,int size)
 		*controlador = 1;
 		//close(socket_receptor);
 	}
-
 }
 
 void cerrar_conexion(int socket_)

@@ -6,6 +6,7 @@ int iniciar_socket_server(char*, int, int*);
 int escuchar_conexiones(int, int*);
 int aceptar_conexion(int, int*);
 int enviar(int, char*, int*);
+int enviar_pcb(int , char *, int *,int );
 char *recibir(int, int*);
 void cerrar_conexion(int);
 

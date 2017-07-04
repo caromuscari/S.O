@@ -16,104 +16,122 @@
 #include <commons/string.h>
 #include <stdbool.h>
 #include "funciones.h"
-
+#include "archivos.h"
+#include "log.h"
+#include <commons/log.h>
+#include "mensaje.h"
+#include <commons/bitarray.h>
+#include <sys/stat.h>
+#include <sys/mman.h>
+#include <commons/collections/dictionary.h>
+#include "estructuras.h"
+#include "fsecundarias.h"
 
 int puerto;
 char *ip;
 char *montaje;
 int flagsocket;
 int socketfs;
-t_log * log;
+t_log * log_;
+int tBloques;
+int cantBloques;
+char *magic_number;
+t_bitarray * bitmap;
+char* posicion;
+
+struct stat mystat;
 
 int verificarHS(char *handshake);
-void archivoDeCofiguracion(char* argv);
-void handshake();
+void handshake1();
 void reservar_memoria();
 void liberar_memoria();
 
 
 int main(int argc, char *argv[])
 {
+	int metadata;
+	int bitmap;
+	int flag = 0;
+
 	reservar_memoria();
 	archivoDeCofiguracion(argv[1]);
+
+	metadata = leer_metadata();
+	if (metadata == -1) goto finalizar;
+
+	bitmap = abrir_bitmap();
+	if(bitmap == -1) goto finalizar;
+
+	posicion = malloc(cantBloques);
 	flagsocket=0;
 	socketfs =iniciar_socket_server(ip,puerto,&flagsocket);
-	handshake();
-	while(1)
+
+	handshake1();
+
+	while(flag == 0)
 	{
-		char *mensaje = strdup("");
-		int codigo;
+		char *mensaje;
+		char * codigo;
+		char * mensaje2;
+
 		mensaje = recibir(socketfs,&flagsocket);
 		codigo = get_codigo(mensaje);
-		switch(codigo)
+
+		switch(atoi(codigo))
 		{
 			case 11:
-				char * mensaje2 = strdup("");
 				mensaje2 = get_mensaje(mensaje);
 				validar_archivo(mensaje2);
 				free(mensaje2);
 				break;
 			case 12:
-				char * mensaje2 = strdup("");
 				mensaje2 = get_mensaje(mensaje);
-				crear_archivo();
+				crear_archivo(mensaje2);
 				free(mensaje2);
 				break;
 			case 13:
-				char * mensaje2 = strdup("");
 				mensaje2 = get_mensaje(mensaje);
-				borrar_archivo();
+				borrar_archivo(mensaje2);
 				free(mensaje2);
 				break;
-			case 14:
-				char *mensaje2 = strdup("");
-				char **parametros;
+			case 14: ;
+				t_datos * est;
 				mensaje2 = get_mensaje(mensaje);
-				parametros = string_split(mensaje2,",");
-				obtener_datos(parametros[0],atoi(parametros[1]),atoi(parametros[2]));
+				est =recuperar_datos(codigo,mensaje2);
+				obtener_datos(est->path,est->offset,est->size);
+				free(est);
 				free(mensaje2);
 				break;
-			case 15:
-				char *mensaje2 = strdup("");
-				char **parametros;
+			case 15: ;
+				t_datos * estruct;
 				mensaje2 = get_mensaje(mensaje);
-				parametros = string_split(mensaje2,",");
-				guardar_datos(parametros[0],atoi(parametros[1]),atoi(parametros[2]),parametros[3]);
+				estruct = recuperar_datos(codigo,mensaje2);
+				guardar_datos(estruct->path,estruct->offset,estruct->size,estruct->buffer);
 				free(mensaje2);
+				free(estruct);
 				break;
 			default:
 				escribir_log("Mensaje incorrecto");
+				flag =1;
+				break;
 
 		}
 		free(mensaje);
 
 	}
+
+	finalizar: escribir_log("Error leyendo archivos iniciales");
+
 	liberar_memoria();
 	return EXIT_SUCCESS;
 }
 					////// AUXILIARES //////
-void archivoDeCofiguracion(char* argv)
-{
-	t_config *configuracion;
-	printf("ruta archivo de configuacion: %s \n", argv);
-	configuracion = config_create(argv);
-	puerto = config_get_int_value(configuracion, "PUERTO");
-	string_append(montaje, config_get_string_value(configuracion, "PUNTO_MONTAJE"));
-	string_append(ip, config_get_string_value(configuracion, "IP"));
-	printf("Valor Ip para conexion del KERNEL: %d \n", ip);
-	printf("Valor puerto para conexion del KERNEL: %d \n", puerto);
-	printf("Valor punto montaje FS: %s \n", montaje);
-	escribir_log_compuesto("Valor IP para conexion con Kernel: ", ip);
-	escribir_log_con_numero("Valor puerto para conexion del Kernel: ", puerto);
-	escribir_log_compuesto("Valor punto montaje FS: ",montaje);
 
-	config_destroy(configuracion);
-}
-
-void handshake()
+void handshake1()
 {
-	char *handshake = strdup("");
+	char *handshake;
 	int esKernel=0;
+	char *mensaje;
 	while(esKernel == 0)
 	{
 		int cliente = escuchar_conexiones(socketfs,&flagsocket);
@@ -121,28 +139,36 @@ void handshake()
 		if (verificarHS(handshake)== 1)
 		{
 			esKernel = 1;
+			mensaje = armar_mensaje("F00","");
+			enviar(socketfs,mensaje,&flagsocket);
+			free(mensaje);
 		}else{
 			cerrar_conexion(cliente);
 			printf("intruso no kernel eliminado \n");
 			escribir_log("Proceso no Kernel eliminado");
 		}
+		free(handshake);
 	}
 	printf("KERNEL CONECTADO \n");
 	escribir_log("Se conecto el Kernel");
-	free(handshake);
 }
 
 void reservar_memoria()
 {
 	montaje = strdup("");
 	ip = strdup("");
-	log =crear_archivo_log("/home/utnso/log_fs.txt");
+	magic_number = strdup("");
+	crear_archivo_log("/home/utnso/log_fs.txt");
 }
 
 void liberar_memoria()
 {
 	free(montaje);
 	free(ip);
+	free(magic_number);
+	memcpy(posicion,bitmap,cantBloques);
+	bitarray_destroy(bitmap);
+	munmap(&mystat,mystat.st_size);
 	liberar_log();
 }
 

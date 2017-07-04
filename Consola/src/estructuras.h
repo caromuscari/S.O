@@ -21,6 +21,21 @@ typedef struct{
 	int cantidad;
 }t_impresiones;
 
+typedef struct{
+	pthread_t hilo;
+}t_hilo;
 
+typedef struct{
+	time_t *tiempo;
+	struct tm* tm_info;
+	char buffer[26];
+}t_tiempo;
+
+typedef struct{
+	int valor_chequeo;
+	int cantidad_impresiones;
+	int hilo;
+	time_t *tiempoInicial;
+}t_data;
 
 #endif /* ESTRUCTURAS_H_ */

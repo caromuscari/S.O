@@ -10,17 +10,18 @@
 
 //Arma el texto de envio para mensajes
 char *armar_mensaje(char *identificador, char *mensaje);
+char *armar_mensaje_pcb(char *identificador, char *mensaje,int sizepcb);
 
 //Devuelve el header del mensaje
 char *get_header(char *mensaje);
 
 //Devuelve el codigo del mensaje
-int get_codigo(char *mensaje);
+char * get_codigo(char *mensaje);
 
 //Obtiene el mensaje
 char * get_mensaje(char *mensaje);
 
 //Compara un header contra el header un mensaje
-int comparar_header(char *identificador, char *mensaje);
+int comparar_header(char *identificador, char *header);
 
 #endif /* MENSAJE_H_ */

@@ -13,7 +13,8 @@
 char *armar_mensaje(char *identificador, char *mensaje)
 {
 	char *resultado = strdup(identificador);
-	char *payload_char = string_itoa(string_length(mensaje));
+	int length = string_length(mensaje);
+	char *payload_char = string_itoa(length);
 	int size_payload = string_length(payload_char);
 	char *completar = string_repeat('0', 10 - size_payload);
 
@@ -26,21 +27,39 @@ char *armar_mensaje(char *identificador, char *mensaje)
 	return resultado;
 }
 
+char *armar_mensaje_pcb(char *identificador, char *mensaje,int sizepcb)
+{
+	char *resultado = malloc(13+sizepcb);
+	char *payload_char = string_itoa(sizepcb);
+	int size_payload = string_length(payload_char);
+	char *completar = string_repeat('0', 10 - size_payload);
+
+
+	memcpy(resultado,identificador,3);
+	memcpy(resultado+3,completar,10 - size_payload);
+	memcpy(resultado+3+10-size_payload,payload_char,size_payload);
+	memcpy(resultado+13,mensaje,sizepcb);
+
+	free(payload_char);
+	free(completar);
+	return resultado;
+}
+
 //devuelve el header del mensaje
 char *get_header(char *mensaje)
 {
 	return string_substring(mensaje, 0, 1);
 }
 
-int comparar_header(char *identificador, char *mensaje)
+int comparar_header(char *identificador, char *header)
 {
-	return !strcmp(string_substring(mensaje, 0, 1), identificador);
+	return !strcmp(header, identificador);
 }
 
 //devuelve el codigo del mensaje
-int get_codigo(char *mensaje)
+char * get_codigo(char *mensaje)
 {
-	return atoi(string_substring(mensaje, 1, 2));
+	return string_substring(mensaje, 1, 2);
 }
 
 //obtiene el mensaje
@@ -48,5 +67,6 @@ char * get_mensaje(char *mensaje)
 {
 	char *payload = string_substring(mensaje, 3, 10);
 	int payload1 = atoi(payload);
+	free(payload);
 	return string_substring(mensaje, 13, payload1);
 }

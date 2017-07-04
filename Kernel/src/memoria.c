@@ -14,7 +14,7 @@
 #include "mensaje.h"
 
 extern t_configuracion *config;
-int tam_pagina = 0;
+extern int tam_pagina;
 
 void manejar_respuesta(char *);
 void handshakearMemory();
@@ -28,7 +28,7 @@ void crear_dict_pagina(t_dictionary *);
 void handshakearMemory()
 {
 	int controlador = 0;
-	char *mensaje = "K02";
+	char *mensaje = armar_mensaje("K00","");
 	char *respuesta;
 
 	enviar(config->cliente_memoria, mensaje, &controlador);
@@ -84,11 +84,11 @@ void reservar_memoria_din(t_program *program, int size_solicitado)
 
 void manejar_respuesta(char *respuesta)
 {
-	int codigo = get_codigo(respuesta);
-	char *mensaje = strdup("");
-	mensaje = get_mensaje(respuesta);
+	char *codigo = get_codigo(respuesta);
+	int cod = atoi(codigo);
+	char *mensaje = get_mensaje(respuesta);
 
-	switch (codigo)
+	switch(cod)
 	{
 		case 0:
 			tam_pagina = atoi(mensaje);
@@ -100,6 +100,7 @@ void manejar_respuesta(char *respuesta)
 			//desconectar de memoria????? o ke? que no pase esto plis
 	}
 	free(mensaje);
+	free(codigo);
 }
 
 int ubicar_bloque(t_pagina *pagina,int tam_sol, int *flag)//usa algoritmo first fit -> el resumen dice que es el mas kpo

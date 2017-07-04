@@ -19,7 +19,7 @@ t_log *log;
 void crear_archivo_log(char *file)
 {
 
-	log = log_create(file,"CPU",false, LOG_LEVEL_INFO);
+	log = log_create(file,"CPU",true, LOG_LEVEL_INFO);
 	log_info(log, string_from_format("se crea archivo de log en ruta: %s",file));
 }
 
