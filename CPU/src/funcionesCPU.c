@@ -315,7 +315,7 @@ int handshakeMemoria(int socketMP){
 			memcpy(tammensaje,handshake+3,10);
 			tamimensaje = atoi(tammensaje);
 			free(tammensaje);
-			char *tampag = malloc(tamimensaje);printf("tamimensaje%d\n",tamimensaje);
+			char *tampag = malloc(tamimensaje);
 			recibir(socketMP,&control,tampag,tamimensaje);
 			tamanopag = atoi(tampag); free(tampag);
 
@@ -386,4 +386,74 @@ void t_memoria_destroy(t_memoria *self){
 }
 int calcular_offset_respecto_pagina(int offset){
 	return offset % tam_pagina_memoria;
+}
+
+char *mensaje_escibir_memoria(int fpid,int direccion_variable,int cant_pag,int valor){
+
+		char * mensaje = malloc(19+ sizeof(int));
+		char * pid; char * pagina; char *offset; char *tam;
+		char * aux_ceros;
+		int desplazamiento=0;
+		pid = string_itoa(fpid);
+		pagina = string_itoa(calcular_pagina(direccion_variable,cant_pag));
+		offset = string_itoa(calcular_offset_respecto_pagina(direccion_variable));
+		tam = strdup("0004");
+		// COD
+		memcpy(mensaje+desplazamiento,"P08",3);
+		desplazamiento += 3;
+		// PID
+		aux_ceros = string_repeat('0',4-strlen(pid));
+		memcpy(mensaje+desplazamiento,aux_ceros,4-strlen(pid));
+		free(aux_ceros);
+		desplazamiento += 4-strlen(pid);
+		memcpy(mensaje+desplazamiento,pid,strlen(pid));
+		desplazamiento += strlen(pid);
+		// PAGINA
+		aux_ceros = string_repeat('0',4-strlen(pagina));
+		memcpy(mensaje+desplazamiento,aux_ceros,4-strlen(pagina));
+		free(aux_ceros);
+		desplazamiento += 4-strlen(pagina);
+		memcpy(mensaje+desplazamiento,pagina,strlen(pagina));
+		desplazamiento += strlen(pagina);
+		// OFFSET
+		aux_ceros = string_repeat('0',4-strlen(offset));
+		memcpy(mensaje+desplazamiento,aux_ceros,4-strlen(offset));
+		free(aux_ceros);
+		desplazamiento += 4-strlen(offset);
+		memcpy(mensaje+desplazamiento,offset,strlen(offset));
+		desplazamiento += strlen(offset);
+		// TAMAÑO
+		memcpy(mensaje+desplazamiento,tam,4);
+		desplazamiento +=4;
+		// VALOR
+		char * str_valor = string_itoa(valor);
+		aux_ceros = string_repeat('0',4-strlen(str_valor));
+		memcpy(mensaje+desplazamiento,aux_ceros,4-strlen(str_valor));
+		free(aux_ceros);
+		desplazamiento += 4-strlen(str_valor);
+		memcpy(mensaje+desplazamiento,str_valor,strlen(str_valor));
+		desplazamiento += strlen(str_valor);
+
+		free(pid); free(pagina); free(offset); free(tam); free(str_valor);
+		return mensaje;
+}
+char *mensaje_semaforo(char * cod,char * semaforo,int *size){
+	char *mensaje= malloc(13+strlen(semaforo));
+	char *strlen_sem = string_itoa(strlen(semaforo));
+	char *aux_ceros = string_repeat(0,10-strlen(strlen_sem));
+
+	int desplazamiento = 0;
+	memcpy(mensaje + desplazamiento,cod,3);
+	desplazamiento += 3;
+	memcpy(mensaje+desplazamiento,aux_ceros,10-strlen(strlen_sem));
+	desplazamiento += 10-strlen(strlen_sem);
+	memcpy(mensaje+desplazamiento,strlen_sem,strlen(strlen_sem));
+	desplazamiento += strlen(strlen_sem);
+	memcpy(mensaje+desplazamiento,semaforo,strlen(semaforo));
+	desplazamiento += strlen(semaforo);
+
+	*size = desplazamiento;
+	free(strlen_sem);
+	free(aux_ceros);
+	return mensaje;
 }

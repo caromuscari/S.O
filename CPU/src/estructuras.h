@@ -3,6 +3,8 @@
 #include <commons/collections/list.h>
 #include <commons/collections/dictionary.h>
 
+#define FINALIZAR_PROGRAMA 1
+
 typedef struct
 {
 	int offset_inicio;

@@ -15,6 +15,8 @@
 #include "funcionesParser.h"
 
 
+
+
 int puertoK,puertoM;
 char *ipK;
 char *ipM;
@@ -24,11 +26,13 @@ int tam_pagina_memoria;
 t_PCB_CPU* pcb;
 char* programa;
 int n;
+
 static const char* bobo_ansisop =
 		"#!/usr/bin/ansisop\n"
 		"begin\n"
 		"variables a\n"
 		"a = 2\n"
+		"prints n a\n"
 		"end\n"
 		"\n";
 static const char* compartida_ansisop =
@@ -118,31 +122,27 @@ int main(int argc, char *argv[])
 		char* sizemensaje= malloc (10);
 		int largomensaje  = 0;
 		escribir_log("Esperando mensajes del Kernel para ponerme a trabajar...",1);
+
 		recibir(sockKerCPU,&controlador,buff,13);
-		//controlador = recv(sockKerCPU,buff,13,0);
 
 		if(controlador != 0){
 			escribir_log("error recibiendo mensaje del Kernel, bai",2);
 			chau = 1;
 		}
 		memcpy(idmensaje,buff+1,2);
-		//idmensaje= string_substring(buff,1,2);
+
 		char * aux = string_from_format("mensaje recibido %s",buff);
 		escribir_log(aux,1);
 		free(aux);
-		printf("%d",atoi(idmensaje));
+
 		switch (atoi(idmensaje)){
 		case 07:
 			escribir_log("CASE N° 7: iniciar procesamiento de PCB",1);
 			//iniciar_pcb_falsa();
-			char * aux = string_from_format("sizemensaje (resto del mensaje) :%s-%d",sizemensaje,atoi(sizemensaje));
-			escribir_log(aux,1);
-			free(aux);
-			memcpy(sizemensaje,buff+3,10);largomensaje = atoi(sizemensaje);
-			//free(sizemensaje);
+			memcpy(sizemensaje,buff+3,10);
+			largomensaje = atoi(sizemensaje);
 			char *mensajeEntero = malloc(largomensaje);
 			recibir(sockKerCPU,&controlador,mensajeEntero,largomensaje);
-			//printf("hola\n");
 			pcb = deserializarPCB_KerCPU(mensajeEntero);
 			procesar();
 			break;
@@ -203,10 +203,11 @@ void procesar(){
 
 		// PROCESAR SEGUN FIFO
 		n=0;
-		while(n == 0){
-			//@MARU! estan pasando cosas raras aca!!! llamo como 3 veces al "pedir_linea_memoria"
-			//y este devolvio char vacios! y despues pincho con strcpy!!
+		while(n != FINALIZAR_PROGRAMA){
+
 			char *linea = pedir_linea_memoria();
+			escribir_log("linea a ejecutar:",1);
+			escribir_log(linea,1);
 			analizadorLinea(linea,&funcionesTodaviaSirve,&funcionesKernelTodaviaSirve);
 			free(linea);
 			pcb->PC ++;
@@ -247,7 +248,9 @@ char* pedir_linea_memoria(){
 	// }
 
 	// todo: ARMAR MENSAJE PEDIR BYTES A MEMORIA: P|01|0000000000|PID|PAGINA|INICIO|FIN
-
+	char * aux = string_from_format("offset inicio:%d-offset fin:%d",pcb->in_cod[pcb->PC].offset_inicio,pcb->in_cod[pcb->PC].offset_fin);
+	escribir_log(aux,1);
+	free(aux);
 	char *linea = string_substring(programa,pcb->in_cod[pcb->PC].offset_inicio,pcb->in_cod[pcb->PC].offset_fin);
 
 	return linea;
@@ -256,7 +259,7 @@ void iniciar_pcb_falsa(){
 
 		pcb= malloc(sizeof(t_PCB_CPU));
 			pcb->PC =0;
-			pcb->PID =2;
+			pcb->PID =1;
 			pcb->SP = 0;
 			pcb->cant_pag = 1;
 			pcb->exit_code = 0;

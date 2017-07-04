@@ -44,11 +44,12 @@ P07 BORRAR
 P08 ASIGNAR BYTES EN MEMORIA
 P09 PEDIR VALOR VARIABLE COMPARTIDA A KERNEL: P|09|0000000018|"variablecompartida"
 P10  ASIGNAR VALOR VARIABLE COMPARTIDA KERNEL: P|10|0000000018|"variablecompartida"|0025 
-P11 Imprimir
+P11 Imprimir P11|0000000008|"imprimir"
 P12 Finalización por quantum 
 P13 Finalización del proceso por el buen camino o por error
 P14 Wait
 P15 Signal
+
 
 MEMORIA - M
 M00: Respuesta a la solicitud de datos (Kernel) de tamaño de página. Va en el HandShake. Rta Ej: M|00|0128|
