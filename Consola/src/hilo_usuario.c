@@ -1,10 +1,3 @@
-/*
- * hilo_usuario.c
- *
- *  Created on: 6/5/2017
- *      Author: utnso
- */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
@@ -22,90 +15,82 @@ extern int socket_;
 extern t_dictionary * p_pid;
 extern t_dictionary * h_pid;
 extern pthread_t hiloMensaje;
-//extern pthread_t hiloUsuario;
 extern t_dictionary * sem;
 extern t_dictionary * impresiones;
 extern t_dictionary * tiempo;
 extern int flag;
 
 char* leer_archivo(char*);
-void iniciar_programa(char * ruta, int socket_);
-void finalizar_programa(char * pid, int socket_);
+void iniciar_programa(char *ruta, int socket_);
+void finalizar_programa(char *pid, int socket_);
 void desconectar_consola();
-void cerrar_programas(char* key, void* data);
-void tiempofinal_impresiones(char* pid);
-void mostrar_pids(char* key, void* data);
+void cerrar_programas(char *key, void *data);
+void tiempofinal_impresiones(char *pid);
+void mostrar_pids(char *key, void *data);
+void imprimir_menu();
 
 void hilousuario()
 {
 	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE,NULL);
 	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,NULL);
-	//t_dictionary* switch_;
-	//cargar_switch(switch_);
+
 	while(flag == 0)
 	{
 		char *ingreso;
 		char *identi;
 		scanf("%ms", &ingreso);
 
-		/*int data=dictionary_get(switch_,ingreso);
-		  switch(data){
-		  	case 1:
-		  		printf("ingresar la ruta del programa: ");
-				scanf("%s",identi);
-				iniciar_programa(identi,socket_);
-				break;
-			case 2:
-				printf("ingresar el PID del programa: ");
-				scanf("%s",identi);
-				finalizar_programa(atol(identi),socket_);
-				break;
-			case 3:
-				desconectar_consola();
-				break;
-			case 4:
-				system("clear");
-				break;
-			default:
+		imprimir_menu();
 
-			}
-		 */
-
-		if(!strcmp(ingreso, "iniciar_programa"))
+		switch(atoi(ingreso))
 		{
-			printf("ingresar la ruta del programa: ");
+		case 1:
+		//if(!strcmp(ingreso, "iniciar_programa"))
+		//{
+			printf("Ingresar la ruta del programa: ");
 			scanf("%ms",&identi);
 			iniciar_programa(identi,socket_);
 			free(identi);
-		}
-		else if(!strcmp(ingreso, "finalizar_programa"))
-		{
+			break;
+		//}
+		case 2:
+		//else if(!strcmp(ingreso, "finalizar_programa"))
+		//{
 			if(dictionary_is_empty(p_pid)){
-				escribir_log("No hay programas abiertos");
+				printf("No hay programas abiertos\n");
 			}
 			else
 			{
+				printf("Los programas son los siguientes:\n");
 				dictionary_iterator(p_pid,(void *)mostrar_pids);
 
-				printf("ingresar el pid del hilo: ");
+				printf("\nIngresar el pid del hilo a finalizar: ");
 				scanf("%ms",&identi);
 
 				finalizar_programa(identi,socket_);
 
 				free(identi);
 			}
-		}
-		else if(!strcmp(ingreso, "desconectar_consola"))
-		{
+			break;
+		//}
+		case 3:
+		//else if(!strcmp(ingreso, "desconectar_consola"))
+		//{
 			desconectar_consola();
-		}
-		else if(!strcmp(ingreso, "limpiar_consola"))
-		{
+			break;
+		//}
+		case 4:
+		//else if(!strcmp(ingreso, "limpiar_consola"))
+		//{
 			system("clear");
-		}
-		else
-		{
+			break;
+		//}
+		default :
+		//else
+		//{
 			printf("No se reconoce el pedido\n");
+			break;
+		//}
 		}
 
 		free(ingreso);
@@ -113,18 +98,10 @@ void hilousuario()
 	pthread_exit(NULL);
 }
 
-/*void cargar_switch(t_dictionary * switch_){
-	switch_=dictionary_create();
-	dictionary_put(switch_,"iniciar_programa",1);
-	dictionary_put(switch_,"finalizar_programa",2);
-	dictionary_put(switch_,"desconectar_consola",3);
-	dictionary_put(switch_,"limpiar_consola",4);
-}*/
-
 void iniciar_programa(char *ruta, int socket_)
 {
-	char * mensaje_armado;
-	char * mensaje;
+	char *mensaje_armado;
+	char *mensaje;
 	mensaje = leer_archivo(ruta);
 	mensaje_armado= armar_mensaje("C01", mensaje);
 	enviar(socket_, mensaje_armado,string_length(mensaje_armado));
@@ -154,47 +131,41 @@ char *leer_archivo(char *ruta)
 
 void finalizar_programa(char *pid, int socket_)
 {
-	char * mensaje;
-	char* pid2;
-	t_hilo * hilo = dictionary_get(p_pid,pid);
-	int pid3 = atoi(pid);
-	char * var = string_itoa(hilo->hilo);
+	char *mensaje;
+	char *pid2;
 
-	if(pthread_cancel(hilo->hilo)==0)
+	if(dictionary_has_key(p_pid,pid))
 	{
-		pid2=dictionary_get(h_pid,var);
-		mensaje = armar_mensaje("C02",pid2);
-		enviar(socket_, mensaje, string_length(mensaje));
-		escribir_log_con_numero("Se finalizo el programa: ", pid3);
-		tiempofinal_impresiones(pid2);
+		t_hilo *hilo = dictionary_get(p_pid,pid);
+		char *var = string_itoa(hilo->hilo);
 
-		free(dictionary_remove(h_pid,var));
-		free(dictionary_remove(p_pid,pid2));
-		free(dictionary_remove(impresiones,pid2));
-		free(dictionary_remove(sem,pid2));
-		free(dictionary_remove(tiempo,pid2));
-		free(mensaje);
+		if(pthread_cancel(hilo->hilo)==0)
+		{
+			pid2 = dictionary_get(h_pid,var);
+			mensaje = armar_mensaje("C02",pid2);
+			enviar(socket_, mensaje, string_length(mensaje));
+			printf("Se finalizo el programa: %d\n", atoi(pid));
+			tiempofinal_impresiones(pid2);
+
+			free(dictionary_remove(h_pid,var));
+			free(dictionary_remove(p_pid,pid2));
+			free(dictionary_remove(impresiones,pid2));
+			free(dictionary_remove(sem,pid2));
+			free(dictionary_remove(tiempo,pid2));
+			free(mensaje);
+		}
+		else escribir_log("No se pudo finalizar el programa\n");
 	}
-	else{
-		escribir_log("No se pudo finalizar el programa");
-	}
+	else printf("El programa no existe\n");
 }
 
-void mostrar_pids(char* key, void* data)
+void mostrar_pids(char *key, void *data)
 {
-	char *pid = strdup("");
-	t_hilo * hilo =data;
-	char * var = string_itoa(hilo->hilo);
+	t_hilo *hilo = data;
+	char *var = string_itoa(hilo->hilo);
 
-	string_append(&pid,"PID: ");
-	string_append(&pid,key);
-	string_append(&pid,"	PID HILO: ");
-	string_append(&pid,var);
-
-	printf("%s", pid);
-	printf("\n");
-
-	free(pid);
+	printf("PID: %s\n", key);
+	free(var);
 }
 
 void tiempofinal_impresiones(char* pid)
@@ -221,10 +192,10 @@ void tiempofinal_impresiones(char* pid)
 
 	diferencia= difftime(*tiempoFinal, *tiempoI);
 
-	escribir_log_compuesto("Inicio de ejecución : ", tiempoinicial->buffer);
-	escribir_log_compuesto("Fin de ejecución : ", buffer1);
-	escribir_log_con_numero("Cantidad de impresiones: ", cant->cantidad);
-	escribir_log_con_numero("Tiempo total de ejecución en segundos : ", diferencia);
+	printf("Inicio de ejecucion: %s\n", (char*)tiempoinicial->buffer);
+	printf("Fin de ejecucion: %s\n", (char*)buffer1);
+	printf("Cantidad de impresiones: %d\n", cant->cantidad);
+	printf("Tiempo total de ejecucion en segundos: %d\n\n", (int)diferencia);
 
 	free(tiempoFinal);
 }
@@ -235,7 +206,7 @@ void desconectar_consola()
 	dictionary_iterator(h_pid,(void*)cerrar_programas);
 	mensaje = armar_mensaje("C03", "");
 	enviar(socket_, mensaje, string_length(mensaje));
-	escribir_log("Se desconecta la consola");
+	printf("Se desconecta la consola\n");
 	free(mensaje);
 	//pthread_cancel(hiloMensaje);
 	pthread_kill(hiloMensaje,SIGKILL);
@@ -247,4 +218,13 @@ void desconectar_consola()
 void cerrar_programas(char *key, void *data)
 {
 	finalizar_programa(key,socket_);
+}
+
+void imprimir_menu()
+{
+	printf("Seleccione el numero de la opcion a ejecutar\n");
+	printf("	1 - Iniciar programa\n");
+	printf("	2 - Finalizar programa\n");
+	printf("	3 - Desconectar consola\n");
+	printf("	4 - Limpiar consola\n\n");
 }

@@ -72,15 +72,14 @@ void escuchar_mensaje()
 				pthread_create(&hiloPrograma,NULL,(void*)programa,pid);
 				hilo->hilo= hiloPrograma;
 
-				escribir_log_con_numero("Se inicio el programa: ", atoi(pid));
+				printf("Se inicio el programa: %d\n", atoi(pid));
 
 				dictionary_put(p_pid,pid,hilo);
 				dictionary_put(h_pid,string_itoa(hiloPrograma),pid);
 
-
 				break;
 			case 5:
-				escribir_log("No se pudo iniciar el programa");
+				printf("No se pudo iniciar el programa\n");
 				free(sema);
 				free(cant);
 				free(smod);
@@ -140,7 +139,7 @@ void finalizar(char *pid, int socket_)
 	if(pthread_cancel(hilo->hilo)==0)
 	{
 		pid2=dictionary_get(h_pid,var);
-		escribir_log_con_numero("Se finalizo el programa: ", pid3);
+		printf("Se finalizo el programa: %d\n", pid3);
 		tiempofinal_impresiones(pid2);
 
 		free(dictionary_remove(h_pid,var));
@@ -149,9 +148,7 @@ void finalizar(char *pid, int socket_)
 		free(dictionary_remove(sem,pid2));
 		free(dictionary_remove(tiempo,pid2));
 	}
-	else{
-		escribir_log("No se pudo finalizar el programa");
-	}
+	else printf("No se pudo finalizar el programa\n");
 }
 
 void senial()
