@@ -33,6 +33,8 @@ void hilousuario()
 {
 	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE,NULL);
 	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,NULL);
+	//t_dictionary* switch_;
+	//cargar_switch(switch_);
 
 	while(flag == 0)
 	{
@@ -40,6 +42,28 @@ void hilousuario()
 		char *identi;
 		scanf("%ms", &ingreso);
 
+		/*int data=dictionary_get(switch_,ingreso);
+				  switch(data){
+				  	case 1:
+				  		printf("ingresar la ruta del programa: ");
+						scanf("%s",identi);
+						iniciar_programa(identi,socket_);
+						break;
+					case 2:
+						printf("ingresar el PID del programa: ");
+						scanf("%s",identi);
+						finalizar_programa(atol(identi),socket_);
+						break;
+					case 3:
+						desconectar_consola();
+						break;
+					case 4:
+						system("clear");
+						break;
+					default:
+
+		}
+		*/
 		imprimir_menu();
 
 		switch(atoi(ingreso))
@@ -97,6 +121,14 @@ void hilousuario()
 	}
 	pthread_exit(NULL);
 }
+
+/*void cargar_switch(t_dictionary * switch_){
+	switch_=dictionary_create();
+	dictionary_put(switch_,"iniciar_programa",1);
+	dictionary_put(switch_,"finalizar_programa",2);
+	dictionary_put(switch_,"desconectar_consola",3);
+	dictionary_put(switch_,"limpiar_consola",4);
+}*/
 
 void iniciar_programa(char *ruta, int socket_)
 {
