@@ -87,7 +87,7 @@ typedef struct
 typedef struct
 {
 	int n_pagina;
-	t_list *heaps; //de heapMetadata
+	t_list *heaps; //de bloques
 	int esp_libre;
 	t_dictionary *posiciones;
 }t_pagina;
@@ -104,6 +104,12 @@ typedef struct
 	int size;
 	bool isFree;
 }HeapMetadata;
+
+typedef struct
+{
+	HeapMetadata *metadata;
+	void *data;
+}t_bloque;
 
 typedef struct
 {

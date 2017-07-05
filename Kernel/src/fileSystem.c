@@ -234,6 +234,7 @@ void escribir_archivo(int offset, char *info, char *flags, char *path, int socke
 			{
 				/*char *mensaje_leido = get_mensaje(mensaje_recibido);
 				enviar(socket_cpu, mensaje_leido, &controlador);*/
+				//enviar ok 5 ceros
 			}
 			free(cod);
 		}

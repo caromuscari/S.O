@@ -129,7 +129,7 @@ void responder_solicitud_cpu(int socket_, char *mensaje) {
 			char *variable = get_variable(mensaje);
 			char *numero = get_numero(mensaje);
 			int num = atoi(numero);
-			set_vglobal(variable, num, prog->PID);
+			set_vglobal(variable, num, prog, socket_);
 			free(variable);
 			free(numero);
 			break;
@@ -152,6 +152,7 @@ void responder_solicitud_cpu(int socket_, char *mensaje) {
 			free(cpu_ejecutando->program);
 			cpu_ejecutando->program = malloc(sizeof(t_program));
 			cpu_ejecutando->ejecutando = 0;
+			free(mensaje_r);
 			break;
 		case 13: ;
 			char *mensaje_r2 = get_mensaje(mensaje);
@@ -162,6 +163,17 @@ void responder_solicitud_cpu(int socket_, char *mensaje) {
 			free(cpu_ejecutando->program);
 			cpu_ejecutando->program = malloc(sizeof(t_program));
 			cpu_ejecutando->ejecutando = 0;
+			free(mensaje_r2);
+			break;
+		case 14: ;//wait
+			char *mensaje2 = get_mensaje(mensaje);
+			sem_wait_(prog, mensaje2, socket_);
+			free(mensaje2);
+			break;
+		case 15: ;//post
+			char *mensaje3 = get_mensaje(mensaje);
+			sem_signal(prog, mensaje3, socket_);
+			free(mensaje3);
 			break;
 		default:
 			;
@@ -241,7 +253,7 @@ void pedir_pcb_error(t_program *prg, int exit_code)
 
 	char *pid_aux = string_itoa(exit_code);
 	int size_pid = string_length(pid_aux);
-	char *completar = string_repeat('0', 4 - size_pid);
+	char *completar = string_repeat('0', 14 - size_pid);
 
 	char *mensaje = strdup("K21");
 	string_append(&mensaje, completar);

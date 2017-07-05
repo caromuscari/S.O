@@ -14,6 +14,7 @@ void forzar_finalizacion(int pid, int cid, int codigo_finalizacion);
 void finalizar_proceso(int pid, int codigo_finalizacion);
 void programas_listos_A_ejecutar();
 void programas_nuevos_A_listos();
+int bloquear_proceso(int);
 void desbloquear_proceso(int);
 int calcular_pag(char *mensaje);
 void finalizar_quantum(int pid);

@@ -16,6 +16,7 @@
 #include "manejo_errores.h"
 #include "consolaKernel.h"
 #include "manejo_conexiones.h"
+#include "semaforos_vglobales.h"
 #include "planificador.h"
 #include "estructuras.h"
 #include "cpuManager.h"
@@ -113,6 +114,8 @@ void inicializar_variables()
 	cola_nuevos = queue_create();
 	cola_listos = queue_create();
 	list_bloqueados = list_create();
+	inicializar_sems();
+	inicializar_vglobales();
 }
 
 void liberar_memoria()
