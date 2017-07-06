@@ -193,7 +193,7 @@ t_cpu *programa_ejecutando(int socket_)
 {
 	bool _cpu_por_socket(t_cpu *cpu)
 	{
-		return !(cpu->socket_cpu == socket_);
+		return (cpu->socket_cpu == socket_);
 	}
 
 	pthread_mutex_lock(&mutex_lista_cpus);

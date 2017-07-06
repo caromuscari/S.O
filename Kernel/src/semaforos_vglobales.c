@@ -33,8 +33,25 @@ void get_vglobal(char *vglobal, int num, t_program *prog, int socket_);
 void inicializar_sems()
 {
 	sems = dictionary_create();
-	char **ids = string_split(sem_id, ",");
-	char **ins = string_split(sem_in, ",");
+	t_sem *sem = malloc (sizeof(t_sem));
+	sem->value = 1;
+	sem->procesos = queue_create();
+	dictionary_put(sems, "SEM1",sem);
+
+	t_vglobal *vg = malloc (sizeof(t_vglobal));
+	vglobales = dictionary_create();
+	vg->mutex_ = 1;
+	vg->value = 0;
+	vg->procesos = queue_create();
+	dictionary_put(vglobales, "!Global", vg);
+	/*
+	sems = dictionary_create();
+	int l_id = string_length(sem_id);
+	char *id_aux = string_substring(sem_id, 1, l_id - 1);
+	int l_in = string_length(sem_in);
+	char *in_aux = string_substring(sem_id, 1, l_in - 1);
+	char **ids = string_split(id_aux, ",");
+	char **ins = string_split(in_aux, ",");
 	int n = 0;
 
 	while (ids[n] != NULL)
@@ -54,6 +71,7 @@ void inicializar_sems()
 
 	free(ids);
 	free(ins);
+	hacer frees*/
 }
 
 void inicializar_vglobales()
@@ -88,7 +106,7 @@ void sem_wait_(t_program *proceso, char *sema, int socket_)
 		if (sem->value  > 0)
 		{
 			escribir_log_compuesto("Se realiza un wait al semaforo: ",sema);
-
+			enviar(socket_, "OK000000000000000", &controlador);
 			sem->value --;
 		}else
 		{
