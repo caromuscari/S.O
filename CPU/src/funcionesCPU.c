@@ -287,8 +287,9 @@ int handshakeKernel(int socketKP){
 		if(strncmp(handshake,"K00",3) == 0){
 
 			escribir_log("mensaje de conexion con Kernel recibido",1);
-			char * k= strdup("P00");
+			char *k= strdup("P00");
 			enviar(socketKP,k,&control,3);
+			free(k);
 			if(control != 0){
 				escribir_log("error enviando mensaje al Kernel",2);
 			}
