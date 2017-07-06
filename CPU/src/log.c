@@ -14,23 +14,23 @@
 #include <commons/log.h>
 #include <commons/string.h>
 
-t_log *log;
+t_log *logi;
 
 void crear_archivo_log(char *file)
 {
 
-	log = log_create(file,"CPU",true, LOG_LEVEL_INFO);
-	log_info(log, string_from_format("se crea archivo de log en ruta: %s",file));
+	logi = log_create(file,"CPU",true, LOG_LEVEL_INFO);
+	log_info(logi, string_from_format("se crea archivo de log en ruta: %s",file));
 }
 
 void escribir_log(char *mensaje,int cod)
 {
 	switch(cod){
 	case 1:
-		log_info(log, mensaje);
+		log_info(logi, mensaje);
 		break;
 	case 2:
-		log_error(log,mensaje);
+		log_error(logi,mensaje);
 		break;
 	}
 
@@ -38,5 +38,5 @@ void escribir_log(char *mensaje,int cod)
 
 void liberar_log()
 {
-	log_destroy(log);
+	log_destroy(logi);
 }

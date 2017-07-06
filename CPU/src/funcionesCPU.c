@@ -4,14 +4,18 @@
  *  Created on: 30/4/2017
  *      Author: utnso
  */
-#include <stdio.h>
+
+#include "funcionesCPU.h"
+
+#include <commons/collections/dictionary.h>
+#include <commons/collections/list.h>
+#include <commons/string.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/socket.h>
-#include <commons/string.h>
-#include "funcionesCPU.h"
-#include "socket.h"
+
+#include "estructuras.h"
 #include "log.h"
+#include "socket.h"
 
 extern int tam_pagina_memoria;
 
@@ -25,16 +29,16 @@ t_dictionary* armarDiccionarioEtiquetas(char* etiquetas_serializadas){
 
 	while(n<cantEtiquetas){
 
-	int lengkey=0;char *key_aux;int pasar_pc=0;
-	memcpy(&lengkey,etiquetas_serializadas+desplazamiento,sizeof(int));
-	desplazamiento += sizeof(int);
-	key_aux= string_substring(etiquetas_serializadas,desplazamiento,lengkey);
-	desplazamiento += lengkey;
-	memcpy(&pasar_pc,etiquetas_serializadas+desplazamiento,sizeof(int));
-	dictionary_put(dicc,key_aux,(void *)pasar_pc);
-	desplazamiento += sizeof(int);
-	free(key_aux);
-	n++;
+		int lengkey=0;char *key_aux;int pasar_pc=0;
+		memcpy(&lengkey,etiquetas_serializadas+desplazamiento,sizeof(int));
+		desplazamiento += sizeof(int);
+		key_aux= string_substring(etiquetas_serializadas,desplazamiento,lengkey);
+		desplazamiento += lengkey;
+		memcpy(&pasar_pc,etiquetas_serializadas+desplazamiento,sizeof(int));
+		dictionary_put(dicc,key_aux,(void *)pasar_pc);
+		desplazamiento += sizeof(int);
+		free(key_aux);
+		n++;
 
 	}
 	return dicc;
@@ -42,234 +46,234 @@ t_dictionary* armarDiccionarioEtiquetas(char* etiquetas_serializadas){
 }
 char* serializarPCB_CPUKer (t_PCB_CPU* pcb,int * devolveme){
 	char *retorno;
-			//int sizeretorno = tamaño_PCB(pcb);
-			int size_retorno = sizeof(int)*6; //(int) SIZEOF MENSAJE,PID,PC,CANT_PAGINAS,SP,EXIT_CODE
-			// TAMAÑO_SENTENCIAS_SERIALIZADAS + SENTENCIAS_SERIALIZADAS (c/sentencias : (int)inicio,(int)offset)
-			// en la serializacion de etiquetas como en el indice hay una extra, de control, con valores negativos
-			int cantidad_sentencias=0;
-			while(pcb->in_cod[cantidad_sentencias].offset_inicio != -1 && pcb->in_cod[cantidad_sentencias].offset_fin != -1 ){
-				cantidad_sentencias++;
-			}
-			int size_in_sentencias= (cantidad_sentencias+1)*sizeof(t_sentencia);
-			size_retorno += size_in_sentencias + sizeof(int);
-			// SIZE TOTAL DEL INDICE DE ETIQUETAS (SERIALIZACION DE UN DICCIONARIO)
-			int size_in_et = 0; memcpy(&size_in_et,pcb->in_et,4);
-			size_retorno += size_in_et;
-			//(int) SIZE TOTAL INDICE DE STACK + (int) CANT_ELEMENTOS +T_STACK_ELEMENT SERIALIZADO
-			//(c/u t_stack_element: (int) pos+(int)retPos + (13 bytes t_memoria serializada) retVar + (int) size_argumentos + (13bytes*nElemetos) args + (int) size_vars + (13bytes) vars)
-			//(c/u t_memoria : retVar, vars, args: (char) ID, (int) pag,(int) offset,(int) size)
-			int size_in_stack = 0;
-			int n=0; int tam_stack = list_size(pcb->in_stack);
-			while (n < tam_stack){
-				t_stack_element* aux = list_get(pcb->in_stack,n);
-				size_in_stack += 4* sizeof(int) + sizeof(t_memoria)+ sizeof(t_memoria)*( list_size(aux->args) + list_size(aux->vars) );
-				n++;
-			}
-			size_retorno += size_in_stack + 2 * sizeof(int);
-			retorno = malloc(size_retorno);
-			*devolveme = size_retorno;
-			int desplazamiento = 0;
+	//int sizeretorno = tamaño_PCB(pcb);
+	int size_retorno = sizeof(int)*6; //(int) SIZEOF MENSAJE,PID,PC,CANT_PAGINAS,SP,EXIT_CODE
+	// TAMAÑO_SENTENCIAS_SERIALIZADAS + SENTENCIAS_SERIALIZADAS (c/sentencias : (int)inicio,(int)offset)
+	// en la serializacion de etiquetas como en el indice hay una extra, de control, con valores negativos
+	int cantidad_sentencias=0;
+	while(pcb->in_cod[cantidad_sentencias].offset_inicio != -1 && pcb->in_cod[cantidad_sentencias].offset_fin != -1 ){
+		cantidad_sentencias++;
+	}
+	int size_in_sentencias= (cantidad_sentencias+1)*sizeof(t_sentencia);
+	size_retorno += size_in_sentencias + sizeof(int);
+	// SIZE TOTAL DEL INDICE DE ETIQUETAS (SERIALIZACION DE UN DICCIONARIO)
+	int size_in_et = 0; memcpy(&size_in_et,pcb->in_et,4);
+	size_retorno += size_in_et;
+	//(int) SIZE TOTAL INDICE DE STACK + (int) CANT_ELEMENTOS +T_STACK_ELEMENT SERIALIZADO
+	//(c/u t_stack_element: (int) pos+(int)retPos + (13 bytes t_memoria serializada) retVar + (int) size_argumentos + (13bytes*nElemetos) args + (int) size_vars + (13bytes) vars)
+	//(c/u t_memoria : retVar, vars, args: (char) ID, (int) pag,(int) offset,(int) size)
+	int size_in_stack = 0;
+	int n=0; int tam_stack = list_size(pcb->in_stack);
+	while (n < tam_stack){
+		t_stack_element* aux = list_get(pcb->in_stack,n);
+		size_in_stack += 4* sizeof(int) + sizeof(t_memoria)+ sizeof(t_memoria)*( list_size(aux->args) + list_size(aux->vars) );
+		n++;
+	}
+	size_retorno += size_in_stack + 2 * sizeof(int);
+	retorno = malloc(size_retorno);
+	*devolveme = size_retorno;
+	int desplazamiento = 0;
 
-			// 4 BYTES C/U PARA: SIZE_TOTAL_MENSAJE,PID,PC,CANT_PAGINAS,SP,EXIT_CODE,QUANTUM,QUANTUM_SLEEP
-			memcpy(retorno+desplazamiento,&size_retorno,sizeof(int));
-			desplazamiento += sizeof(int);
-			memcpy(retorno+desplazamiento,&pcb->PID,sizeof(int));
-			desplazamiento += sizeof(int);
-			memcpy(retorno+desplazamiento,&pcb->PC,sizeof(int));
-			desplazamiento += sizeof(int);
-			memcpy(retorno+desplazamiento,&pcb->cant_pag,sizeof(int));
-			desplazamiento += sizeof(int);
-			memcpy(retorno+desplazamiento,&pcb->SP,sizeof(int));
-			desplazamiento += sizeof(int);
-			memcpy(retorno+desplazamiento,&pcb->exit_code,sizeof(int));
-			desplazamiento += sizeof(int);
+	// 4 BYTES C/U PARA: SIZE_TOTAL_MENSAJE,PID,PC,CANT_PAGINAS,SP,EXIT_CODE,QUANTUM,QUANTUM_SLEEP
+	memcpy(retorno+desplazamiento,&size_retorno,sizeof(int));
+	desplazamiento += sizeof(int);
+	memcpy(retorno+desplazamiento,&pcb->PID,sizeof(int));
+	desplazamiento += sizeof(int);
+	memcpy(retorno+desplazamiento,&pcb->PC,sizeof(int));
+	desplazamiento += sizeof(int);
+	memcpy(retorno+desplazamiento,&pcb->cant_pag,sizeof(int));
+	desplazamiento += sizeof(int);
+	memcpy(retorno+desplazamiento,&pcb->SP,sizeof(int));
+	desplazamiento += sizeof(int);
+	memcpy(retorno+desplazamiento,&pcb->exit_code,sizeof(int));
+	desplazamiento += sizeof(int);
 
-			// 4 BYTES PARA TAMAÑO_SENTENCIAS_SERIALIZADAS
-			memcpy(retorno +desplazamiento,&size_in_sentencias,sizeof(int));
+	// 4 BYTES PARA TAMAÑO_SENTENCIAS_SERIALIZADAS
+	memcpy(retorno +desplazamiento,&size_in_sentencias,sizeof(int));
+	desplazamiento += sizeof(int);
+
+	// SERIALIZO SENTENCIAS
+	n=0;
+	while(pcb->in_cod[n].offset_inicio != -1 &&pcb->in_cod[n].offset_fin != -1 ){
+		memcpy(retorno+desplazamiento, &pcb->in_cod[n].offset_inicio,sizeof(int));
+		desplazamiento += sizeof(int);
+		memcpy(retorno+desplazamiento, &pcb->in_cod[n].offset_fin,sizeof(int));
+		desplazamiento += sizeof(int);
+		n++;
+	}
+	memcpy(retorno+desplazamiento, &pcb->in_cod[n].offset_fin,sizeof(int));
+	desplazamiento += sizeof(int);
+	memcpy(retorno+desplazamiento, &pcb->in_cod[n].offset_fin,sizeof(int));
+	desplazamiento += sizeof(int);
+	// AGREGO EL INDICE_ETIQUETAS (DICCIONARIO DE ETIQUETAS SERIALIZADO)
+	memcpy(retorno+desplazamiento,pcb->in_et,size_in_et);
+	desplazamiento += size_in_et;
+
+	// 4 BYTES C/U PARA : SIZE_IN_STACK, CANT_ELEMENTOS_STACK
+	memcpy(retorno+desplazamiento,&size_in_stack,sizeof(int));
+	desplazamiento += sizeof(int);
+	memcpy(retorno+desplazamiento,&tam_stack,sizeof(int));
+	desplazamiento += sizeof(int);
+
+	n=0;
+	while (n < tam_stack){
+		t_stack_element* aux = list_get(pcb->in_stack,n);
+		memcpy(retorno+desplazamiento,&aux->pos,sizeof(int));
+		desplazamiento += sizeof(int);
+		memcpy(retorno+desplazamiento,&aux->retPos,sizeof(int));
+		desplazamiento += sizeof(int);
+		memcpy(retorno+desplazamiento,&aux->retVar.ID,sizeof(char));
+		desplazamiento += sizeof(char);
+		memcpy(retorno+desplazamiento,&aux->retVar.offset,sizeof(int));
+		desplazamiento += sizeof(int);
+		memcpy(retorno+desplazamiento,&aux->retVar.pag,sizeof(int));
+		desplazamiento += sizeof(int);
+		memcpy(retorno+desplazamiento,&aux->retVar.size,sizeof(int));
+		desplazamiento += sizeof(int);
+		int n_args=0;int n_vars= 0;
+		n_args= list_size(aux->args);n_vars = list_size(aux->vars);
+		int c=0;
+		memcpy(retorno+desplazamiento,&n_args,sizeof(int));
+		desplazamiento += sizeof(int);
+		while(c<n_args){
+			t_memoria* aux2 = list_get(aux->args,c);
+			memcpy(retorno+desplazamiento,&aux2->ID,sizeof(char));
+			desplazamiento += sizeof(char);
+			memcpy(retorno+desplazamiento,&aux2->offset,sizeof(int));
 			desplazamiento += sizeof(int);
-
-			// SERIALIZO SENTENCIAS
-			n=0;
-			while(pcb->in_cod[n].offset_inicio != -1 &&pcb->in_cod[n].offset_fin != -1 ){
-				memcpy(retorno+desplazamiento, &pcb->in_cod[n].offset_inicio,sizeof(int));
-				desplazamiento += sizeof(int);
-				memcpy(retorno+desplazamiento, &pcb->in_cod[n].offset_fin,sizeof(int));
-				desplazamiento += sizeof(int);
-					n++;
-			}
-			memcpy(retorno+desplazamiento, &pcb->in_cod[n].offset_fin,sizeof(int));
+			memcpy(retorno+desplazamiento,&aux2->pag,sizeof(int));
 			desplazamiento += sizeof(int);
-			memcpy(retorno+desplazamiento, &pcb->in_cod[n].offset_fin,sizeof(int));
+			memcpy(retorno+desplazamiento,&aux2->size,sizeof(int));
 			desplazamiento += sizeof(int);
-			// AGREGO EL INDICE_ETIQUETAS (DICCIONARIO DE ETIQUETAS SERIALIZADO)
-			memcpy(retorno+desplazamiento,pcb->in_et,size_in_et);
-			desplazamiento += size_in_et;
-
-			// 4 BYTES C/U PARA : SIZE_IN_STACK, CANT_ELEMENTOS_STACK
-			memcpy(retorno+desplazamiento,&size_in_stack,sizeof(int));
+			c++;
+		}
+		c=0;
+		memcpy(retorno+desplazamiento,&n_vars,sizeof(int));
+		desplazamiento += sizeof(int);
+		while(c<n_vars){
+			t_memoria* aux2 = list_get(aux->vars,c);
+			memcpy(retorno+desplazamiento,&aux2->ID,sizeof(char));
+			desplazamiento += sizeof(char);
+			memcpy(retorno+desplazamiento,&aux2->offset,sizeof(int));
 			desplazamiento += sizeof(int);
-			memcpy(retorno+desplazamiento,&tam_stack,sizeof(int));
+			memcpy(retorno+desplazamiento,&aux2->pag,sizeof(int));
 			desplazamiento += sizeof(int);
-
-			n=0;
-			while (n < tam_stack){
-				t_stack_element* aux = list_get(pcb->in_stack,n);
-				memcpy(retorno+desplazamiento,&aux->pos,sizeof(int));
-				desplazamiento += sizeof(int);
-				memcpy(retorno+desplazamiento,&aux->retPos,sizeof(int));
-				desplazamiento += sizeof(int);
-				memcpy(retorno+desplazamiento,&aux->retVar.ID,sizeof(char));
-				desplazamiento += sizeof(char);
-				memcpy(retorno+desplazamiento,&aux->retVar.offset,sizeof(int));
-				desplazamiento += sizeof(int);
-				memcpy(retorno+desplazamiento,&aux->retVar.pag,sizeof(int));
-				desplazamiento += sizeof(int);
-				memcpy(retorno+desplazamiento,&aux->retVar.size,sizeof(int));
-				desplazamiento += sizeof(int);
-				int n_args=0;int n_vars= 0;
-				n_args= list_size(aux->args);n_vars = list_size(aux->vars);
-				int c=0;
-				memcpy(retorno+desplazamiento,&n_args,sizeof(int));
-				desplazamiento += sizeof(int);
-				while(c<n_args){
-					t_memoria* aux2 = list_get(aux->args,c);
-					memcpy(retorno+desplazamiento,&aux2->ID,sizeof(char));
-					desplazamiento += sizeof(char);
-					memcpy(retorno+desplazamiento,&aux2->offset,sizeof(int));
-					desplazamiento += sizeof(int);
-					memcpy(retorno+desplazamiento,&aux2->pag,sizeof(int));
-					desplazamiento += sizeof(int);
-					memcpy(retorno+desplazamiento,&aux2->size,sizeof(int));
-					desplazamiento += sizeof(int);
-					c++;
-				}
-				c=0;
-				memcpy(retorno+desplazamiento,&n_vars,sizeof(int));
-				desplazamiento += sizeof(int);
-				while(c<n_vars){
-						t_memoria* aux2 = list_get(aux->vars,c);
-						memcpy(retorno+desplazamiento,&aux2->ID,sizeof(char));
-						desplazamiento += sizeof(char);
-						memcpy(retorno+desplazamiento,&aux2->offset,sizeof(int));
-						desplazamiento += sizeof(int);
-						memcpy(retorno+desplazamiento,&aux2->pag,sizeof(int));
-						desplazamiento += sizeof(int);
-						memcpy(retorno+desplazamiento,&aux2->size,sizeof(int));
-						desplazamiento += sizeof(int);
-						c++;
-				}
+			memcpy(retorno+desplazamiento,&aux2->size,sizeof(int));
+			desplazamiento += sizeof(int);
+			c++;
+		}
 
 
-				n++;
-			}
+		n++;
+	}
 
-		return retorno;
+	return retorno;
 
 
 }
 t_PCB_CPU* deserializarPCB_KerCPU (char * pcbserializado){
 	int desplazamiento =0;
-			int size_in_cod = 0; int size_in_et = 0;
-			int size_in_stack = 0; int cant_stack = 0;
+	int size_in_cod = 0; int size_in_et = 0;
+	int size_in_stack = 0; int cant_stack = 0;
 
-			t_PCB_CPU *pcb = malloc(sizeof(t_PCB_CPU));
-			memcpy(&pcb->PID,pcbserializado,sizeof(int));
-			desplazamiento += sizeof(int);
-			memcpy(&pcb->PC,pcbserializado+desplazamiento,sizeof(int));
-			desplazamiento+= sizeof(int);
-			memcpy(&pcb->cant_pag,pcbserializado+desplazamiento,sizeof(int));
-			desplazamiento += sizeof(int);
-			memcpy(&pcb->SP,pcbserializado+desplazamiento,sizeof(int));
-			desplazamiento += sizeof(int);
-			memcpy(&pcb->exit_code,pcbserializado+desplazamiento,sizeof(int));
-			desplazamiento += sizeof(int);
-			memcpy(&pcb->quantum,pcbserializado+desplazamiento,sizeof(int));
-			desplazamiento += sizeof(int);
-			memcpy(&pcb->quantum_sleep,pcbserializado+desplazamiento,sizeof(int));
-			desplazamiento += sizeof(int);
-			pcb->algoritmo = malloc(2);
-			memcpy(pcb->algoritmo,pcbserializado+desplazamiento,sizeof(char)*2);
-			desplazamiento += sizeof(char)*2;
-			memcpy(&size_in_cod,pcbserializado+desplazamiento,sizeof(int));
-			desplazamiento += sizeof(int);
-			pcb->in_cod = malloc(sizeof(t_sentencia) *(size_in_cod / sizeof(t_sentencia)));
+	t_PCB_CPU *pcb = malloc(sizeof(t_PCB_CPU));
+	memcpy(&pcb->PID,pcbserializado,sizeof(int));
+	desplazamiento += sizeof(int);
+	memcpy(&pcb->PC,pcbserializado+desplazamiento,sizeof(int));
+	desplazamiento+= sizeof(int);
+	memcpy(&pcb->cant_pag,pcbserializado+desplazamiento,sizeof(int));
+	desplazamiento += sizeof(int);
+	memcpy(&pcb->SP,pcbserializado+desplazamiento,sizeof(int));
+	desplazamiento += sizeof(int);
+	memcpy(&pcb->exit_code,pcbserializado+desplazamiento,sizeof(int));
+	desplazamiento += sizeof(int);
+	memcpy(&pcb->quantum,pcbserializado+desplazamiento,sizeof(int));
+	desplazamiento += sizeof(int);
+	memcpy(&pcb->quantum_sleep,pcbserializado+desplazamiento,sizeof(int));
+	desplazamiento += sizeof(int);
+	pcb->algoritmo = malloc(2);
+	memcpy(pcb->algoritmo,pcbserializado+desplazamiento,sizeof(char)*2);
+	desplazamiento += sizeof(char)*2;
+	memcpy(&size_in_cod,pcbserializado+desplazamiento,sizeof(int));
+	desplazamiento += sizeof(int);
+	pcb->in_cod = malloc(sizeof(t_sentencia) *(size_in_cod / sizeof(t_sentencia)));
 
-			int n=0;
-			while(n < (size_in_cod / sizeof(t_sentencia))){
-				t_sentencia aux;
-				memcpy(&aux.offset_inicio,pcbserializado+desplazamiento,sizeof(int));
-				desplazamiento += sizeof(int);
-				memcpy(&aux.offset_fin,pcbserializado+desplazamiento,sizeof(int));
-				desplazamiento += sizeof(int);
-				pcb->in_cod[n]= aux;
-				n++;
-			}
-			memcpy(&size_in_et,pcbserializado+desplazamiento,sizeof(int));
-			pcb->in_et = malloc(size_in_et);
-			memcpy(pcb->in_et,pcbserializado+desplazamiento,size_in_et);
-			pcb->dicc_et = armarDiccionarioEtiquetas(pcb->in_et);
-			desplazamiento += size_in_et;
-			memcpy(&size_in_stack,pcbserializado+desplazamiento,sizeof(int));
-			desplazamiento += sizeof(int);
-			memcpy(&cant_stack,pcbserializado+desplazamiento,sizeof(int));
-			desplazamiento += sizeof(int);
-			pcb->in_stack = list_create();
-			n=0;
-			while(n < cant_stack){
-				t_stack_element* aux = malloc(sizeof(t_stack_element));
-				memcpy(&aux->pos,pcbserializado+desplazamiento,sizeof(int));
-				desplazamiento += sizeof(int);
-				memcpy(&aux->retPos,pcbserializado+desplazamiento,sizeof(int));
-				desplazamiento += sizeof(int);
-				t_memoria aux2;
-				memcpy(&aux2.ID,pcbserializado+desplazamiento,sizeof(char));
-				desplazamiento += sizeof(char);
-				memcpy(&aux2.offset,pcbserializado+desplazamiento,sizeof(int));
-				desplazamiento += sizeof(int);
-				memcpy(&aux2.pag,pcbserializado+desplazamiento,sizeof(int));
-				desplazamiento += sizeof(int);
-				memcpy(&aux2.size,pcbserializado+desplazamiento,sizeof(int));
-				desplazamiento += sizeof(int);
-				aux->retVar = aux2;
-				int n_args=0; int n_vars=0;int c=0;
-				memcpy(&n_args,pcbserializado+desplazamiento,sizeof(int));
-				desplazamiento += sizeof(int);
-				aux->args = list_create();
-				while(c<n_args){
-					t_memoria* aux3 = malloc(sizeof(t_memoria));
-					memcpy(&aux3->ID,pcbserializado+desplazamiento,sizeof(char));
-					desplazamiento += sizeof(char);
-					memcpy(&aux3->offset,pcbserializado+desplazamiento,sizeof(int));
-					desplazamiento += sizeof(int);
-					memcpy(&aux3->pag,pcbserializado+desplazamiento,sizeof(int));
-					desplazamiento += sizeof(int);
-					memcpy(&aux3->size,pcbserializado+desplazamiento,sizeof(int));
-					desplazamiento += sizeof(int);
-					list_add(aux->args,aux3);
-					c++;
-				}
-				memcpy(&n_vars,pcbserializado+desplazamiento,sizeof(int));
-				desplazamiento += sizeof(int);
-				aux->vars = list_create();
-				c=0;
-				while(c<n_vars){
-					t_memoria* aux3 = malloc(sizeof(t_memoria));
-					memcpy(&aux3->ID,pcbserializado+desplazamiento,sizeof(char));
-					desplazamiento += sizeof(char);
-					memcpy(&aux3->offset,pcbserializado+desplazamiento,sizeof(int));
-					desplazamiento += sizeof(int);
-					memcpy(&aux3->pag,pcbserializado+desplazamiento,sizeof(int));
-					desplazamiento += sizeof(int);
-					memcpy(&aux3->size,pcbserializado+desplazamiento,sizeof(int));
-					desplazamiento += sizeof(int);
-					list_add(aux->vars,aux3);
-					c++;
-				}
-				list_add(pcb->in_stack,aux);
-				n++;
-			}
-			return pcb;
+	int n=0;
+	while(n < (size_in_cod / sizeof(t_sentencia))){
+		t_sentencia aux;
+		memcpy(&aux.offset_inicio,pcbserializado+desplazamiento,sizeof(int));
+		desplazamiento += sizeof(int);
+		memcpy(&aux.offset_fin,pcbserializado+desplazamiento,sizeof(int));
+		desplazamiento += sizeof(int);
+		pcb->in_cod[n]= aux;
+		n++;
 	}
+	memcpy(&size_in_et,pcbserializado+desplazamiento,sizeof(int));
+	pcb->in_et = malloc(size_in_et);
+	memcpy(pcb->in_et,pcbserializado+desplazamiento,size_in_et);
+	pcb->dicc_et = armarDiccionarioEtiquetas(pcb->in_et);
+	desplazamiento += size_in_et;
+	memcpy(&size_in_stack,pcbserializado+desplazamiento,sizeof(int));
+	desplazamiento += sizeof(int);
+	memcpy(&cant_stack,pcbserializado+desplazamiento,sizeof(int));
+	desplazamiento += sizeof(int);
+	pcb->in_stack = list_create();
+	n=0;
+	while(n < cant_stack){
+		t_stack_element* aux = malloc(sizeof(t_stack_element));
+		memcpy(&aux->pos,pcbserializado+desplazamiento,sizeof(int));
+		desplazamiento += sizeof(int);
+		memcpy(&aux->retPos,pcbserializado+desplazamiento,sizeof(int));
+		desplazamiento += sizeof(int);
+		t_memoria aux2;
+		memcpy(&aux2.ID,pcbserializado+desplazamiento,sizeof(char));
+		desplazamiento += sizeof(char);
+		memcpy(&aux2.offset,pcbserializado+desplazamiento,sizeof(int));
+		desplazamiento += sizeof(int);
+		memcpy(&aux2.pag,pcbserializado+desplazamiento,sizeof(int));
+		desplazamiento += sizeof(int);
+		memcpy(&aux2.size,pcbserializado+desplazamiento,sizeof(int));
+		desplazamiento += sizeof(int);
+		aux->retVar = aux2;
+		int n_args=0; int n_vars=0;int c=0;
+		memcpy(&n_args,pcbserializado+desplazamiento,sizeof(int));
+		desplazamiento += sizeof(int);
+		aux->args = list_create();
+		while(c<n_args){
+			t_memoria* aux3 = malloc(sizeof(t_memoria));
+			memcpy(&aux3->ID,pcbserializado+desplazamiento,sizeof(char));
+			desplazamiento += sizeof(char);
+			memcpy(&aux3->offset,pcbserializado+desplazamiento,sizeof(int));
+			desplazamiento += sizeof(int);
+			memcpy(&aux3->pag,pcbserializado+desplazamiento,sizeof(int));
+			desplazamiento += sizeof(int);
+			memcpy(&aux3->size,pcbserializado+desplazamiento,sizeof(int));
+			desplazamiento += sizeof(int);
+			list_add(aux->args,aux3);
+			c++;
+		}
+		memcpy(&n_vars,pcbserializado+desplazamiento,sizeof(int));
+		desplazamiento += sizeof(int);
+		aux->vars = list_create();
+		c=0;
+		while(c<n_vars){
+			t_memoria* aux3 = malloc(sizeof(t_memoria));
+			memcpy(&aux3->ID,pcbserializado+desplazamiento,sizeof(char));
+			desplazamiento += sizeof(char);
+			memcpy(&aux3->offset,pcbserializado+desplazamiento,sizeof(int));
+			desplazamiento += sizeof(int);
+			memcpy(&aux3->pag,pcbserializado+desplazamiento,sizeof(int));
+			desplazamiento += sizeof(int);
+			memcpy(&aux3->size,pcbserializado+desplazamiento,sizeof(int));
+			desplazamiento += sizeof(int);
+			list_add(aux->vars,aux3);
+			c++;
+		}
+		list_add(pcb->in_stack,aux);
+		n++;
+	}
+	return pcb;
+}
 
 
 int handshakeKernel(int socketKP){
@@ -338,17 +342,17 @@ int calcular_offset(t_list* args,t_list* vars){
 		}else{
 			nuevo_offset = ultimo_arg->offset + 4;
 		}
-	// comparar segun lista no vacia
+		// comparar segun lista no vacia
 	}else{
 		// no hay variables y si hay argumentos
 		if(list_size(args)!=0 && list_size(vars)==0){
 			t_memoria* ultimo_arg = list_get(args,list_size(args)-1);
 			nuevo_offset = ultimo_arg->offset + 4;
-		// no hay argumentos y si hay variables
+			// no hay argumentos y si hay variables
 		}if(list_size(args)==0 && list_size(vars)!=0){
 			t_memoria* ultima_var = list_get(vars,list_size(vars)-1);
 			nuevo_offset = ultima_var->offset + 4;
-		// no hay ni variables ni argumentos
+			// no hay ni variables ni argumentos
 		}else if(list_size(args)==0 && list_size(vars)==0){
 			nuevo_offset = 0;
 		}
@@ -374,11 +378,11 @@ int calcular_pagina(int offset,int paginas){
 	return pagina+paginas;
 }
 void stack_destroy(t_stack_element *self) {
-   list_clean_and_destroy_elements(self->args,(void *) t_memoria_destroy);
-   list_destroy(self->args);
-   list_clean_and_destroy_elements(self->vars,(void *) t_memoria_destroy);
-   list_destroy(self->vars);
-   free(self);
+	list_clean_and_destroy_elements(self->args,(void *) t_memoria_destroy);
+	list_destroy(self->args);
+	list_clean_and_destroy_elements(self->vars,(void *) t_memoria_destroy);
+	list_destroy(self->vars);
+	free(self);
 }
 
 void t_memoria_destroy(t_memoria *self){
@@ -388,72 +392,4 @@ int calcular_offset_respecto_pagina(int offset){
 	return offset % tam_pagina_memoria;
 }
 
-char *mensaje_escibir_memoria(int fpid,int direccion_variable,int cant_pag,int valor){
 
-		char * mensaje = malloc(19+ sizeof(int));
-		char * pid; char * pagina; char *offset; char *tam;
-		char * aux_ceros;
-		int desplazamiento=0;
-		pid = string_itoa(fpid);
-		pagina = string_itoa(calcular_pagina(direccion_variable,cant_pag));
-		offset = string_itoa(calcular_offset_respecto_pagina(direccion_variable));
-		tam = strdup("0004");
-		// COD
-		memcpy(mensaje+desplazamiento,"P08",3);
-		desplazamiento += 3;
-		// PID
-		aux_ceros = string_repeat('0',4-strlen(pid));
-		memcpy(mensaje+desplazamiento,aux_ceros,4-strlen(pid));
-		free(aux_ceros);
-		desplazamiento += 4-strlen(pid);
-		memcpy(mensaje+desplazamiento,pid,strlen(pid));
-		desplazamiento += strlen(pid);
-		// PAGINA
-		aux_ceros = string_repeat('0',4-strlen(pagina));
-		memcpy(mensaje+desplazamiento,aux_ceros,4-strlen(pagina));
-		free(aux_ceros);
-		desplazamiento += 4-strlen(pagina);
-		memcpy(mensaje+desplazamiento,pagina,strlen(pagina));
-		desplazamiento += strlen(pagina);
-		// OFFSET
-		aux_ceros = string_repeat('0',4-strlen(offset));
-		memcpy(mensaje+desplazamiento,aux_ceros,4-strlen(offset));
-		free(aux_ceros);
-		desplazamiento += 4-strlen(offset);
-		memcpy(mensaje+desplazamiento,offset,strlen(offset));
-		desplazamiento += strlen(offset);
-		// TAMAÑO
-		memcpy(mensaje+desplazamiento,tam,4);
-		desplazamiento +=4;
-		// VALOR
-		char * str_valor = string_itoa(valor);
-		aux_ceros = string_repeat('0',4-strlen(str_valor));
-		memcpy(mensaje+desplazamiento,aux_ceros,4-strlen(str_valor));
-		free(aux_ceros);
-		desplazamiento += 4-strlen(str_valor);
-		memcpy(mensaje+desplazamiento,str_valor,strlen(str_valor));
-		desplazamiento += strlen(str_valor);
-
-		free(pid); free(pagina); free(offset); free(tam); free(str_valor);
-		return mensaje;
-}
-char *mensaje_semaforo(char * cod,char * semaforo,int *size){
-	char *mensaje= malloc(13+strlen(semaforo));
-	char *strlen_sem = string_itoa(strlen(semaforo));
-	char *aux_ceros = string_repeat(0,10-strlen(strlen_sem));
-
-	int desplazamiento = 0;
-	memcpy(mensaje + desplazamiento,cod,3);
-	desplazamiento += 3;
-	memcpy(mensaje+desplazamiento,aux_ceros,10-strlen(strlen_sem));
-	desplazamiento += 10-strlen(strlen_sem);
-	memcpy(mensaje+desplazamiento,strlen_sem,strlen(strlen_sem));
-	desplazamiento += strlen(strlen_sem);
-	memcpy(mensaje+desplazamiento,semaforo,strlen(semaforo));
-	desplazamiento += strlen(semaforo);
-
-	*size = desplazamiento;
-	free(strlen_sem);
-	free(aux_ceros);
-	return mensaje;
-}

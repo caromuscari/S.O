@@ -3,7 +3,13 @@
 #include <commons/collections/list.h>
 #include <commons/collections/dictionary.h>
 
+#define CONTINUAR 0
 #define FINALIZAR_PROGRAMA 1
+#define FINALIZAR_POR_QUANTUM 2
+#define FINALIZAR_POR_ERROR 3
+#define DESCONECTARME 4
+#define BLOQUEAR_PROCESO 5
+
 
 typedef struct
 {
