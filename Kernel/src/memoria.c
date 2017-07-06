@@ -50,7 +50,7 @@ void pedir_pagina()
 		manejar_respuesta(respuesta);
 	}
 }
-
+/*
 void reservar_memoria_din(t_program *program, int size_solicitado)
 {
 	if (!list_is_empty(program->memoria_dinamica))
@@ -80,7 +80,7 @@ void reservar_memoria_din(t_program *program, int size_solicitado)
 			free(page);
 		}
 	}else pedir_pagina();
-}
+}*/
 
 void manejar_respuesta(char *respuesta)
 {
@@ -102,7 +102,7 @@ void manejar_respuesta(char *respuesta)
 	free(mensaje);
 	free(codigo);
 }
-
+/*
 int ubicar_bloque(t_pagina *pagina,int tam_sol, int *flag)//usa algoritmo first fit -> el resumen dice que es el mas kpo
 {
 //	int flag = 0;
@@ -154,3 +154,4 @@ void compactar(t_list *paginas)
 	int n = 0;
 
 }
+*/

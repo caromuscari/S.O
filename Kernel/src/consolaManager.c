@@ -21,6 +21,7 @@ fd_set read_fds;
 int fdmax;
 int controlador = 0;
 extern int ultimo_pid;
+extern int pag_stack;
 
 int get_CID();
 void desconectar_consola(int socket);
@@ -164,7 +165,6 @@ void responder_peticion_prog(int socket, char *mensaje)
 	{
 		escribir_log("No se puede guardar codigo en memoria");
 		enviar(socket, "K05", &controlador);
-
 	}
 	else
 	{
@@ -173,6 +173,8 @@ void responder_peticion_prog(int socket, char *mensaje)
 		char *msj_enviar = armar_mensaje("K20",codigo_new);
 		char *ult_pid = string_itoa(ultimo_pid);
 		string_append(&msj_enviar, ult_pid);
+
+		enviar(config->cliente_memoria, msj_enviar, &controlador);
 
 		int consola = buscar_consola(socket);
 		agregar_nueva_prog(consola, ultimo_pid, mensaje, socket);
@@ -262,6 +264,6 @@ int calcular_pag_stack()
 	{
 		paginas ++;
 	}
-
+	pag_stack = paginas;
 	return paginas;
 }
