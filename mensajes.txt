@@ -31,6 +31,7 @@ K18: ENVIAR VALOR VARIABLE COMPARTIDA A CPU : K|18|0025| (EMISOR-CODIGO-4BYTES V
 K19: K19|PID|CANTPAGHEAP ->K19|0000|0000
 K20:Mensaje para enviar código a la Memoria
 K21:Mensaje para enviar error a CPU
+K23:Mensaje para bloquear proceso, esperar pcb
 
 CPU - P
 P00: me presento al mundo como una CPU
@@ -38,7 +39,7 @@ P01: Pedir bytes de una página a Memoria
 P02|0000000016|0004|HOLA|3|w|r|c
 P03 MOVER CURSOR
 P04 LEER
-P05 ESCRIBIR
+P05 ESCRIBIR  P05|10size|4fd|info
 P06 CERRAR
 P07 BORRAR
 P08 ASIGNAR BYTES EN MEMORIA
@@ -49,6 +50,7 @@ P12 Finalización por quantum
 P13 Finalización del proceso por el buen camino o por error
 P14 Wait
 P15 Signal
+P16 DEVOLVER PCB POR BLOQUEO
 
 
 MEMORIA - M
