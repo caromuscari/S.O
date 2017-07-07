@@ -500,9 +500,11 @@ t_descriptor_archivo abrir (t_direccion_archivo direccion, t_banderas flags){
 	fd = atoi(str_fd);
 
 	if(fd >= 0){
+
 		char *aux_log = string_from_format("Ejecute ABRIR direccion %s y se le asoció el FD %d",direccion,fd);
 		escribir_log(aux_log,1);
 		free(aux_log);
+
 	}else {
 		fifo = FINALIZAR_POR_ERROR;
 		accion_siguiente = FINALIZAR_POR_ERROR;
@@ -535,7 +537,48 @@ void moverCursor (t_descriptor_archivo descriptor_archivo, t_valor_variable posi
 }
 
 void leer (t_descriptor_archivo descriptor_archivo, t_puntero informacion, t_valor_variable tamanio){
-	escribir_log("Ejecute leer",1);
+
+	int size = 0; int controlador = 0;
+
+	char *mensaje = mensaje_leer_kernel(descriptor_archivo,tamanio,&size);
+	enviar(sockKerCPU,mensaje,&controlador,size);
+	free(mensaje);
+
+	char * respuesta= malloc(13);
+	recibir(sockKerCPU,&controlador,respuesta,13);
+	if(strncmp(respuesta,"K21",3)==0){
+
+		fifo= FINALIZAR_POR_ERROR;
+		accion_siguiente = FINALIZAR_POR_ERROR;
+
+		char *cod_error= malloc(4);
+		recibir(sockKerCPU,&controlador,cod_error,4);
+		int codigo_error = (-1)*(atoi(cod_error));
+		pcb->exit_code = codigo_error;
+
+		char * logi = string_from_format("ERROR:%d LEYENDO con file descriptor %d",cod_error,descriptor_archivo);
+		escribir_log(logi,2);
+		free(logi);
+		free(cod_error);
+
+	}else{
+		char *size_mensaje = string_substring(respuesta,3,10);
+		int size_mensaj = atoi(size_mensaje);
+
+		char *lectura = malloc(size_mensaj);
+		recibir(sockKerCPU,&controlador,lectura,size_mensaj);
+
+		//preguntar si lo escribo en memoria o lo asigno en una variable alocada dinamicamente
+
+		char * logi = string_from_format("Ejecute LEER %d con file descriptor %d alojar en %d",tamanio,descriptor_archivo,informacion);
+		escribir_log(logi,1);
+		free(logi);
+
+		free(size_mensaje);
+		free(lectura);
+	}
+
+	free(respuesta);
 }
 
 void cerrar (t_descriptor_archivo descriptor_archivo){

@@ -392,3 +392,39 @@ char *mensaje_abrir(char *direccion,t_banderas flags,int *size){
 
 	return mensaje;
 }
+
+char *mensaje_leer_kernel(int fd,int tamanio,int *size){
+
+	int desplazamiento = 0;
+	char *cod = strdup("P04");
+	char *str_fd = string_itoa(fd);
+	char *str_tamanio =  string_itoa(tamanio);
+	char *str_long_mensaje = string_itoa(strlen(str_tamanio)+4);
+	char *aux_ceros = string_repeat('0',10-strlen(str_long_mensaje));
+	char *mensaje = malloc(13+strlen(str_tamanio)+4);
+
+	memcpy(mensaje+desplazamiento,cod,3);
+	desplazamiento += 3;
+	memcpy(mensaje+desplazamiento,aux_ceros,10-strlen(str_long_mensaje));
+	desplazamiento += 10-strlen(str_long_mensaje);
+	memcpy(mensaje+desplazamiento,str_long_mensaje,strlen(str_long_mensaje));
+	desplazamiento += strlen(str_long_mensaje);
+	free(aux_ceros);
+	aux_ceros = string_repeat('0',4-strlen(str_fd));
+	memcpy(mensaje+desplazamiento,aux_ceros,4-strlen(str_fd));
+	desplazamiento += 4-strlen(str_fd);
+	memcpy(mensaje+desplazamiento,str_fd,strlen(str_fd));
+	desplazamiento += strlen(str_fd);
+	memcpy(mensaje+desplazamiento,str_tamanio,strlen(str_tamanio));
+	desplazamiento += strlen(str_tamanio);
+
+	*size = desplazamiento;
+
+	free(cod);
+	free(str_fd);
+	free(str_tamanio);
+	free(str_long_mensaje);
+	free(aux_ceros);
+
+	return mensaje;
+}

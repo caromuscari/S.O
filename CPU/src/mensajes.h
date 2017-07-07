@@ -24,5 +24,6 @@ char *mensaje_heap(char *cod,int valor, int *size);
 char *mensaje_borrar_cerrar(int cod,int fd,int *size);
 char *mensaje_moverCursor(int fd,int posicion,int *size);
 char *mensaje_abrir(char *direccion,t_banderas flags,int *size);
+char *mensaje_leer_kernel(int fd,int tamanio,int *size);
 
 #endif /* SRC_MENSAJES_H_ */
