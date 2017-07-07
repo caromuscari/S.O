@@ -47,7 +47,7 @@ void bloquear_proceso(int pid);
 void programas_nuevos_A_listos();
 void programas_listos_A_ejecutar();
 int calcular_pag(char *mensaje);
-void forzar_finalizacion(int pid, int cid, int codigo_finalizacion);
+void forzar_finalizacion(int pid, int cid, int codigo_finalizacion, int aviso);
 
 void programas_listos_A_ejecutar()
 {
@@ -250,7 +250,7 @@ int calcular_pag(char *mensaje)
 	return paginas;
 }
 
-void forzar_finalizacion(int pid, int cid, int codigo_finalizacion)
+void forzar_finalizacion(int pid, int cid, int codigo_finalizacion, int aviso)
 {
 	t_list *encontrados = list_create();
 	t_list *encontrados_ejec = list_create();
@@ -266,14 +266,14 @@ void forzar_finalizacion(int pid, int cid, int codigo_finalizacion)
 
 	void _procesar_finalizacion(t_program *pr)
 	{
-		avisar_consola_proceso_murio(pr);
+		if(aviso) avisar_consola_proceso_murio(pr);
 		pedir_pcb_error(pr,codigo_finalizacion);
 	}
 
 	void _terminar_programa(t_program *pr)
 	{
 		pr->pcb->exit_code = codigo_finalizacion;
-		avisar_consola_proceso_murio(pr);
+		if(aviso) avisar_consola_proceso_murio(pr);
 
 		pthread_mutex_lock(&mutex_lista_finalizados);
 		list_add(list_finalizados,pr);

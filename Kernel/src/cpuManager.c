@@ -12,6 +12,7 @@
 #include "log.h"
 #include "metadata.h"
 #include "semaforos_vglobales.h"
+#include "memoria2.h"
 
 extern t_list *list_cpus;
 extern pthread_mutex_t mutex_lista_cpus;
@@ -27,7 +28,7 @@ int get_cpuId();
 void actualizar_pcb();
 void responder_solicitud_cpu(int socket_, char *mensaje);
 t_cpu *programa_ejecutando(int socket_);
-int get_offset(char *mensaje);
+char *get_offset(char *mensaje);
 int get_fd(char *mensaje);
 char *get_variable(char *mensaje);
 char *get_numero(char *mensaje);
@@ -41,21 +42,26 @@ void realizar_handShake_cpu(int nuevo_socket) {
 	if (controlador_cpu > 0) {
 		cerrar_conexion(nuevo_socket);
 		escribir_error_log("Fallo el Handshake con el administrador CPU");
-	} else {
+	} else
+	{
 		char *respuesta = recibir(nuevo_socket, &controlador_cpu);
 
 		escribir_log(respuesta);
 
-		if (controlador_cpu > 0) {
+		if (controlador_cpu > 0)
+		{
 			cerrar_conexion(nuevo_socket);
 			escribir_error_log("Fallo el Handshake con el administrador CPU");
-		} else {
+		} else
+		{
 			char *header = get_header(respuesta);
 			//Aca deberia ir la validacion si el mensaje corresponde a cpu
-			if (comparar_header("P", header)) {
+			if (comparar_header("P", header))
+			{
 				escribir_log("Se ha conectado una nueva CPU");
 				agregar_lista_cpu(nuevo_socket);
-			} else {
+			} else
+			{
 				//El recien conectado NO corresponde a una CPU
 				escribir_log("El administrador de CPUs rechazo una conexion");
 				char *mensaje = "Perdon no sos una CPU, Chau!";
@@ -74,7 +80,8 @@ void actualizar_pcb(t_program *programa, t_PCB *pcb)
 	programa->pcb = pcb;
 }
 
-void agregar_lista_cpu(int nuevo_socket) {
+void agregar_lista_cpu(int nuevo_socket)
+{
 	t_cpu *nueva_cpu = malloc(sizeof(t_cpu));
 	nueva_cpu->socket_cpu = nuevo_socket;
 	nueva_cpu->program = malloc(sizeof(t_program));
@@ -86,19 +93,23 @@ void agregar_lista_cpu(int nuevo_socket) {
 	pthread_mutex_unlock(&mutex_lista_cpus);
 }
 
-int get_cpuId() {
+int get_cpuId()
+{
 	int ultimo_id = 1;
 
-	void _mayor(t_cpu *cpu) {
-		if (cpu->cpu_id == ultimo_id) {
+	void _mayor(t_cpu *cpu)
+	{
+		if (cpu->cpu_id == ultimo_id)
+		{
 			ultimo_id++;
 		}
 	}
-	list_iterate(list_cpus, (void*) _mayor);
+	list_iterate(list_cpus, (void*) _mayor); //esto es variable global?
 	return ultimo_id;
 }
 
-void responder_solicitud_cpu(int socket_, char *mensaje) {
+void responder_solicitud_cpu(int socket_, char *mensaje)
+{
 	char *header = get_header(mensaje);
 	if (comparar_header(header, "P"))
 	{
@@ -107,24 +118,27 @@ void responder_solicitud_cpu(int socket_, char *mensaje) {
 		char *cod = get_codigo(mensaje);
 		int codigo = atoi(cod);
 
-		switch (codigo) {
+		switch (codigo)
+		{
 		case 2:
 			escribir_log("Se recibio una peticion de CPU de abrir crear");
 			abrir_crear(mensaje, prog, socket_);
 			break;
-		case 3:
-			;
+		case 3: ;
 			escribir_log("Se recibio una peticion de CPU de mover puntero");
-			int offset = get_offset(mensaje);
-			int fd = get_fd(mensaje);
-			mover_puntero(socket_, offset, fd, prog);
+			char *offset = get_offset(mensaje);
+			int offset1 = atoi(offset);
+			char *fd_ = get_fd(mensaje);
+			int fd = atoi(fd_);
+			mover_puntero(socket_, offset1, fd, prog);
+			free(offset);
+			free(fd_);
 			break;
 		case 9:	;
 			escribir_log("Se recibió una petición de CPU para obtener valor de variable compartida");
 			break;
 
-		case 10:
-			;
+		case 10: ;
 			escribir_log("Se recibió una petición de CPU para setear valor de variable compartida");
 			char *variable = get_variable(mensaje);
 			char *numero = get_numero(mensaje);
@@ -133,13 +147,12 @@ void responder_solicitud_cpu(int socket_, char *mensaje) {
 			free(variable);
 			free(numero);
 			break;
-		case 11:
-			;
+		case 11: ;
 			int controlador;
 			char *mensaje_recibido = get_mensaje(mensaje);
 			char *mensaje_enviar = armar_mensaje("K09", mensaje_recibido);
 			enviar(prog->socket_consola, mensaje_enviar, &controlador);
-			enviar(socket_, "ok", &controlador);
+			enviar(socket_, "OK", &controlador);
 			free(mensaje_recibido);
 			free(mensaje_enviar);
 			break;
@@ -175,6 +188,17 @@ void responder_solicitud_cpu(int socket_, char *mensaje) {
 			sem_signal(prog, mensaje3, socket_);
 			free(mensaje3);
 			break;
+		case 17: ;//alloc
+			char *mensaje4 = get_mensaje(mensaje);
+			int size = atoi(mensaje4);
+			reservar_memoria_din(prog, size);
+			free(mensaje4);
+			break;
+		case 18: //free
+			char *offset_bloque = get_mensaje(mensaje);
+			liberar_bloque(prog, offset_bloque);
+			free(offset_bloque);
+			break;
 		default:
 			;
 			//No se comprende el mensaje recibido por cpu
@@ -203,15 +227,15 @@ t_cpu *programa_ejecutando(int socket_)
 	return cpu_ejecutando;
 }
 
-int get_fd(char *mensaje)
+char *get_fd(char *mensaje)
 {
 	char *payload = string_substring(mensaje, 0, 2);
 	int payload2 = atoi(payload);
 	free(payload);
-	return atoi(string_substring(mensaje, 3, payload2));
+	return string_substring(mensaje, 3, payload2);
 }
 
-int get_offset(char *mensaje)
+char *get_offset(char *mensaje)
 {
 	char *payload = string_substring(mensaje, 0, 2);
 	int payload2 = atoi(payload);
@@ -221,7 +245,7 @@ int get_offset(char *mensaje)
 	free(payload);
 	free(payload3);
 
-	return atoi(string_substring(mensaje, (2 + payload2 + 4), payload4));
+	return string_substring(mensaje, (2 + payload2 + 4), payload4);
 }
 
 char *get_variable(char *mensaje)

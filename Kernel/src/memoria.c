@@ -35,7 +35,7 @@ void handshakearMemory()
 	respuesta = recibir(config->cliente_memoria, &controlador);
 	manejar_respuesta(respuesta);
 }
-
+/*
 void pedir_pagina()
 {
 	int controlador = 0;
@@ -49,7 +49,7 @@ void pedir_pagina()
 		respuesta = recibir(config->cliente_memoria, &controlador);
 		manejar_respuesta(respuesta);
 	}
-}
+}*/
 /*
 void reservar_memoria_din(t_program *program, int size_solicitado)
 {

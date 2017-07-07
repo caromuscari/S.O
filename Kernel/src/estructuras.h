@@ -145,4 +145,10 @@ typedef struct
 	t_queue *procesos;
 }t_vglobal;
 
+typedef struct
+{
+	int pagina;
+	int bloque;
+}t_infoheap;
+
 #endif /* ESTRUCTURAS_H_ */

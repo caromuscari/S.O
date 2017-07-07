@@ -54,6 +54,7 @@ int ultimo_pid = 1;
 int tam_pagina = 0;
 int pag_cod = 0;
 int pag_stack = 0;
+
 void inicializar_variables();
 void liberar_memoria();
 void handshakearFS();

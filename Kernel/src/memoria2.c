@@ -24,6 +24,11 @@ t_bloque *find_first_fit(t_list *hs, int t_sol);
 void reservar_memoria_din(t_program *program, int size_solicitado);
 void inicializar_pagina_dinamica(t_program *prog);
 void pedir_pagina_dinamica(t_program *prog);
+int ubicar_bloque(t_pagina *pagina,int tam_sol, int *flag);
+void compactar(t_list *pagina);
+void _free_bloque(t_bloque *bloque);
+int pedir_pagina();
+void liberar_bloque(t_program *prog, int offset);
 
 void pedir_pagina_dinamica(t_program *prog)
 {
@@ -79,8 +84,20 @@ void reservar_memoria_din(t_program *program, int size_solicitado)
 				else n++;
 				free(page);
 			}
-		}else pedir_pagina();
-	}else forzar_finalizacion(program->PID, 0, 8);
+		}
+		else
+		{
+			int pedido = pedir_pagina();
+			if(pedido)
+			{
+				inicializar_pagina(program);
+			}
+			else
+			{
+				forzar_finalizacion(program->PID, 0, 8, 20); //ver codigo
+			}
+		}
+	}else forzar_finalizacion(program->PID, 0, 8, 1);
 }
 
 int ubicar_bloque(t_pagina *pagina,int tam_sol, int *flag)//usa algoritmo first fit -> el resumen dice que es el mas kpo
@@ -124,4 +141,70 @@ t_bloque *find_first_fit(t_list *hs, int t_sol)
 	}
 	t_bloque *nes = list_find(hs, (void *)_first_fit);
 	return nes;
+}
+
+void compactar(t_list *pagina)
+{
+	t_list * pagina_aux = list_create();
+	list_add_all(pagina_aux, pagina);
+	int n = 0;
+
+	int contador_libre = 0;
+	int cont_bl_libres = 0;
+
+	while(!list_is_empty(pagina_aux))
+	{
+		t_bloque *bloque = list_remove(pagina_aux, n);
+
+		if(bloque->metadata->isFree)
+		{
+			contador_libre =+ bloque->metadata->size;
+			list_remove_and_destroy_element(pagina, n, (void *)_free_bloque);
+			cont_bl_libres ++;
+		}
+	}
+	t_bloque *bloque_free = malloc(sizeof(bloque_free));
+	bloque_free->metadata = malloc(sizeof(HeapMetadata));
+	bloque_free->metadata->isFree = true;
+	bloque_free->metadata->size = contador_libre + (cont_bl_libres - 1)*(5);
+
+	list_add(pagina, bloque_free);
+}
+
+void _free_bloque(t_bloque *bloque)
+{
+	free(bloque->metadata);
+	free(bloque);
+}
+
+int pedir_pagina()
+{
+	int controlador = 0;
+	char *mensaje = "K05";
+	char *respuesta;
+	enviar(config->cliente_memoria, mensaje, &controlador);
+	if (controlador > 0)
+	{
+		error_sockets(&controlador,"Memoria");
+		return 0;
+	}
+	else
+	{
+		controlador = 0;
+		respuesta = recibir(config->cliente_memoria, &controlador);
+		char *codigo = get_codigo(respuesta);
+		int cod = atoi(mensaje);
+		int res;
+		if(cod == 2)
+		{
+			res = 1;
+		}else res = 0;
+		free(respuesta);
+		free(codigo);
+		return res;
+	}
+}
+void liberar_bloque(t_program *prog, int offset)
+{
+
 }
