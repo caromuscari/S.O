@@ -32,6 +32,8 @@ K19: K19|PID|CANTPAGHEAP ->K19|0000|0000
 K20:Mensaje para enviar código a la Memoria
 K21:Mensaje para enviar error a CPU
 K23:Mensaje para bloquear proceso, esperar pcb
+K25:Finalizar un PROCESO. K|25|XXXX|  XXXX = PID Ej: K250001 (Eliminamos el PID 1)
+
 
 CPU - P
 P00: me presento al mundo como una CPU
