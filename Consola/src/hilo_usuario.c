@@ -20,7 +20,7 @@ extern t_dictionary * impresiones;
 extern t_dictionary * tiempo;
 extern int flag;
 
-char* leer_archivo(char*);
+char* leer_archivo(FILE* archivo);
 void iniciar_programa(char *ruta, int socket_);
 void finalizar_programa(char *pid, int socket_);
 void desconectar_consola();
@@ -38,6 +38,8 @@ void hilousuario()
 
 	while(flag == 0)
 	{
+		imprimir_menu();
+
 		char *ingreso;
 		char *identi;
 		scanf("%ms", &ingreso);
@@ -64,24 +66,17 @@ void hilousuario()
 
 		}
 		*/
-		imprimir_menu();
-
 		switch(atoi(ingreso))
 		{
 		case 1:
-		//if(!strcmp(ingreso, "iniciar_programa"))
-		//{
 			printf("Ingresar la ruta del programa: ");
 			scanf("%ms",&identi);
 			iniciar_programa(identi,socket_);
 			free(identi);
 			break;
-		//}
 		case 2:
-		//else if(!strcmp(ingreso, "finalizar_programa"))
-		//{
 			if(dictionary_is_empty(p_pid)){
-				printf("No hay programas abiertos\n");
+				printf("No hay programas ejecutando\n");
 			}
 			else
 			{
@@ -95,28 +90,24 @@ void hilousuario()
 
 				free(identi);
 			}
+			printf("\n");
 			break;
-		//}
 		case 3:
-		//else if(!strcmp(ingreso, "desconectar_consola"))
-		//{
-			desconectar_consola();
+			printf("Confirmar cierre de consola (Y/N)\n");
+			scanf("%ms",&identi);
+
+			if(!strcmp(identi, "Y"))
+				desconectar_consola();
+
+			printf("\n");
 			break;
-		//}
 		case 4:
-		//else if(!strcmp(ingreso, "limpiar_consola"))
-		//{
 			system("clear");
 			break;
-		//}
 		default :
-		//else
-		//{
 			printf("No se reconoce el pedido\n");
 			break;
-		//}
 		}
-
 		free(ingreso);
 	}
 	pthread_exit(NULL);
@@ -132,22 +123,27 @@ void hilousuario()
 
 void iniciar_programa(char *ruta, int socket_)
 {
-	char *mensaje_armado;
-	char *mensaje;
-	mensaje = leer_archivo(ruta);
-	mensaje_armado= armar_mensaje("C01", mensaje);
-	enviar(socket_, mensaje_armado,string_length(mensaje_armado));
+	FILE *archivo = fopen(ruta,"r");
 
-	free(mensaje);
-	free(mensaje_armado);
+	if(archivo)
+	{
+		char *mensaje_armado;
+		char *mensaje;
+
+		mensaje = leer_archivo(archivo);
+		mensaje_armado= armar_mensaje("C01", mensaje);
+		enviar(socket_, mensaje_armado,string_length(mensaje_armado));
+
+		free(mensaje);
+		free(mensaje_armado);
+	}
+	else printf("El archivo ingresado no existe\n");
+	printf("\n");
 }
 
-char *leer_archivo(char *ruta)
+char *leer_archivo(FILE* archivo)
 {
-	FILE* archivo;
 	long int final;
-
-	archivo = fopen(ruta,"r");
 	fseek( archivo, 0L, SEEK_END );
 	final = ftell( archivo );
 	fseek(archivo,0,0);
@@ -180,10 +176,10 @@ void finalizar_programa(char *pid, int socket_)
 			tiempofinal_impresiones(pid2);
 
 			free(dictionary_remove(h_pid,var));
-			free(dictionary_remove(p_pid,pid2));
-			free(dictionary_remove(impresiones,pid2));
-			free(dictionary_remove(sem,pid2));
-			free(dictionary_remove(tiempo,pid2));
+			free(dictionary_remove(p_pid,pid));
+			free(dictionary_remove(impresiones,pid));
+			free(dictionary_remove(sem,pid));
+			free(dictionary_remove(tiempo,pid));
 			free(mensaje);
 		}
 		else escribir_log("No se pudo finalizar el programa\n");
@@ -235,7 +231,7 @@ void tiempofinal_impresiones(char* pid)
 void desconectar_consola()
 {
 	char *mensaje;
-	dictionary_iterator(h_pid,(void*)cerrar_programas);
+	dictionary_iterator(p_pid,(void*)cerrar_programas);
 	mensaje = armar_mensaje("C03", "");
 	enviar(socket_, mensaje, string_length(mensaje));
 	printf("Se desconecta la consola\n");
