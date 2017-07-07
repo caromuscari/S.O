@@ -393,4 +393,14 @@ int calcular_offset_respecto_pagina(int offset){
 	return offset % tam_pagina_memoria;
 }
 
+bool linea_esta_dividida(int offset, int largo){
+
+	bool division = false;
+
+	if(offset + largo > tam_pagina_memoria){
+		division = true;
+	}
+
+	return division;
+}
 

@@ -10,6 +10,7 @@
 #include <commons/collections/dictionary.h>
 #include "estructuras.h"
 #include <parser/parser.h>
+#include <stdbool.h>
 
 int handshakeKernel(int );
 int handshakeMemoria(int );
@@ -22,6 +23,7 @@ void stack_destroy(t_stack_element *self);
 void t_memoria_destroy(t_memoria *self);
 int calcular_pagina(int offset,int paginas);
 int calcular_offset_respecto_pagina(int offset);
+bool linea_esta_dividida(int offset, int largo);
 
 
 #endif /* SRC_FUNCIONESCPU_ */

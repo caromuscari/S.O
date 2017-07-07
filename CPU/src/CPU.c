@@ -73,7 +73,7 @@ static const char* otro_ansisop =
 		"\n";
 static const char* con_funcion_ansisop =
 		"#!/usr/bin/ansisop\n"
-		"begin variables a,g\n"
+		"b-egin variables a,g\n"
 		"a = 1\n"
 		"g <- doble a\n"
 		"prints g\n"
@@ -322,20 +322,51 @@ int conexion_Memoria(int puerto, char* ip) {
 	return handshakeMemoria(sockMemCPU);
 }
 char* pedir_linea_memoria(){
-	//if (linea_esta_dividida() == TRUE){
-	// calcular pagina 1 -> enviar mensaje memoria;
-	// calcular pagina 2 -> enviar mensaje memoria;
-	// return append resultado1|resultado2;
-	//}else{
-	//	calcular pagina -> enviar mensaje memoria;
-	// return resultado;
-	// }
+	int size = 0;
+	int controlador = 0;
+	int offset =pcb->in_cod[pcb->PC].offset_inicio;
+	int largo = pcb->in_cod[pcb->PC].offset_fin;
+	char *linea;
 
-	// todo: ARMAR MENSAJE PEDIR BYTES A MEMORIA: P|01|0000000000|PID|PAGINA|INICIO|FIN
+	if (linea_esta_dividida(calcular_offset_respecto_pagina(offset),largo) == true){
+		int nuevo_largo1 = tam_pagina_memoria -  calcular_offset_respecto_pagina(offset);
+		int nuevo_largo2 = largo - nuevo_largo1;
+
+		char *primera_parte = malloc(nuevo_largo1+1); memset(primera_parte,'\0',nuevo_largo1+1);
+		char *segunda_parte = malloc(nuevo_largo2+1); memset(segunda_parte,'\0',nuevo_largo2+1);
+
+		char *mensaje = mensaje_leer_memoria(pcb->PID,offset,0,nuevo_largo1,&size);
+		enviar(sockMemCPU,mensaje,&controlador,size);
+		recibir(sockMemCPU,&controlador,primera_parte,nuevo_largo1);
+
+		char *mensaje2 = mensaje_leer_memoria(pcb->PID,offset+nuevo_largo1,0,nuevo_largo2,&size);
+		enviar(sockMemCPU,mensaje2,&controlador,size);
+		recibir(sockMemCPU,&controlador,segunda_parte,nuevo_largo1);
+
+		linea = string_from_format("%s%s",primera_parte,segunda_parte);
+
+		free(primera_parte);
+		free(segunda_parte);
+		free(mensaje);
+		free(mensaje2);
+	}else{
+
+		char *mensaje = mensaje_leer_memoria(pcb->PID,offset,0,largo,&size);
+		enviar(sockMemCPU,mensaje,&controlador,size);
+
+		char *respuesta = malloc(largo+1); memset(respuesta,'\0',largo+1);
+		recibir(sockMemCPU,&controlador,respuesta,largo);
+
+		linea = strdup(respuesta);
+
+		free(mensaje);
+		free(respuesta);
+	}
 	char * aux = string_from_format("offset inicio:%d-offset fin:%d",pcb->in_cod[pcb->PC].offset_inicio,pcb->in_cod[pcb->PC].offset_fin);
 	escribir_log(aux,1);
 	free(aux);
-	char *linea = string_substring(programa,pcb->in_cod[pcb->PC].offset_inicio,pcb->in_cod[pcb->PC].offset_fin);
+
+	//char *linea = string_substring(programa,pcb->in_cod[pcb->PC].offset_inicio,pcb->in_cod[pcb->PC].offset_fin);
 
 	return linea;
 }

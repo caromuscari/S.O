@@ -98,7 +98,7 @@ t_valor_variable dereferenciar(t_puntero direccion_variable) {
 	int size=0;
 	int controlador=0;
 
-	char * mensaje = mensaje_leer_memoria(pcb->PID,direccion_variable,pcb->cant_pag,&size);
+	char * mensaje = mensaje_leer_memoria(pcb->PID,direccion_variable,pcb->cant_pag,4,&size);
 	enviar(sockMemCPU,mensaje,&controlador,size);
 
 	char* mensaje_aux= malloc(4);

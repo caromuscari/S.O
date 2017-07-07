@@ -16,7 +16,7 @@
 
 char *mensaje_escibir_memoria(int fpid,t_puntero direccion_variable,int cant_pag,int valor);
 char *mensaje_semaforo(char * cod,char * semaforo,int *);
-char *mensaje_leer_memoria(int fpid,t_puntero direccion_variable, int cant_pag,int *size);
+char *mensaje_leer_memoria(int fpid,t_puntero direccion_variable, int cant_pag,int size_lectura,int *size);
 char *mensaje_pcb(char *identificador, char *mensaje,int sizepcb);
 char *mensaje_escribir_kernel(int fd,void *informacion,int tamanio,int *size);
 char *mensaje_variable_kernel(int codigo,char *variable,int valor,int *size);

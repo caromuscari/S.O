@@ -76,19 +76,22 @@ char *mensaje_semaforo(char * cod,char * semaforo,int *size){
 	free(aux_ceros);
 	return mensaje;
 }
-char *mensaje_leer_memoria(int fpid,t_puntero direccion_variable, int cant_pag,int *size){
+char *mensaje_leer_memoria(int fpid,t_puntero direccion_variable, int cant_pag,int size_lectura,int *size){
 
 	char * mensaje = malloc(19);
 	char * pid;
 	char * pagina;
 	char *offset;
-	char *tam;
+	char *str_size_lectura = string_itoa(size_lectura);
 	char * aux_ceros;
 	int desplazamiento = 0;
 	pid = string_itoa(fpid);
 	pagina = string_itoa(calcular_pagina(direccion_variable,cant_pag));
 	offset = string_itoa(calcular_offset_respecto_pagina(direccion_variable));
-	tam = strdup("0004");
+
+	aux_ceros = string_repeat('0',4-strlen(str_size_lectura));
+	char *tam = string_from_format("%s%s",aux_ceros,str_size_lectura);
+	free(aux_ceros);
 	// PID
 	memcpy(mensaje+desplazamiento,"P01",3);
 	desplazamiento += 3;
@@ -120,6 +123,7 @@ char *mensaje_leer_memoria(int fpid,t_puntero direccion_variable, int cant_pag,i
 	free(pagina);
 	free(offset);
 	free(tam);
+	free(str_size_lectura);
 
 	*size = desplazamiento;
 
@@ -154,10 +158,12 @@ char *mensaje_escribir_kernel(int fd,void *informacion,int tamanio,int *size){
 	if(fd == 1){
 		cod=strdup("P11");
 		str_valor = string_itoa(strlen(informacion));
+		//str_valor = string_itoa(tamanio);
 		tam_alloc = 13+tamanio;
 	}else{
 		cod=strdup("P05");
 		str_valor = string_itoa(strlen(informacion)+4);
+		//str_valor = string_itoa(tamanio+4);
 		tam_alloc = 13+4+tamanio;
 	};
 	mensaje = malloc(tam_alloc);
