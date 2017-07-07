@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <signal.h>
 #include <stdbool.h>
 #include <commons/config.h>
 #include <commons/collections/list.h>
@@ -94,11 +95,12 @@ static const char* con_funcion_ansisop =
 
 
 void procesar();
-void iniciar_pcb_falsa();
+//void iniciar_pcb_falsa();
 void leerArchivoConfiguracion(char* argv);
 int conexion_Kernel(int puertoK, char* ipK);
 int conexion_Memoria(int puertoM,char* ipM);
 char * pedir_linea_memoria();
+void finalizar_por_senial(int);
 
 int main(int argc, char *argv[])
 {
@@ -109,8 +111,10 @@ int main(int argc, char *argv[])
 	programa = strdup(prueba_ansisop);
 	crear_archivo_log("/home/utnso/CPUlog");
 	leerArchivoConfiguracion(argv[1]);
+	signal(SIGUSR1,finalizar_por_senial);
+
 	int res;int chau = 0;
-	accion_siguiente = 0;
+	accion_siguiente = CONTINUAR;
 	res = conexion_Kernel(puertoK, ipK);
 	if(res != 0){
 		cerrar_conexion(sockKerCPU);
@@ -222,9 +226,10 @@ int main(int argc, char *argv[])
 			free(mensaje);
 			break;
 		case DESCONECTARME:
-			escribir_log("FINALICE EL PROGRAMA ACTUAL PORQUE ME MANDARON A DESCONECTARME/MORIR... devolviendo pcb",1);
-			chau = 1; //si me desconectan ¿me matan o me pueden volver a conectar? (o sea me quedo esperando mensajes o no)
 
+			escribir_log("FINALICE EL PROGRAMA ACTUAL PORQUE ME MANDARON A DESCONECTARME/MORIR... devolviendo pcb",1);
+			chau = 1;
+			// todo: enviar p19 (aviso que le voy a dejar de brindar servicios al sistema)
 			pcb_serializado  = serializarPCB_CPUKer(pcb,&size);
 			mensaje = mensaje_pcb("P12",pcb_serializado,size);
 			enviar(sockKerCPU,mensaje,&controlador,size);
@@ -369,6 +374,12 @@ char* pedir_linea_memoria(){
 	//char *linea = string_substring(programa,pcb->in_cod[pcb->PC].offset_inicio,pcb->in_cod[pcb->PC].offset_fin);
 
 	return linea;
+}
+
+void finalizar_por_senial(int sig){
+
+	signal(sig, SIG_IGN);
+	accion_siguiente = DESCONECTARME;
 }
 /*
 void iniciar_pcb_falsa(){
