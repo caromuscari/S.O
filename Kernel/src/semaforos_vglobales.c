@@ -57,13 +57,15 @@ void inicializar_sems()
 		sem->value = atoi(ins[n]);
 		sem->procesos = queue_create();
 		dictionary_put(sems, ids[n],sem);
+		printf("%s \n", ids[n]);
 		n++;
 	}
 	n = 0;
-	while (ids[n] != NULL && ins[n] != NULL)
+	while (ids[n] != NULL || ins[n] != NULL)
 	{
 		free(ids[n]);
 		free(ins[n]);
+		n++;
 	}
 
 	free(ids);
@@ -83,18 +85,22 @@ void inicializar_vglobales()
 		vg->value = 0;
 		vg->procesos = queue_create();
 		dictionary_put(vglobales ,ids[n] ,vg);
+		printf("%s\n", ids[n]);
 		n++;
 	}
 	n = 0;
 	while (ids[n] != NULL)
 	{
 		free(ids[n]);
+		n++;
 	}
 	free(ids);
 }
 
 void sem_wait_(t_program *proceso, char *sema, int socket_)
 {
+	proceso->syscall++;
+
 	t_sem *sem = (t_sem *)dictionary_get(sems, sema);
 	int controlador;
 	if(sem != NULL)
@@ -142,6 +148,7 @@ void sem_signal(t_program *prog, char *sema, int socket_, int free_all)//cuando 
 {
 	void _eliminar_proceso(t_sem *sem)
 	{
+		prog->syscall++;
 		t_queue *sems_aux = queue_create();
 
 		while(queue_size(sem->procesos))
@@ -184,6 +191,7 @@ void sem_signal(t_program *prog, char *sema, int socket_, int free_all)//cuando 
 	}
 	else
 	{
+		prog->syscall++;
 		t_sem *sem = (t_sem *)dictionary_get(sems, sema);
 
 		if(sem != NULL)
@@ -217,7 +225,15 @@ int lock_vglobal(t_vglobal *vg, int prog)
 
 void set_vglobal(char *vglobal, int num, t_program *prog, int socket_)
 {
-	t_vglobal *vg = (t_vglobal *)dictionary_get(vglobales, vglobal);
+	prog->syscall++;
+	char *global = strdup("!");
+	string_append(&global, vglobal);
+
+	printf("la variable global buscada es: %s\n", global);
+
+	t_vglobal *vg = (t_vglobal *)dictionary_get(vglobales, global);
+
+	free(global);
 	int controlador;
 	if(vg != NULL)
 	{
@@ -255,8 +271,17 @@ void set_vglobal(char *vglobal, int num, t_program *prog, int socket_)
 
 void get_vglobal(char *vglobal, t_program *prog, int socket_)
 {
-	t_vglobal *vg = (t_vglobal *)dictionary_get(vglobales, vglobal);
+	prog->syscall++;
+
+	char *global = strdup("!");
+	string_append(&global, vglobal);
+
+	t_vglobal *vg = (t_vglobal *)dictionary_get(vglobales, global);
 	int controlador1;
+
+	printf("la variable global buscada es: %s\n", global);
+
+	free(global);
 
 	if(vg != NULL)
 	{

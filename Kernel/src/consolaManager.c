@@ -42,6 +42,7 @@ void realizar_handShake_consola(int nuevo_socket)
 	{
 		cerrar_conexion(nuevo_socket);
 		escribir_error_log("Fallo el Handshake con el administrador consola");
+		FD_CLR(nuevo_socket, &master);
 	}
 	else
 	{
@@ -52,6 +53,7 @@ void realizar_handShake_consola(int nuevo_socket)
 		{
 			cerrar_conexion(nuevo_socket);
 			escribir_error_log("Fallo el Handshake con el administrador consola");
+			FD_CLR(nuevo_socket, &master);
 		}
 		else
 		{
@@ -76,6 +78,7 @@ void realizar_handShake_consola(int nuevo_socket)
 				char *mensaje = "Perdon no sos una Consola, Chau!";
 				enviar(nuevo_socket, mensaje, &controlador);
 				cerrar_conexion(nuevo_socket);
+				FD_CLR(nuevo_socket, &master);
 			}
 			free(mensaje);
 			free(header);
@@ -223,6 +226,7 @@ void desconectar_consola(int socket)
 		eliminar_consola(consola_muere);
 	}
 	cerrar_conexion(socket);
+	FD_CLR(socket, &master);
 }
 
 char *armar_mensaje_memoria(char *mensaje_recibido)

@@ -133,6 +133,9 @@ void leer_consola()
 				printf("La planificacion se ha reanudado\n");
 				free(input);
 				break;
+			case 8 : ;
+				system("clear");
+				break;
 			default :
 				printf("No se reconocio la opcion ingresada\n");
 				free(input);
@@ -319,7 +322,8 @@ void imprimir_menu()
 	printf("	4 - Modificar grado de multiprogramacion\n");
 	printf("	5 - Finalizar proceso\n");
 	printf("	6 - Detener planificacion\n");
-	printf("	7 - Reanudar planificacion\n\n");
+	printf("	7 - Reanudar planificacion\n");
+	printf("	8 - Limpiar pantalla\n\n");
 }
 
 int existe_pid(int pid)
@@ -435,6 +439,9 @@ char *devolver_descripcion_error(int codigo)
 		break;
 	case -20 :
 		descripcion = strdup("Error sin definicion");
+		break;
+	case 1 :
+		descripcion = strdup("El proceso aun no ha finalizado");
 		break;
 	default :
 		descripcion = strdup("");

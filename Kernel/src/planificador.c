@@ -167,7 +167,7 @@ void agregar_nueva_prog(int id_consola, int pid, char *mensaje, int socket_con)
 	programa->pcb->PC = 0;
 	programa->pcb->PID = pid;
 	programa->pcb->SP = 0;//ver que es esto!!!
-	programa->pcb->exit_code = 0;
+	programa->pcb->exit_code = 1;
 	programa->pcb->cant_pag = calcular_pag(mensaje);
 	programa->pcb->in_cod = armarIndiceCodigo(codigo);
 	programa->pcb->in_et = armarIndiceEtiquetas(codigo);
@@ -278,7 +278,7 @@ void forzar_finalizacion(int pid, int cid, int codigo_finalizacion, int aviso)
 
 	void _terminar_programa(t_program *pr)
 	{
-		pr->pcb->exit_code = codigo_finalizacion;
+		pr->pcb->exit_code = (-1)*codigo_finalizacion;
 		if(aviso) avisar_consola_proceso_murio(pr);
 		list_destroy_and_destroy_elements(pr->memoria_dinamica, (void *)liberar_pagina);
 

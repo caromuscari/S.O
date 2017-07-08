@@ -121,7 +121,6 @@ void direccionar(int socket_rec)
 	{
 		escribir_log("Se eliminara una conexion");
 		desconectar_consola(socket_rec);
-		FD_CLR(socket_rec, &master);
 	}
 	else if(comparar_header(header,"C"))
 	{

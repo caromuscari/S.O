@@ -25,7 +25,6 @@ int inicio_bloque;
 t_bloque *find_first_fit(t_list *hs, int t_sol);
 void reservar_memoria_din(t_program *program, int size_solicitado);
 void inicializar_pagina_dinamica(t_program *prog, int size_sol);
-void pedir_pagina_dinamica(t_program *prog);
 int ubicar_bloque(t_pagina *pagina,int tam_sol, t_program *program);
 void compactar(t_pagina *pagina);
 void _free_bloque(t_bloque *bloque);
@@ -35,14 +34,6 @@ t_pagina *_buscar_pagina(t_list *mem, int num_pag);
 void destruir_heap(t_bloque *bl);
 void liberar_pagina(t_pagina *pagina);
 int chequear_pagina(t_pagina *page);
-//void liberar_pagina(t_program *)
-
-
-void pedir_pagina_dinamica(t_program *prog)
-{
-	//armar mensaje
-	//inicializar_pagina_dinamica(prog);
-}
 
 void inicializar_pagina_dinamica(t_program *prog, int size_sol)
 {
@@ -65,6 +56,9 @@ void inicializar_pagina_dinamica(t_program *prog, int size_sol)
 
 void reservar_memoria_din(t_program *program, int size_solicitado)
 {
+	program->syscall++;
+	program->allocs++;
+
 	if (size_solicitado < (tam_pagina -10))
 	{
 		if (!list_is_empty(program->memoria_dinamica))
@@ -248,6 +242,9 @@ int pedir_pagina(t_program *program)
 
 void liberar_bloque(t_program *prog, char *offset)
 {
+	prog->frees++;
+	prog->syscall++;
+
 	t_infoheap *heap = dictionary_get(prog->posiciones, offset);
 	t_pagina *page = _buscar_pagina(prog->memoria_dinamica, heap->pagina);
 

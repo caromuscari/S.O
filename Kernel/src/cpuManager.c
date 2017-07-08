@@ -33,6 +33,7 @@ char *get_fd(char *mensaje);
 char *get_variable(char *mensaje);
 char *get_numero(char *mensaje);
 void pedir_pcb_error(t_program *prg, int exit_code);
+char *armar_valor(char *pid_, char *mensaje);
 
 void realizar_handShake_cpu(int nuevo_socket) {
 	//Envio mensaje a CPU pidiendo sus datos
@@ -42,7 +43,9 @@ void realizar_handShake_cpu(int nuevo_socket) {
 	if (controlador_cpu > 0) {
 		cerrar_conexion(nuevo_socket);
 		escribir_error_log("Fallo el Handshake con el administrador CPU");
-	} else
+		FD_CLR(nuevo_socket, &master);
+	}
+	else
 	{
 		char *respuesta = recibir(nuevo_socket, &controlador_cpu);
 
@@ -52,7 +55,9 @@ void realizar_handShake_cpu(int nuevo_socket) {
 		{
 			cerrar_conexion(nuevo_socket);
 			escribir_error_log("Fallo el Handshake con el administrador CPU");
-		} else
+			FD_CLR(nuevo_socket, &master);
+		}
+		else
 		{
 			char *header = get_header(respuesta);
 			//Aca deberia ir la validacion si el mensaje corresponde a cpu
@@ -60,13 +65,15 @@ void realizar_handShake_cpu(int nuevo_socket) {
 			{
 				escribir_log("Se ha conectado una nueva CPU");
 				agregar_lista_cpu(nuevo_socket);
-			} else
+			}
+			else
 			{
 				//El recien conectado NO corresponde a una CPU
 				escribir_log("El administrador de CPUs rechazo una conexion");
 				char *mensaje = "Perdon no sos una CPU, Chau!";
 				enviar(nuevo_socket, mensaje, &controlador_cpu);
 				cerrar_conexion(nuevo_socket);
+				FD_CLR(nuevo_socket, &master);
 			}
 			free(header);
 		}
@@ -181,11 +188,15 @@ void responder_solicitud_cpu(int socket_, char *mensaje)
 		case 11: ;
 			int controlador;
 			char *mensaje_recibido = get_mensaje(mensaje);
-			char *mensaje_enviar = armar_mensaje("K09", mensaje_recibido);
+			char *pid_ = string_itoa(prog->PID);
+			char *mensaje_armado = armar_valor(pid_,mensaje_recibido);
+			char *mensaje_enviar = armar_mensaje("K09", mensaje_armado);
 			enviar(prog->socket_consola, mensaje_enviar, &controlador);
 			enviar(socket_, "OK", &controlador);
 			free(mensaje_recibido);
 			free(mensaje_enviar);
+			free(mensaje_armado);
+			free(pid_);
 			break;
 		case 12 : ;
 			char *mensaje_r = get_mensaje_pcb(mensaje);
@@ -331,4 +342,12 @@ void pedir_pcb_error(t_program *prg, int exit_code)
 	string_append(&mensaje, pid_aux);
 
 	enviar(cpu->socket_cpu, mensaje, &controlador);
+}
+
+char *armar_valor(char *pid_, char *mensaje)
+{
+	char *valor = strdup(pid_);
+	string_append(&valor, mensaje);
+
+	return valor;
 }

@@ -80,11 +80,11 @@ int main(int argc, char*argv[])
 	leer_configuracion();
 
 	inicializar_sems();
-	//inicializar_vglobales();
+	inicializar_vglobales();
 
 	crear_conexiones();
 	handshakearMemory();
-	//handshakearFS();
+	handshakearFS();
 
 	pthread_create(&hiloConsolaConsola, NULL, (void*)manejo_conexiones, NULL);
 	pthread_create(&hiloNuevos, NULL, (void*)programas_nuevos_A_listos, NULL);
@@ -152,8 +152,8 @@ void crear_conexiones()
 	config->server_cpu = iniciar_socket_server(config->ip_kernel, config->puerto_cpu, &controlador);
 	escribir_log("Creando server Kernel - Consola");
 	config->server_consola = iniciar_socket_server(config->ip_kernel, config->puerto_prog, &controlador);
-	//escribir_log("Conectando con FS");
-	//config->cliente_fs = iniciar_socket_cliente(config->ip_fs, config->puerto_fs, &controlador);
+	escribir_log("Conectando con FS");
+	config->cliente_fs = iniciar_socket_cliente(config->ip_fs, config->puerto_fs, &controlador);
 	escribir_log("Conectando con Memoria");
 	config->cliente_memoria = iniciar_socket_cliente(config->ip_memoria, config->puerto_memoria, &controlador);
 }
