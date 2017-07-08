@@ -18,7 +18,8 @@ typedef struct{
 } t_tablaPagina;
 
 extern t_tablaPagina* tablaPaginas;
-
+extern t_dictionary** colisiones;
+extern int ultimo_frame_libre_asignado;
 
 void inicializar_array_colisiones(){
 
@@ -28,6 +29,7 @@ void inicializar_array_colisiones(){
 		colisiones[i] = dictionary_create();
 	}
 }
+
 int hash(int pid,int pag){
 
 	int marco = -1;
@@ -40,10 +42,6 @@ int hash(int pid,int pag){
 	free(str_pid);
 	free(str_pag);
 	free(str_full);
-
-	if(marco >= cantMarcos){
-		marco = marco % 2;
-	}
 
 	return marco;
 }
@@ -58,14 +56,22 @@ bool marco_ocupado(int marco){
 
 	return retorno;
 }
-int reasignar_colision(int marco,int pid,int pag){
-
+//int reasignar_colision(int marco,int pid,int pag){
+int reasignar_colision(){
 	int marco_libre = -1;
 	int i;
 	for(i=ultimo_frame_libre_asignado+1; i< cantMarcos; i++){
 		if(tablaPaginas[i].estado == 0){
 			marco_libre = i;
 			return marco_libre;
+		}
+	}
+	if (marco_libre == -1){
+		for(i=0; i< ultimo_frame_libre_asignado; i++){
+			if(tablaPaginas[i].estado == 0){
+				marco_libre = i;
+				return marco_libre;
+			}
 		}
 	}
 	return marco_libre;
