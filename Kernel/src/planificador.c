@@ -12,12 +12,14 @@
 #include <commons/collections/list.h>
 #include <commons/collections/queue.h>
 #include <commons/string.h>
+#include <commons/collections/dictionary.h>
 #include <pthread.h>
 #include "estructuras.h"
 #include "semaforos_vglobales.h"
 #include "mensaje_consola.h"
 #include "cpuManager.h"
 #include "mensaje.h"
+#include "memoria2.h"
 #include "metadata.h"
 #include "socket.h"
 #include "log.h"
@@ -48,6 +50,8 @@ void programas_nuevos_A_listos();
 void programas_listos_A_ejecutar();
 int calcular_pag(char *mensaje);
 void forzar_finalizacion(int pid, int cid, int codigo_finalizacion, int aviso);
+void agregar_nueva_prog(int id_consola, int pid, char *mensaje, int socket_con);
+void finalizar_quantum(int pid);
 
 void programas_listos_A_ejecutar()
 {
@@ -158,6 +162,7 @@ void agregar_nueva_prog(int id_consola, int pid, char *mensaje, int socket_con)
 	programa->memoria_dinamica = list_create();
 	programa->TAP = list_create();
 	programa->semaforos = list_create();
+	programa->posiciones = dictionary_create();
 	programa->pcb = malloc(sizeof(t_PCB));
 	programa->pcb->PC = 0;
 	programa->pcb->PID = pid;
@@ -228,11 +233,12 @@ void finalizar_proceso(int pid, int codigo_finalizacion)
 	escribir_log_con_numero("Se ha finalizado el proceso: ", programa->PID);
 	avisar_consola_proceso_murio(programa);
 
+	list_destroy_and_destroy_elements(programa->memoria_dinamica, (void *)liberar_pagina);
+	sem_signal(programa, "", programa->socket_consola, 1);
+
 	pthread_mutex_lock(&mutex_lista_finalizados);
 	list_add(list_finalizados, programa);
 	pthread_mutex_unlock(&mutex_lista_finalizados);
-	//falta invocar funciones para limpiar asignacion de memoria dinamica y el TAP
-	//falta funcion para liberar toma de semaforos y darselos a otros
 }
 
 int calcular_pag(char *mensaje)
@@ -274,6 +280,7 @@ void forzar_finalizacion(int pid, int cid, int codigo_finalizacion, int aviso)
 	{
 		pr->pcb->exit_code = codigo_finalizacion;
 		if(aviso) avisar_consola_proceso_murio(pr);
+		list_destroy_and_destroy_elements(pr->memoria_dinamica, (void *)liberar_pagina);
 
 		pthread_mutex_lock(&mutex_lista_finalizados);
 		list_add(list_finalizados,pr);

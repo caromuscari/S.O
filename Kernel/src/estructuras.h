@@ -17,16 +17,15 @@ typedef struct
 	int quantum_sleep;
 	char *algoritmo;
 	int grado_multiprog;
-	t_list *sem_ids; //alfanumérico
-	t_list *sem_init; //numérico
-	t_list *shared_vars; //alfanumérico
+	char **sem_ids; //alfanumérico
+	char **sem_init; //numérico
+	char **shared_vars; //alfanumérico
 	int stack_size;
 	int server_cpu;
 	int server_consola;
 	int cliente_fs;
 	int cliente_memoria;
-} t_configuracion;
-
+}t_configuracion;
 
 typedef struct
 {
@@ -73,6 +72,7 @@ typedef struct
 	t_list *semaforos;
 	t_list *TAP; //tabla de archivo por proceso
 	t_list *memoria_dinamica; //lista de paginas pedidas de manera dinámica
+	t_dictionary *posiciones;
 }t_program; //cada vez que se crea un programa, además del pcb esta estructura de control
 
 typedef struct
@@ -89,7 +89,6 @@ typedef struct
 	int n_pagina;
 	t_list *heaps; //de bloques
 	int esp_libre;
-	t_dictionary *posiciones;
 }t_pagina;
 
 /*typedef struct

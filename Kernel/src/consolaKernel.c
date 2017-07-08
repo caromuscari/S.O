@@ -43,6 +43,7 @@ void mostrar_cola(t_queue *, char *);
 void mostrar_listas(t_list *, char *);
 void obtener_informacion(int pid);
 void imprimir_tabla_archivos();
+char *devolver_descripcion_error(int codigo);
 int existe_pid(int pid);
 
 void imprimir_info();
@@ -113,7 +114,7 @@ void leer_consola()
 
 				if(existe_pid(numberKill))
 				{
-					forzar_finalizacion(numberKill, 0, -10, 1);
+					forzar_finalizacion(numberKill, 0, 10, 1);
 					printf("El proceso ha sido eliminado\n");
 				}
 				else
@@ -281,6 +282,7 @@ void obtener_informacion(int pid)
 	}
 	else
 	{
+		char *desc = devolver_descripcion_error(found->pcb->exit_code);
 		printf("Id Proceso: %i\n", found->PID);
 		printf("Id Consola: %i\n", found->CID);
 		printf("Status de proceso: %s\n", lista);
@@ -288,8 +290,9 @@ void obtener_informacion(int pid)
 		printf("Cantidad de frees: %i\n", found->frees);
 		printf("Cantidad de Syscalls: %i\n", found->syscall);
 		printf("Cantidad de paginas: %i\n", found->pcb->cant_pag);
-		printf("Exit code: %i\n", found->pcb->exit_code);
+		printf("Exit code: %i  Descripcion: %s\n", found->pcb->exit_code, desc);
 		free(lista);
+		free(desc);
 	}
 }
 
@@ -386,4 +389,57 @@ void imprimir_info()
 	}
 
 	list_iterate(list_consolas, (void*)_imprimir_consola);
+}
+
+char *devolver_descripcion_error(int codigo)
+{
+	char *descripcion;
+
+	switch (codigo)
+	{
+	case 0 :
+		descripcion = strdup("El programa finalizo correctamente");
+		break;
+	case -1 :
+		descripcion = strdup("No se pudieron reservar recursos para ejecutar el programa");
+		break;
+	case -2 :
+		descripcion = strdup("El programa intento acceder a un archivo que no existe");
+		break;
+	case -3 :
+		descripcion = strdup("El programa intento leer un archivo sin permisos");
+		break;
+	case -4 :
+		descripcion = strdup("El programa intento escribir un archivo sin permisos");
+		break;
+	case -5 :
+		descripcion = strdup("Excepcion de memoria");
+		break;
+	case -6 :
+		descripcion = strdup("Finalizado a traves de desconexion de consola");
+		break;
+	case -7 :
+		descripcion = strdup("Finalizado a traves del comando Finalizar Programa de la consola");
+		break;
+	case -8 :
+		descripcion = strdup("Se intento reservar mas memoria que el tamanio de una pagina");
+		break;
+	case -9 :
+		descripcion = strdup("No se pueden asignar mas paginas al proceso");
+		break;
+	case -11 :
+		descripcion = strdup("Se intento acceder a un semaforo inexistente");
+		break;
+	case -12 :
+		descripcion = strdup("Se intento acceder a una variable inexistente");
+		break;
+	case -20 :
+		descripcion = strdup("Error sin definicion");
+		break;
+	default :
+		descripcion = strdup("");
+		break;
+	}
+
+	return descripcion;
 }

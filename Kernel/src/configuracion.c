@@ -9,9 +9,9 @@
 
 extern char *ruta_config;
 extern t_configuracion *config;
-extern char *sem_id;
+/*extern char *sem_id;
 extern char *sem_in;
-extern char *shared;
+extern char *shared;*/
 
 void leer_configuracion()
 {
@@ -23,9 +23,9 @@ void leer_configuracion()
 	string_append(&config->ip_fs, config_get_string_value(configuracion, "IP_FS"));
 	string_append(&config->ip_memoria, config_get_string_value(configuracion, "IP_MEMORIA"));
 	string_append(&config->ip_kernel, config_get_string_value(configuracion, "IP_KERNEL"));
-	//config->sem_ids = config_get_array_value(configuracion, "SEM_IDS");
-	//config->sem_init = config_get_array_value(configuracion, "SEM_INIT");
-	//config->shared_vars = config_get_array_value(configuracion, "SHARED_VARS");
+	config->sem_ids = config_get_array_value(configuracion, "SEM_IDS");
+	config->sem_init = config_get_array_value(configuracion, "SEM_INIT");
+	config->shared_vars = config_get_array_value(configuracion, "SHARED_VARS");
 	config->stack_size = config_get_int_value(configuracion, "STACK_SIZE");
 	config->grado_multiprog = config_get_int_value(configuracion, "GRADO_MULTIPROG");
 	config->puerto_cpu = config_get_int_value(configuracion, "PUERTO_CPU");
@@ -35,9 +35,9 @@ void leer_configuracion()
 	config->quantum = config_get_int_value(configuracion, "QUANTUM");
 	config->quantum_sleep= config_get_int_value(configuracion, "QUANTUM_SLEEP");
 
-	shared = strdup(config_get_string_value(configuracion, "SHARED_VARS"));
+	/*shared = strdup(config_get_string_value(configuracion, "SHARED_VARS"));
 	sem_id = strdup(config_get_string_value(configuracion, "SEM_IDS"));
-	sem_in = strdup(config_get_string_value(configuracion, "SEM_INIT"));
+	sem_in = strdup(config_get_string_value(configuracion, "SEM_INIT"));*/
 
 	config_destroy(configuracion);
 	free(ruta_aux);

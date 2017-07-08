@@ -20,8 +20,12 @@ char * get_codigo(char *mensaje);
 
 //Obtiene el mensaje
 char * get_mensaje(char *mensaje);
+char *get_mensaje_pcb(char *mensaje);
 
 //Compara un header contra el header un mensaje
 int comparar_header(char *identificador, char *header);
+
+char *get_mensaje_escritura_info(char *mensaje);
+char *get_mensaje_escritura_fd(char *mensaje);
 
 #endif /* MENSAJE_H_ */
