@@ -29,6 +29,7 @@
 
 int puerto;
 char *ip;
+int cliente;
 char *montaje;
 int flagsocket;
 int socketfs;
@@ -38,6 +39,7 @@ int cantBloques;
 char *magic_number;
 t_bitarray * bitmap;
 char* posicion;
+int bitm;
 
 struct stat mystat;
 
@@ -50,7 +52,6 @@ void liberar_memoria();
 int main(int argc, char *argv[])
 {
 	int metadata;
-	int bitmap;
 	int flag = 0;
 
 	reservar_memoria();
@@ -59,8 +60,8 @@ int main(int argc, char *argv[])
 	metadata = leer_metadata();
 	if (metadata == -1) goto finalizar;
 
-	bitmap = abrir_bitmap();
-	if(bitmap == -1) goto finalizar;
+	bitm = abrir_bitmap();
+	if(bitm == -1) goto finalizar;
 
 	posicion = malloc(cantBloques);
 	flagsocket=0;
@@ -74,7 +75,7 @@ int main(int argc, char *argv[])
 		char * codigo;
 		char * mensaje2;
 
-		mensaje = recibir(socketfs,&flagsocket);
+		mensaje = recibir(cliente,&flagsocket);
 		codigo = get_codigo(mensaje);
 
 		switch(atoi(codigo))
@@ -120,7 +121,9 @@ int main(int argc, char *argv[])
 
 	}
 
-	finalizar: escribir_log("Error leyendo archivos iniciales");
+	if(metadata == -1 || bitm == -1){
+		finalizar: escribir_log("Error leyendo archivos iniciales");
+	}
 
 	liberar_memoria();
 	return EXIT_SUCCESS;
@@ -134,13 +137,13 @@ void handshake1()
 	char *mensaje;
 	while(esKernel == 0)
 	{
-		int cliente = escuchar_conexiones(socketfs,&flagsocket);
+		cliente = escuchar_conexiones(socketfs,&flagsocket);
 		handshake = recibir(cliente,&flagsocket);
 		if (verificarHS(handshake)== 1)
 		{
 			esKernel = 1;
 			mensaje = armar_mensaje("F00","");
-			enviar(socketfs,mensaje,&flagsocket);
+			enviar(cliente,mensaje,&flagsocket);
 			free(mensaje);
 		}else{
 			cerrar_conexion(cliente);
@@ -166,9 +169,12 @@ void liberar_memoria()
 	free(montaje);
 	free(ip);
 	free(magic_number);
-	memcpy(posicion,bitmap,cantBloques);
-	bitarray_destroy(bitmap);
-	munmap(&mystat,mystat.st_size);
+	if(bitm != -1){
+		memcpy(posicion,bitmap,mystat.st_size);
+		msync(posicion,mystat.st_size,MS_SYNC);
+		munmap(posicion,mystat.st_size);
+		bitarray_destroy(bitmap);
+	}
 	liberar_log();
 }
 

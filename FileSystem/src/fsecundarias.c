@@ -13,6 +13,8 @@
 #include <commons/bitarray.h>
 #include <commons/config.h>
 #include "fsecundarias.h"
+#include <commons/log.h>
+#include "log.h"
 
 extern t_bitarray * bitmap;
 extern char *montaje;
@@ -23,18 +25,25 @@ void armar_archivo(FILE * archivo)
 	char * tamanio = "TAMANIO=0\n";
 	char * bloques =strdup("");
 	int bit;
+	int bit2;
 	char * var;
-	bit = agregar_bloque();
-
+	bit = verificar_bloque();
 	if(bit != -1){
+		bit2=agregar_bloque(bit);
+	}
+
+	if(bit != -1 && bit2 != -1){
 		var = string_itoa(bit);
 		string_append(&bloques, "BLOQUES=[");
 		string_append(&bloques, var);
 		string_append(&bloques, "]");
 
-		fwrite(tamanio,sizeof(char),string_length(tamanio),archivo);
-		fwrite(bloques,sizeof(char),string_length(bloques),archivo);
+		fputs(tamanio,archivo);
+		fputs(bloques,archivo);
+		//fwrite(tamanio,sizeof(char),string_length(tamanio),archivo);
+		//fwrite(bloques,sizeof(char),string_length(bloques),archivo);
 		free(var);
+		escribir_log(bloques);
 	}
 
 	free(bloques);
@@ -43,11 +52,10 @@ void armar_archivo(FILE * archivo)
 char * armar_pathBloque(char *path,int bloqueSig,t_arch *archivo)
 {
 	char *path2 =strdup("");
-	char * var=string_itoa(*archivo->bloques[bloqueSig]);
 	string_append(&path2,path);
-	string_append(&path2,var);
+	string_append(&path2,archivo->bloques[bloqueSig]);
 	string_append(&path2,".bin");
-	free(var);
+	escribir_log(path2);
 	return path2;
 }
 
@@ -58,6 +66,7 @@ char * armar_pathBloqueNuevo(char *path,int bloqueSig)
 	string_append(&path2,path);
 	string_append(&path2,var);
 	string_append(&path2,".bin");
+	escribir_log(path2);
 	free(var);
 	return path2;
 }
@@ -69,6 +78,8 @@ t_arch *leer_archivo(char * path)
 	archivo = malloc( sizeof(t_arch) );
 	archivo->tamanio = config_get_int_value(config,"TAMANIO");
 	archivo->bloques = config_get_array_value(config,"BLOQUES");
+	escribir_log_con_numero("Tamanio: ", archivo->tamanio);
+	escribir_log_compuesto("Bloques: ", *(archivo->bloques));
 	config_destroy(config);
 	return archivo;
 }
@@ -78,23 +89,36 @@ char * armar_path(char *mensaje)
 	char *mensaje2 = strdup("");
 	string_append(&mensaje2,montaje);
 	string_append(&mensaje2,mensaje);
+	escribir_log(mensaje2);
 	return mensaje2;
 
 }
 
-int agregar_bloque()
+int verificar_bloque()
 {
-	int bit = 0;
+	int bit = -1;
 	int prueba = -1;
 	bool comprobar;
 	while(bit < cantBloques && comprobar == true)
 	{
+		bit++;
 		comprobar = bitarray_test_bit(bitmap,bit);
 
-		bit++;
 	}
 	if(bit == cantBloques && comprobar == true){
 		return prueba;
+	}
+	else {
+		return bit;
+	}
+
+}
+
+int agregar_bloque(int bit)
+{
+
+	if(bit == -1){
+		return -1;
 	}
 	else {
 		bitarray_set_bit(bitmap,bit);
@@ -105,14 +129,10 @@ int agregar_bloque()
 
 void modificar_archivo(char* path, int tamanio, char* bloques)
 {
-	char* tamanio2 = strdup("");
+	char* tamanio2 = string_itoa(tamanio);
 	t_config * archconf;
-	char * var= string_itoa(tamanio);
 
 	archconf = config_create(path);
-
-	string_append(&tamanio2,var);
-	string_append(&tamanio2,"\n");
 
 	config_set_value(archconf,"TAMANIO", tamanio2);
 	config_set_value(archconf,"BLOQUES", bloques);
@@ -121,7 +141,6 @@ void modificar_archivo(char* path, int tamanio, char* bloques)
 
 	config_destroy(archconf);
 	free(tamanio2);
-	free(var);
 }
 
 char * crear_string_bloques(char ** bloques, char * bloques_nuevos)
@@ -132,7 +151,7 @@ char * crear_string_bloques(char ** bloques, char * bloques_nuevos)
 
 	string_append(&bloque,"[");
 
-	while (bloques[j] != '\0') j++;
+	while (bloques[j] != NULL /*'\0'*/) j++;
 
 	j -= 2;
 
@@ -148,10 +167,11 @@ char * crear_string_bloques(char ** bloques, char * bloques_nuevos)
 		string_append(&bloque,"]");
 	}
 	else{
-		string_append(&bloque,",");
 		string_append(&bloque,bloques_nuevos);
 		string_append(&bloque,"]");
 	}
+
+	escribir_log(bloque);
 
 	return bloque;
 }
@@ -166,6 +186,7 @@ t_datos * recuperar_datos(char * codigo, char * mensaje)
 	var = string_substring(mensaje, 0, 4);
 	size = atoi(var);
 	estructura->path = string_substring(mensaje,4,size);
+	escribir_log(estructura->path);
 	free(var);
 
 	start = 4+ size;
@@ -176,6 +197,7 @@ t_datos * recuperar_datos(char * codigo, char * mensaje)
 	free(var);
 	var = string_substring(mensaje,start,size);
 	estructura->offset = atoi(var);
+	escribir_log_con_numero("offset", estructura->offset);
 	free(var);
 
 	start += size;
@@ -186,6 +208,7 @@ t_datos * recuperar_datos(char * codigo, char * mensaje)
 	free(var);
 	var = string_substring(mensaje,start,size);
 	estructura->size = atoi(var);
+	escribir_log_con_numero("size", estructura->size);
 	free(var);
 
 	start += size;
@@ -197,6 +220,7 @@ t_datos * recuperar_datos(char * codigo, char * mensaje)
 		start +=4;
 		free(var);
 		estructura->buffer = string_substring(mensaje,start,size);
+		escribir_log(estructura->buffer);
 	}
 
 	return estructura;
@@ -216,6 +240,8 @@ char * sacar_archivo(char * mensaje){
 		string_append(&path,split[j]);
 		j++;
 	}
+
+	escribir_log(path);
 
 	return path;
 }

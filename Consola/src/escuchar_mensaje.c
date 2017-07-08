@@ -26,10 +26,12 @@ extern t_dictionary * sem;
 extern t_dictionary * impresiones;
 extern t_dictionary * tiempo;
 extern sem_t semaforo;
+extern sem_t x;
 extern int flag;
 extern int socket_;
-extern int tamAimprimir;
+//extern int tamAimprimir;
 pthread_t hiloPrograma;
+extern char * aImprimir;
 
 void escuchar_mensaje();
 void finalizar(char *pid, int socket_);
@@ -42,10 +44,12 @@ void escuchar_mensaje()
 	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,NULL);
 	char *mensaje;
 	char *mensaje2;
-	sem_init(&semaforo,0,1);
+	sem_init(&semaforo,0,2);
+	sem_init(&x,0,2);
 
 	while(flag==0)
 	{
+		sem_wait(&x);
 		sem_wait(&semaforo);
 		t_chequeo *sema = malloc(sizeof(t_chequeo));
 		t_chequeo *smod = malloc(sizeof(t_chequeo));
@@ -88,10 +92,15 @@ void escuchar_mensaje()
 			case 9: ;
 				char *pid2 = recibir(socket_,1);
 				char *size = get_payload(mensaje);
-				tamAimprimir= atoi(size);
+				escribir_log(pid2);
+				//tamAimprimir= atoi(size)-1;
 
-				smod=dictionary_get(sem,pid);
+				aImprimir = recibir(socket_, atoi(size)-1);
+				escribir_log_compuesto("A imprimir: ", aImprimir);
+
+				smod=dictionary_get(sem,pid2);
 				smod->valor=1;
+				sem_wait(&x);
 
 				free(sema);
 				free(cant);
@@ -120,6 +129,7 @@ void escuchar_mensaje()
 				free(hilo);
 				break;
 		}
+		sem_post(&x);
 		sem_post(&semaforo);
 		free(mensaje);
 		free(mensaje2);
