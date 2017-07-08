@@ -11,7 +11,7 @@
 #include "estructuras.h"
 
 void inicializar_sems();
-void sem_signal(t_program *prog, char *sema, int socket_);
+void sem_signal(t_program *prog, char *sema, int socket_, int free_all);
 void sem_wait_(t_program *proceso, char *sema, int socket_);
 void inicializar_vglobales();
 int lock_vglobal(t_vglobal *vg, int prog);

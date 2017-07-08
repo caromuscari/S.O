@@ -113,7 +113,7 @@ void leer_consola()
 
 				if(existe_pid(numberKill))
 				{
-					forzar_finalizacion(numberKill, 0, -10, 1);
+					forzar_finalizacion(numberKill, 0, 10, 1);
 					printf("El proceso ha sido eliminado\n");
 				}
 				else

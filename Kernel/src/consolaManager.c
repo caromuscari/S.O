@@ -112,13 +112,13 @@ void responder_solicitud_consola(int socket, char *mensaje)
 			escribir_log("Llego una solicitud de finalizacion de programa");
 			char *pid_c = get_mensaje(mensaje);
 			int pid = atoi(pid_c);
-			forzar_finalizacion(pid, 0, -7, 0);
+			forzar_finalizacion(pid, 0, 7, 0);
 			free(pid_c);
 			break;
 		case 3 : ;
 			char *con = get_mensaje(mensaje);
 			int consola_id = atoi(con);
-			forzar_finalizacion(0, consola_id, -6, 0);
+			forzar_finalizacion(0, consola_id, 6, 0);
 			desconectar_consola(socket);
 			free(con);
 			break;
@@ -127,7 +127,12 @@ void responder_solicitud_consola(int socket, char *mensaje)
 			//No se comprende el mensaje recibido por consola
 			char *msj_unknow = "K08";
 			enviar(socket, msj_unknow, &controlador);
-			if (controlador > 0) desconectar_consola(socket);
+			if (controlador > 0)
+			{
+				desconectar_consola(socket);
+				int id_consola2 = buscar_consola(socket);
+				forzar_finalizacion(0, id_consola2, 20, 0);
+			}
 	}
 	free(codigo);
 }
@@ -214,7 +219,7 @@ void desconectar_consola(int socket)
 	int consola_muere = buscar_consola(socket);
 	if(consola_muere)
 	{
-		forzar_finalizacion(0, consola_muere, 0, 1); //dudo
+		//forzar_finalizacion(0, consola_muere, 0, 1); //dudo
 		eliminar_consola(consola_muere);
 	}
 	cerrar_conexion(socket);

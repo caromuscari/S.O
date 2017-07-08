@@ -22,7 +22,7 @@ extern t_dictionary *sems;
 extern t_dictionary *vglobales;
 
 void inicializar_sems();
-void sem_signal(t_program *prog, char *sema, int socket_);
+void sem_signal(t_program *prog, char *sema, int socket_, int free_all);
 void sem_wait_(t_program *proceso, char *sema, int socket_);
 void inicializar_vglobales();
 int lock_vglobal(t_vglobal *vg, int prog);
@@ -142,7 +142,7 @@ void sem_wait_(t_program *proceso, char *sema, int socket_)
 	}
 }
 
-void sem_signal(t_program *prog, char *sema, int socket_)
+void sem_signal(t_program *prog, char *sema, int socket_, int free_all)//cuando te mando 1 es porque tenes que liberar todo!!! FEA!!
 {
 	t_sem *sem = (t_sem *)dictionary_get(sems, sema);
 

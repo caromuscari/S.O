@@ -25,8 +25,7 @@ typedef struct
 	int server_consola;
 	int cliente_fs;
 	int cliente_memoria;
-} t_configuracion;
-
+}t_configuracion;
 
 typedef struct
 {
@@ -89,7 +88,6 @@ typedef struct
 	int n_pagina;
 	t_list *heaps; //de bloques
 	int esp_libre;
-	t_dictionary *posiciones;
 }t_pagina;
 
 /*typedef struct

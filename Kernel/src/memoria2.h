@@ -12,9 +12,10 @@ t_bloque *find_first_fit(t_list *hs, int t_sol);
 void reservar_memoria_din(t_program *program, int size_solicitado);
 void inicializar_pagina_dinamica(t_program *prog);
 void pedir_pagina_dinamica(t_program *prog);
-int ubicar_bloque(t_pagina *pagina,int tam_sol, int *flag);
-void compactar(t_list *pagina);
+int ubicar_bloque(t_pagina *pagina,int tam_sol);
+void compactar(t_pagina *pagina);
 void _free_bloque(t_bloque *bloque);
 int pedir_pagina();
+void liberar_bloque(t_program *prog, int offset);
 
 #endif /* MEMORIA2_H_ */

@@ -29,7 +29,7 @@ void actualizar_pcb();
 void responder_solicitud_cpu(int socket_, char *mensaje);
 t_cpu *programa_ejecutando(int socket_);
 char *get_offset(char *mensaje);
-int get_fd(char *mensaje);
+char *get_fd(char *mensaje);
 char *get_variable(char *mensaje);
 char *get_numero(char *mensaje);
 void pedir_pcb_error(t_program *prg, int exit_code);
@@ -185,7 +185,7 @@ void responder_solicitud_cpu(int socket_, char *mensaje)
 			break;
 		case 15: ;//post
 			char *mensaje3 = get_mensaje(mensaje);
-			sem_signal(prog, mensaje3, socket_);
+			sem_signal(prog, mensaje3, socket_, 0);
 			free(mensaje3);
 			break;
 		case 17: ;//alloc
@@ -194,7 +194,7 @@ void responder_solicitud_cpu(int socket_, char *mensaje)
 			reservar_memoria_din(prog, size);
 			free(mensaje4);
 			break;
-		case 18: //free
+		case 18: ;//free
 			char *offset_bloque = get_mensaje(mensaje);
 			liberar_bloque(prog, offset_bloque);
 			free(offset_bloque);
