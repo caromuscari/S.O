@@ -56,6 +56,7 @@ P16 DEVOLVER PCB POR BLOQUEO
 P17 ALLOCAR MEMORIA DINAMICA P17|000000005|25000 (emisor P - codigo 17 - 10 bytes largo siguiente - numero de alloc que se esta haciendo)-> respuesta: K##|0000000002|20 (offset de esa peticion de heap) ó K21|0000000000|0003 codigo de error 
 P18 LIBERAR MEMORIA DE HEAP P18|0000000002|20 (emisor P - codigo 17 - 10 bytes largo siguiente - offset de donde se ubica la porcion que quiero liberar) -> respuesta OK o no?
 P19 avisar a kernel que me voy, y que espere que le devuelvo el pcb
+P20 pcb para agregar a la cola de listos?
 
 MEMORIA - M
 M00: Respuesta a la solicitud de datos (Kernel) de tamaño de página. Va en el HandShake. Rta Ej: M|00|0128|

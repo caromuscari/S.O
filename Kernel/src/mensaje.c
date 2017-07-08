@@ -70,3 +70,17 @@ char * get_mensaje(char *mensaje)
 	free(payload);
 	return string_substring(mensaje, 13, payload1);
 }
+
+char *get_mensaje_pcb(char *mensaje){
+
+	char *payload = malloc(10);
+	memcpy(payload,mensaje+3,10);
+	int payload1 = atoi(payload);
+	free(payload);
+
+	char *pcb_serializado = malloc(payload1);
+	memcpy(pcb_serializado,mensaje+13,payload1);
+
+	return pcb_serializado;
+
+}

@@ -200,6 +200,7 @@ int main(int argc, char *argv[])
 			free(mensaje);
 
 			break;
+
 		case FINALIZAR_POR_QUANTUM:
 			escribir_log("FINALIZO QUANTUM DEL PROGRAMA... devolviendo pcb...",1);
 
@@ -209,6 +210,7 @@ int main(int argc, char *argv[])
 			free(pcb_serializado);
 			free(mensaje);
 			break;
+
 		case FINALIZAR_POR_ERROR :
 			escribir_log("FINALIZO PROGRAMA ERRONEAMENTE... devolviendo pcb ...",1);
 
@@ -218,6 +220,7 @@ int main(int argc, char *argv[])
 			free(pcb_serializado);
 			free(mensaje);
 			break;
+
 		case BLOQUEAR_PROCESO:
 			pcb_serializado  = serializarPCB_CPUKer(pcb,&size);
 			mensaje = mensaje_pcb("P16",pcb_serializado,size);
@@ -225,17 +228,24 @@ int main(int argc, char *argv[])
 			free(pcb_serializado);
 			free(mensaje);
 			break;
+
 		case DESCONECTARME:
 
 			escribir_log("FINALICE EL PROGRAMA ACTUAL PORQUE ME MANDARON A DESCONECTARME/MORIR... devolviendo pcb",1);
 			chau = 1;
-			// todo: enviar p19 (aviso que le voy a dejar de brindar servicios al sistema)
+
+			mensaje = strdup("P19");
+			enviar(sockKerCPU,mensaje,&controlador,3);
+			free(mensaje);
+
 			pcb_serializado  = serializarPCB_CPUKer(pcb,&size);
-			mensaje = mensaje_pcb("P12",pcb_serializado,size);
+			mensaje = mensaje_pcb("P20",pcb_serializado,size);
 			enviar(sockKerCPU,mensaje,&controlador,size);
+
 			free(pcb_serializado);
 			free(mensaje);
 			break;
+
 		default:
 			escribir_log("CONTINUAR CON MI TRABAJO DE CPU",1);
 		}
