@@ -52,8 +52,6 @@ pthread_mutex_t mutex_cola_listos;
 int flag_planificador = 1;
 int ultimo_pid = 1;
 int tam_pagina = 0;
-int pag_cod = 0;
-int pag_stack = 0;
 
 void inicializar_variables();
 void liberar_memoria();
@@ -78,9 +76,6 @@ int main(int argc, char*argv[])
 	inicializar_variables();
 	inicializar_semaforos();
 	leer_configuracion();
-
-	inicializar_sems();
-	//inicializar_vglobales();
 
 	crear_conexiones();
 	handshakearMemory();
@@ -119,6 +114,8 @@ void inicializar_variables()
 	cola_nuevos = queue_create();
 	cola_listos = queue_create();
 	list_bloqueados = list_create();
+	//inicializar_sems();
+	//inicializar_vglobales();
 }
 
 void liberar_memoria()

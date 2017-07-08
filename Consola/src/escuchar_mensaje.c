@@ -72,15 +72,14 @@ void escuchar_mensaje()
 				pthread_create(&hiloPrograma,NULL,(void*)programa,pid);
 				hilo->hilo= hiloPrograma;
 
-				escribir_log_con_numero("Se inicio el programa: ", atoi(pid));
+				printf("Se inicio el programa: %d\n", atoi(pid));
 
 				dictionary_put(p_pid,pid,hilo);
 				dictionary_put(h_pid,string_itoa(hiloPrograma),pid);
 
-
 				break;
 			case 5:
-				escribir_log("No se pudo iniciar el programa");
+				printf("No se pudo iniciar el programa por falta de memoria\n");
 				free(sema);
 				free(cant);
 				free(smod);
@@ -132,25 +131,25 @@ void escuchar_mensaje()
 
 void finalizar(char *pid, int socket_)
 {
-	char* pid2;
-	t_hilo * hilo = dictionary_get(p_pid,pid);
-	int pid3 = atoi(pid);
-	char * var = string_itoa(hilo->hilo);
-
-	if(pthread_cancel(hilo->hilo)==0)
+	if(dictionary_has_key(p_pid,pid))
 	{
-		pid2=dictionary_get(h_pid,var);
-		escribir_log_con_numero("Se finalizo el programa: ", pid3);
-		tiempofinal_impresiones(pid2);
+		char *pid2;
+		t_hilo *hilo = dictionary_get(p_pid,pid);
+		char *var = string_itoa(hilo->hilo);
 
-		free(dictionary_remove(h_pid,var));
-		free(dictionary_remove(p_pid,pid2));
-		free(dictionary_remove(impresiones,pid2));
-		free(dictionary_remove(sem,pid2));
-		free(dictionary_remove(tiempo,pid2));
-	}
-	else{
-		escribir_log("No se pudo finalizar el programa");
+		if(pthread_cancel(hilo->hilo)==0)
+		{
+			pid2 = dictionary_get(h_pid,var);
+			printf("Se finalizo el programa: %d\n", atoi(pid));
+			tiempofinal_impresiones(pid2);
+
+			free(dictionary_remove(h_pid,var));
+			free(dictionary_remove(p_pid,pid));
+			free(dictionary_remove(impresiones,pid));
+			free(dictionary_remove(sem,pid));
+			free(dictionary_remove(tiempo,pid));
+		}
+		else printf("No se pudo finalizar el programa\n");
 	}
 }
 

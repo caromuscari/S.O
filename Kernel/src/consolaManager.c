@@ -21,6 +21,7 @@ fd_set read_fds;
 int fdmax;
 int controlador = 0;
 extern int ultimo_pid;
+extern int pag_stack;
 
 int get_CID();
 void desconectar_consola(int socket);
@@ -111,13 +112,13 @@ void responder_solicitud_consola(int socket, char *mensaje)
 			escribir_log("Llego una solicitud de finalizacion de programa");
 			char *pid_c = get_mensaje(mensaje);
 			int pid = atoi(pid_c);
-			forzar_finalizacion(pid, 0, -7);
+			forzar_finalizacion(pid, 0, -7, 0);
 			free(pid_c);
 			break;
 		case 3 : ;
 			char *con = get_mensaje(mensaje);
 			int consola_id = atoi(con);
-			forzar_finalizacion(0, consola_id, -6);
+			forzar_finalizacion(0, consola_id, -6, 0);
 			desconectar_consola(socket);
 			free(con);
 			break;
@@ -164,7 +165,6 @@ void responder_peticion_prog(int socket, char *mensaje)
 	{
 		escribir_log("No se puede guardar codigo en memoria");
 		enviar(socket, "K05", &controlador);
-
 	}
 	else
 	{
@@ -173,6 +173,8 @@ void responder_peticion_prog(int socket, char *mensaje)
 		char *msj_enviar = armar_mensaje("K20",codigo_new);
 		char *ult_pid = string_itoa(ultimo_pid);
 		string_append(&msj_enviar, ult_pid);
+
+		enviar(config->cliente_memoria, msj_enviar, &controlador);
 
 		int consola = buscar_consola(socket);
 		agregar_nueva_prog(consola, ultimo_pid, mensaje, socket);
@@ -212,7 +214,7 @@ void desconectar_consola(int socket)
 	int consola_muere = buscar_consola(socket);
 	if(consola_muere)
 	{
-		forzar_finalizacion(0, consola_muere, 0);
+		forzar_finalizacion(0, consola_muere, 0, 1); //dudo
 		eliminar_consola(consola_muere);
 	}
 	cerrar_conexion(socket);
@@ -262,6 +264,6 @@ int calcular_pag_stack()
 	{
 		paginas ++;
 	}
-
+	pag_stack = paginas;
 	return paginas;
 }

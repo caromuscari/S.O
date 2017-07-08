@@ -38,7 +38,6 @@ extern pthread_mutex_t mutex_cola_listos;
 extern t_configuracion *config;
 extern int tam_pagina;
 extern int flag_planificador;
-extern int pag_cod;
 int controlador;
 
 void finalizar_proceso(int pid, int codigo_finalizacion);
@@ -246,7 +245,6 @@ int calcular_pag(char *mensaje)
 		paginas ++;
 	}
 	free(tam);
-	pag_cod = paginas;
 	return paginas;
 }
 

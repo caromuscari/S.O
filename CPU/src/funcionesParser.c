@@ -4,24 +4,29 @@
  *  Created on: 31/5/2017
  *      Author: utnso
  */
-#include <stdio.h>
+
+#include "funcionesParser.h"
+
+#include <commons/collections/dictionary.h>
+#include <commons/collections/list.h>
+#include <commons/string.h>
+#include <parser/parser.h>
 #include <stdlib.h>
 #include <string.h>
-#include <commons/string.h>
-#include "funcionesParser.h"
-#include "funcionesCPU.h"
-#include "estructuras.h"
-#include "socket.h"
 #include <sys/socket.h>
+
+#include "estructuras.h"
+#include "funcionesCPU.h"
 #include "log.h"
+#include "mensajes.h"
+#include "socket.h"
 
 extern t_PCB_CPU* pcb;
 extern int sockKerCPU;
 extern int sockMemCPU;
-extern int tam_pagina_memoria;
-extern int n;
+extern int fifo;
 int FD;
-
+extern int accion_siguiente;
 
 t_puntero definirVariable(t_nombre_variable identificador_variable) {
 
@@ -30,10 +35,10 @@ t_puntero definirVariable(t_nombre_variable identificador_variable) {
 	if(identificador_variable >= '0' && identificador_variable <= '9'){
 		// definir nuevo argumento
 		t_memoria* nuevo_arg = malloc(sizeof(t_memoria));
-			nuevo_arg->ID = identificador_variable;
-			nuevo_arg->offset = calcular_offset(stack_actual->args,stack_actual->vars);
-			nuevo_arg->size = 4;
-			nuevo_arg->pag = 0;
+		nuevo_arg->ID = identificador_variable;
+		nuevo_arg->offset = calcular_offset(stack_actual->args,stack_actual->vars);
+		nuevo_arg->size = 4;
+		nuevo_arg->pag = calcular_pagina(nuevo_arg->offset,0);
 		list_add(stack_actual->vars,nuevo_arg);
 		list_replace(pcb->in_stack,pcb->SP,stack_actual);
 		posicion_retorno = nuevo_arg->offset;
@@ -41,10 +46,10 @@ t_puntero definirVariable(t_nombre_variable identificador_variable) {
 	}else if ((identificador_variable >= 'A' && identificador_variable <= 'Z') || (identificador_variable >= 'a' && identificador_variable <= 'z')){
 		// definir nueva variable
 		t_memoria* nueva_var = malloc(sizeof(t_memoria));
-			nueva_var->ID = identificador_variable;
-			nueva_var->offset = calcular_offset(stack_actual->args,stack_actual->vars);
-			nueva_var->size = 4;
-			nueva_var->pag = 0;
+		nueva_var->ID = identificador_variable;
+		nueva_var->offset = calcular_offset(stack_actual->args,stack_actual->vars);
+		nueva_var->size = 4;
+		nueva_var->pag = calcular_pagina(nueva_var->offset,0);
 		list_add(stack_actual->vars,nueva_var);
 		list_replace(pcb->in_stack,pcb->SP,stack_actual);
 		posicion_retorno = nueva_var->offset;
@@ -67,73 +72,34 @@ t_puntero obtenerPosicionVariable(t_nombre_variable identificador_variable) {
 	t_puntero posicion_retorno;
 
 	if(identificador_variable >= '0' && identificador_variable <= '9'){
-			int pos = identificador_variable - '0';
-			t_memoria* arg=list_get(stack_actual->args,pos);
-			posicion_retorno= arg->offset;
+		int pos = identificador_variable - '0';
+		t_memoria* arg=list_get(stack_actual->args,pos);
+		posicion_retorno= arg->offset;
 
-		}else if ((identificador_variable >= 'A' && identificador_variable <= 'Z') || (identificador_variable >= 'a' && identificador_variable <= 'z')){
-			posicion_retorno = buscar_offset_variable(stack_actual->vars,identificador_variable);
-		}
-		if(posicion_retorno == -1){
-			char * aux= string_from_format("OBTENER POSICION VARIABLE:%c no existe variable",identificador_variable);
-			escribir_log(aux,2);
-			free(aux);
-			return posicion_retorno;
-
-		}
-		char *aux= string_from_format("Se ejecutó OBTENER POSICION VARIABLE - identificador:%c - retorno:%d",identificador_variable,posicion_retorno);
-		escribir_log(aux,1);
+	}else if ((identificador_variable >= 'A' && identificador_variable <= 'Z') || (identificador_variable >= 'a' && identificador_variable <= 'z')){
+		posicion_retorno = buscar_offset_variable(stack_actual->vars,identificador_variable);
+	}
+	if(posicion_retorno == -1){
+		char * aux= string_from_format("OBTENER POSICION VARIABLE:%c no existe variable",identificador_variable);
+		escribir_log(aux,2);
 		free(aux);
 		return posicion_retorno;
+
+	}
+	char *aux= string_from_format("Se ejecutó OBTENER POSICION VARIABLE - identificador:%c - retorno:%d",identificador_variable,posicion_retorno);
+	escribir_log(aux,1);
+	free(aux);
+	return posicion_retorno;
 }
 
 t_valor_variable dereferenciar(t_puntero direccion_variable) {
 
-	char * mensaje = malloc(19);
-	char * pid;
-	char * pagina;
-	char *offset;
-	char *tam;
-	char * aux_ceros;
-	int desplazamiento=0;
+
+	int size=0;
 	int controlador=0;
 
-	pid = string_itoa(pcb->PID);
-	pagina = string_itoa(calcular_pagina(direccion_variable,pcb->cant_pag));
-	offset = string_itoa(direccion_variable);
-	tam = strdup("0004");
-	// PID
-	memcpy(mensaje+desplazamiento,"P01",3);
-	desplazamiento += 3;
-	aux_ceros = string_repeat('0',4-strlen(pid));
-	memcpy(mensaje+desplazamiento,aux_ceros,4-strlen(pid));
-	free(aux_ceros);
-	desplazamiento += 4-strlen(pid);
-	memcpy(mensaje+desplazamiento,pid,strlen(pid));
-	desplazamiento += strlen(pid);
-	// PAGINA
-	aux_ceros = string_repeat('0',4-strlen(pagina));
-	memcpy(mensaje+desplazamiento,aux_ceros,4-strlen(pagina));
-	free(aux_ceros);
-	desplazamiento += 4-strlen(pagina);
-	memcpy(mensaje+desplazamiento,pagina,strlen(pagina));
-	desplazamiento += strlen(pagina);
-	// OFFSET
-	aux_ceros = string_repeat('0',4-strlen(offset));
-	memcpy(mensaje+desplazamiento,aux_ceros,4-strlen(offset));
-	free(aux_ceros);
-	desplazamiento += 4-strlen(offset);
-	memcpy(mensaje+desplazamiento,offset,strlen(offset));
-	desplazamiento += strlen(offset);
-	// TAMAÑO
-	memcpy(mensaje+desplazamiento,tam,strlen(tam));
-	desplazamiento += strlen(tam);
-
-
-	enviar(sockMemCPU,mensaje,&controlador,19);
-	free(mensaje);
-	free(pid); free(pagina); free(offset);
-	free(tam);
+	char * mensaje = mensaje_leer_memoria(pcb->PID,direccion_variable,pcb->cant_pag,4,&size);
+	enviar(sockMemCPU,mensaje,&controlador,size);
 
 	char* mensaje_aux= malloc(4);
 	//recibir(sockMemCPU,&controlador,mensaje_aux,13);
@@ -151,7 +117,7 @@ t_valor_variable dereferenciar(t_puntero direccion_variable) {
 
 	free(valor_str); ; free(tam_rest);*/
 	int valor = atoi(mensaje_aux);
-	free(mensaje_aux);
+	free(mensaje_aux);free(mensaje);
 
 
 
@@ -161,7 +127,7 @@ t_valor_variable dereferenciar(t_puntero direccion_variable) {
 	escribir_log(str_aux,1);
 	free(str_aux);
 
-		return valor;
+	return valor;
 }
 
 void asignar(t_puntero direccion_variable, t_valor_variable valor) {
@@ -188,27 +154,14 @@ void asignar(t_puntero direccion_variable, t_valor_variable valor) {
 }
 
 t_valor_variable obtenerValorCompartida(t_nombre_compartida variable) {
-	char * mensaje = malloc(13+strlen(variable));
-	char * aux_ceros;
-	char * leng = string_itoa(strlen(variable));
-	int desplazamiento =0; int controlador=0;
-	// COD
-	memcpy(mensaje+desplazamiento,"P09",3);
-	desplazamiento += 3;
-	// TAMAÑO RESTO MENSAJE
-	aux_ceros = string_repeat('0',10-strlen(leng));
-	memcpy(mensaje+desplazamiento,aux_ceros,10-strlen(leng));
-	free(aux_ceros);
-	desplazamiento += 10-strlen(leng);
-	memcpy(mensaje+desplazamiento,leng,strlen(leng));
-	desplazamiento += strlen(leng);
 
-	// VARIABLE COMPARTIDA
-	memcpy(mensaje+desplazamiento,variable,strlen(variable));
+	char *variable_compartida = strdup(variable);
+	string_trim(&variable_compartida);
+	int size=0; int controlador=0;
+	char *mensaje = mensaje_variable_kernel(9,variable_compartida,0,&size);
 
-	enviar(sockKerCPU,mensaje,&controlador,13+strlen(variable));
-	free(mensaje);
-	free(leng);
+	enviar(sockKerCPU,mensaje,&controlador,size);
+	free(mensaje);free(variable_compartida);
 
 	char * mensaje_r = malloc(7);
 	recibir(sockKerCPU,&controlador,mensaje_r,7);
@@ -226,51 +179,41 @@ t_valor_variable obtenerValorCompartida(t_nombre_compartida variable) {
 
 t_valor_variable asignarValorCompartida(t_nombre_compartida variable,t_valor_variable valor) {
 
-	char * mensaje = malloc(13+strlen(variable)+4);
-	int desplazamiento = 0;
-	char * aux_ceros;
-	char * leng = string_itoa(strlen(variable)+4);
-	char * str_valor = string_itoa(valor);
+
+	int size,v_retorno;
 	int controlador = 0;
-	// COD
-	memcpy(mensaje+desplazamiento,"P10",3);
-	desplazamiento += 3;
-	// LENGTH VAR
-	aux_ceros = string_repeat('0',10-strlen(leng));
-	memcpy(mensaje+desplazamiento,aux_ceros,10-strlen(leng));
-	free(aux_ceros);
-	desplazamiento += 10-strlen(leng);
-	memcpy(mensaje+desplazamiento,leng,strlen(leng));
-	desplazamiento += strlen(leng);
-	free(leng);
-	// VARIABLE
-	memcpy(mensaje+desplazamiento,variable,strlen(variable));
-	desplazamiento += strlen(variable);
-	// VALOR
-	aux_ceros = string_repeat('0',4-strlen(str_valor));
-	memcpy(mensaje+desplazamiento,aux_ceros, 4-strlen(str_valor));
-	free(aux_ceros);
-	desplazamiento += 4-strlen(str_valor);
-	memcpy(mensaje+desplazamiento,str_valor,strlen(str_valor));
+	char * variable_compartida = strdup(variable);
+	string_trim(&variable_compartida);
 
-	enviar(sockKerCPU,mensaje,&controlador,17+strlen(variable));
-	free(mensaje); free(str_valor);
+	char *mensaje = mensaje_variable_kernel(10,variable_compartida,valor,&size);
 
-	char * respuesta= malloc(2);
-	recibir(sockKerCPU,&controlador,respuesta,2);
-	if(strncmp(respuesta,"OK",2)){
+	enviar(sockKerCPU,mensaje,&controlador,size);
+	free(mensaje);free(variable_compartida);
+
+	char * respuesta= malloc(17);
+	recibir(sockKerCPU,&controlador,respuesta,17);
+
+	if(strncmp(respuesta,"OK",2)==0){
 		char * aux =string_from_format("Ejecute ASIGNAR VALOR COMPARTIDA %s valor %d",variable,valor);
 		escribir_log(aux,1);
 		free(aux);
-		free(respuesta);
-		return valor;
-	}else{
+		v_retorno = valor;
+
+	}else if(strncmp(respuesta,"K21",3)==0){
+		fifo = FINALIZAR_POR_ERROR;
+		accion_siguiente = FINALIZAR_POR_ERROR;
+		char *str_cod_error = string_substring(respuesta,13,4);
+		int codigo_error = (-1)* (atoi(str_cod_error));
+		pcb->exit_code = codigo_error;
 		char * aux =string_from_format("ERROR ASIGNANDO VALOR COMPARTIDA %s valor %d",variable,valor);
 		escribir_log(aux,1);
 		free(aux);
-		free(respuesta);
-		return -1;
+		free(str_cod_error);
+		v_retorno = -1;
 	}
+
+	free(respuesta);
+	return v_retorno;
 }
 
 void irAlLabel(t_nombre_etiqueta etiqueta) {
@@ -313,9 +256,9 @@ void llamarSinRetorno (t_nombre_etiqueta etiqueta){
 }
 
 void finalizar(void) {
-	n= FINALIZAR_PROGRAMA;
-	/* devolver pbc a kernel avisandole que se retira de la cpu por finalizacion normal del programa
-	 * */
+	fifo = FINALIZAR_PROGRAMA;
+	accion_siguiente = FINALIZAR_PROGRAMA;
+
 
 	escribir_log("Ejecute FINALIZAR",1);
 }
@@ -342,99 +285,324 @@ void retornar(t_valor_variable retorno) {
 
 	}else if(strncmp(respuesta,"M03",3)== 0){
 		char * aux = string_from_format("ERROR ejecutando RETORNAR con valor de retorno %d",retorno);
-		escribir_log(aux,1);
+		escribir_log(aux,2);
 		free(aux);
 	}
 	free(respuesta);
 }
 
-void wait(t_nombre_semaforo identificador_semaforo) {
+void ts_wait(t_nombre_semaforo identificador_semaforo) {
 
 	int controlador=0;int size=0;
-	char *mensaje = mensaje_semaforo("P13",identificador_semaforo,&size);
+	char *semaforo = strdup(identificador_semaforo);
+	string_trim(&semaforo);
+	char *mensaje = mensaje_semaforo("P14",semaforo,&size);
 	enviar(sockKerCPU,mensaje,&controlador,size);
 	free(mensaje);
 
-	char * logi = string_from_format("Ejecute WAIT sobre semaforo %s",identificador_semaforo);
-	escribir_log(logi,1);
-	free(logi);
+	char *respuesta = malloc(17);
+	recibir(sockKerCPU,&controlador,respuesta,17);
+
+	if(strncmp(respuesta,"OK",2) == 0){
+		char * logi = string_from_format("Ejecute WAIT sobre semaforo %s",identificador_semaforo);
+		escribir_log(logi,1);
+		free(logi);
+	}else if(strncmp(respuesta,"K23",3)==0){
+		fifo = FINALIZAR_PROGRAMA;
+		accion_siguiente = BLOQUEAR_PROCESO;
+		char * logi = string_from_format("Ejecute WAIT sobre semaforo %s y me bloqueo",identificador_semaforo);
+		escribir_log(logi,1);
+		free(logi);
+
+	}else if(strncmp(respuesta,"K21",3)==0){
+		fifo = FINALIZAR_POR_ERROR;
+		accion_siguiente = FINALIZAR_POR_ERROR;
+		char *cod_error= string_substring(respuesta,13,4);
+		int codigo_error= (-1)*(atoi(cod_error));
+		pcb->exit_code = codigo_error;
+		char * logi = string_from_format("ERROR ejecutando WAIT sobre semaforo %s",identificador_semaforo);
+		escribir_log(logi,2);
+		free(logi);free(cod_error);
+	}
+	free(respuesta);
+
 }
 
-void signale(t_nombre_semaforo identificador_semaforo) {
-	escribir_log("Ejecute signale",1);
+void ts_signale(t_nombre_semaforo identificador_semaforo) {
+
+	int size=0; int controlador = 0;
+	char *mensaje = mensaje_semaforo("P15",identificador_semaforo,&size);
+	enviar(sockKerCPU,mensaje,&controlador,size);
+	free(mensaje);
+
+	char *respuesta = malloc(17);
+	recibir(sockMemCPU,&controlador,respuesta,17);
+
+	if(strncmp(respuesta,"OK",2) == 0){
+
+		char * logi = string_from_format("Ejecute SIGNAL sobre semaforo %s",identificador_semaforo);
+		escribir_log(logi,1);
+		free(logi);
+
+	}else if(strncmp(respuesta,"K21",2)==0){
+
+		fifo = FINALIZAR_POR_ERROR;
+		accion_siguiente = FINALIZAR_POR_ERROR;
+
+		char *cod_error= string_substring(respuesta,13,4);
+		int codigo_error= (-1)*(atoi(cod_error));
+		pcb->exit_code = codigo_error;
+
+		char * logi = string_from_format("Ejecute SIGNAL sobre semaforo %s y resulto erroneo",identificador_semaforo);
+		escribir_log(logi,2);
+		free(logi);
+		free(cod_error);
+	}
+	free(respuesta);
+}
+
+t_puntero reservar (t_valor_variable espacio){
+
+	int size;int controlador = 0;int puntero_retorno=0;
+	char *mensaje = mensaje_heap("P17",espacio,&size);
+	enviar(sockKerCPU,mensaje,&controlador,size);
+	free(mensaje);
+
+	char *respuesta= malloc(13);
+	recibir(sockKerCPU,&controlador,respuesta,13);
+
+	if(strncmp(respuesta,"K99",3)==0){
+
+		char *str_size_mensaje = string_substring(respuesta,3,10);
+		int size_mensaje = atoi(str_size_mensaje);
+
+		char *str_puntero = malloc(size_mensaje);
+		recibir(sockKerCPU,&controlador,str_puntero,size_mensaje);
+		puntero_retorno = atoi(str_puntero);
+
+		char *aux_log = string_from_format("Ejecute RESERVAR heap de %d y Kernel lo aloco en el puntero %d",espacio,puntero_retorno);
+		escribir_log(aux_log,1);
+		free(aux_log);
+		free(str_size_mensaje);
+		free(str_puntero);
+
+	}else  if(strncmp(respuesta,"K21",3)==0){
+
+		char *str_error=string_substring(respuesta,13,4);
+		int cod_error = atoi(str_error);
+		pcb->exit_code = cod_error;
+
+		fifo= FINALIZAR_POR_ERROR;
+		accion_siguiente = FINALIZAR_POR_ERROR;
+
+		char *aux_log = string_from_format("ERROR RESERVANDO heap de %d",espacio);
+		escribir_log(aux_log,2);
+		free(aux_log);
+		free(str_error);
+
+	}
+
+	free(respuesta);
+	return puntero_retorno;
+}
+
+void liberar (t_puntero puntero){
+
+	int size;int controlador;
+	char *mensaje = mensaje_heap("P18",puntero,&size);
+	enviar(sockKerCPU,mensaje,&controlador,size);
+	free(mensaje);
+
+	char *respuesta= malloc(13);
+	recibir(sockKerCPU,&controlador,respuesta,13);
+
+	if(strncmp(respuesta,"OK",2)==0){
+
+		char *aux_log = string_from_format("Ejecute LIBERAR de memoria reservada en puntero %d",puntero);
+		escribir_log(aux_log,1);
+		free(aux_log);
+
+	}else  if(strncmp(respuesta,"K21",3)==0){
+
+		char *str_error=string_substring(respuesta,13,4);
+		int cod_error = atoi(str_error);
+		pcb->exit_code = cod_error;
+
+		fifo= FINALIZAR_POR_ERROR;
+		accion_siguiente = FINALIZAR_POR_ERROR;
+
+		char *aux_log = string_from_format("ERROR LIBERANDO puntero %d",puntero);
+		escribir_log(aux_log,2);
+		free(aux_log);
+		free(str_error);
+
+	}
+
+	free(respuesta);
 }
 
 void escribir (t_descriptor_archivo descriptor_archivo, void* informacion, t_valor_variable tamanio){
 	char * logi = string_from_format("Void * informacion:%s, tamanio:%d",(char *) informacion,tamanio);
 	escribir_log(logi,1);
 	free(logi);
-	if(descriptor_archivo == 1){
 
-		char * mensaje = malloc(13+tamanio);
-			int desplazamiento = 0;
-			char * aux_ceros;
-			char * str_valor = string_itoa(strlen(informacion));
-			int controlador = 0;
-			// COD
-			memcpy(mensaje+desplazamiento,"P11",3);
-			desplazamiento += 3;
-			aux_ceros = string_repeat('0',10-strlen(str_valor));
-			memcpy(mensaje+desplazamiento,aux_ceros,10-strlen(str_valor));
-			free(aux_ceros);
-			desplazamiento += 10-strlen(str_valor);
-			memcpy(mensaje+desplazamiento,str_valor,strlen(str_valor));
-			desplazamiento += strlen(str_valor);
-			free(str_valor);
-			// VARIABLE
-			memcpy(mensaje+desplazamiento,informacion,tamanio);
-			desplazamiento += tamanio;
+	int size=0;int controlador=0;
+	char *mensaje= mensaje_escribir_kernel(descriptor_archivo,informacion,tamanio,&size);
+	enviar(sockKerCPU,mensaje,&controlador,size);
+	free(mensaje);
 
-			enviar(sockKerCPU,mensaje,&controlador,13+tamanio);
-			free(mensaje);
+	char * respuesta= malloc(17);
+	recibir(sockKerCPU,&controlador,respuesta,17);
+	if(strncmp(respuesta,"K21",3)==0){
 
-			char * respuesta= malloc(2);
-			recibir(sockKerCPU,&controlador,respuesta,2);
-			if(strncmp(respuesta,"OK",2)==0){
-				char * logi = string_from_format("Ejecute ESCRIBIR con file descriptor %d",descriptor_archivo);
-				escribir_log(logi,1);
-				free(logi);
-			}else{
-				char * logi = string_from_format("ERROR ESCRIBIR con file descriptor %d",descriptor_archivo);
-				escribir_log(logi,2);
-				free(logi);
-			}
+		fifo= FINALIZAR_POR_ERROR;
+		accion_siguiente = FINALIZAR_POR_ERROR;
 
+		char *cod_error= string_substring(respuesta,13,4);
+		int codigo_error = (-1)*(atoi(cod_error));
+		pcb->exit_code = codigo_error;
+
+		char * logi = string_from_format("ERROR:%d ESCRIBIENDO con file descriptor %d",cod_error,descriptor_archivo);
+		escribir_log(logi,2);
+		free(logi);
+		free(cod_error);
+
+	}else{
+
+		char * logi = string_from_format("Ejecute ESCRIBIR con file descriptor %d",descriptor_archivo);
+		escribir_log(logi,1);
+		free(logi);
 	}
-}
 
-void moverCursor (t_descriptor_archivo descriptor_archivo, t_valor_variable posicion){
-	escribir_log("Ejecute moverCursor",1);
-}
+	free(respuesta);
 
-void liberar (t_puntero puntero){
-	escribir_log("Ejecute liberar",1);
-}
-
-t_puntero reservar (t_valor_variable espacio){
-	escribir_log("Ejecute reservar",1);
-	return 1;
 }
 
 t_descriptor_archivo abrir (t_direccion_archivo direccion, t_banderas flags){
-	escribir_log("Ejecute abrir",1);
-	return 1;
+
+	int size; int controlador;
+	char *aux_dire = strdup(direccion);
+	string_trim(&aux_dire);
+
+	char *mensaje = mensaje_abrir(aux_dire,flags,&size);
+	enviar(sockKerCPU,mensaje,&controlador,size);
+	free(mensaje);
+
+	char *respuesta = malloc(13);
+	char *str_tam;
+	int tam;int fd;
+
+	recibir(sockKerCPU,&controlador,respuesta,13);
+	str_tam = string_substring(respuesta,3,10);
+	tam = atoi(str_tam);
+	char *str_fd = malloc(tam);
+	recibir(sockKerCPU,&controlador,str_fd,tam);
+	fd = atoi(str_fd);
+
+	if(fd >= 0){
+
+		char *aux_log = string_from_format("Ejecute ABRIR direccion %s y se le asoció el FD %d",direccion,fd);
+		escribir_log(aux_log,1);
+		free(aux_log);
+
+	}else {
+		fifo = FINALIZAR_POR_ERROR;
+		accion_siguiente = FINALIZAR_POR_ERROR;
+
+		pcb->exit_code = fd;
+
+		char *aux_log = string_from_format("ERROR ABRIENDO direccion %s",direccion);
+		escribir_log(aux_log,2);
+		free(aux_log);
+
+	}
+
+	free(respuesta);
+	free(str_tam);
+	free(str_fd);
+
+	return fd;
+}
+
+void moverCursor (t_descriptor_archivo descriptor_archivo, t_valor_variable posicion){
+
+	int size; int controlador;
+	char *mensaje = mensaje_moverCursor(descriptor_archivo,posicion,&size);
+	enviar(sockKerCPU,mensaje,&controlador,size);
+	free(mensaje);
+
+	char *aux_log = string_from_format("Ejecute CERRAR en FD %d",descriptor_archivo);
+	escribir_log(aux_log,1);
+	free(aux_log);
 }
 
 void leer (t_descriptor_archivo descriptor_archivo, t_puntero informacion, t_valor_variable tamanio){
-	escribir_log("Ejecute leer",1);
+
+	int size = 0; int controlador = 0;
+
+	char *mensaje = mensaje_leer_kernel(descriptor_archivo,tamanio,&size);
+	enviar(sockKerCPU,mensaje,&controlador,size);
+	free(mensaje);
+
+	char * respuesta= malloc(13);
+	recibir(sockKerCPU,&controlador,respuesta,13);
+	if(strncmp(respuesta,"K21",3)==0){
+
+		fifo= FINALIZAR_POR_ERROR;
+		accion_siguiente = FINALIZAR_POR_ERROR;
+
+		char *cod_error= malloc(4);
+		recibir(sockKerCPU,&controlador,cod_error,4);
+		int codigo_error = (-1)*(atoi(cod_error));
+		pcb->exit_code = codigo_error;
+
+		char * logi = string_from_format("ERROR:%d LEYENDO con file descriptor %d",cod_error,descriptor_archivo);
+		escribir_log(logi,2);
+		free(logi);
+		free(cod_error);
+
+	}else{
+		char *size_mensaje = string_substring(respuesta,3,10);
+		int size_mensaj = atoi(size_mensaje);
+
+		char *lectura = malloc(size_mensaj);
+		recibir(sockKerCPU,&controlador,lectura,size_mensaj);
+
+		//preguntar si lo escribo en memoria o lo asigno en una variable alocada dinamicamente
+
+		char * logi = string_from_format("Ejecute LEER %d con file descriptor %d alojar en %d",tamanio,descriptor_archivo,informacion);
+		escribir_log(logi,1);
+		free(logi);
+
+		free(size_mensaje);
+		free(lectura);
+	}
+
+	free(respuesta);
 }
 
 void cerrar (t_descriptor_archivo descriptor_archivo){
-	escribir_log("Ejecute cerrar",1);
+
+	int size; int controlador;
+	char *mensaje = mensaje_borrar_cerrar(6,descriptor_archivo,&size);
+	enviar(sockKerCPU,mensaje,&controlador,size);
+	free(mensaje);
+
+	char *aux_log = string_from_format("Ejecute CERRAR en FD %d",descriptor_archivo);
+	escribir_log(aux_log,1);
+	free(aux_log);
 }
 
-void borrar (t_descriptor_archivo direccion){
-	escribir_log("Ejecute borrar",1);
+void borrar (t_descriptor_archivo descriptor_archivo){
+
+	int size; int controlador;
+	char *mensaje = mensaje_borrar_cerrar(7,descriptor_archivo,&size);
+	enviar(sockKerCPU,mensaje,&controlador,size);
+	free(mensaje);
+
+	char *aux_log = string_from_format("Ejecute CERRAR en FD %d",descriptor_archivo);
+	escribir_log(aux_log,1);
+	free(aux_log);
 }
 
 AnSISOP_funciones funcionesTodaviaSirve = {
@@ -451,14 +619,14 @@ AnSISOP_funciones funcionesTodaviaSirve = {
 		.AnSISOP_finalizar = finalizar,};
 
 AnSISOP_kernel funcionesKernelTodaviaSirve = {
-				.AnSISOP_wait = wait,
-				.AnSISOP_signal =signale,
-				.AnSISOP_reservar = reservar,
-				.AnSISOP_liberar =liberar,
-				.AnSISOP_abrir = abrir,
-				.AnSISOP_borrar = borrar,
-				.AnSISOP_cerrar = cerrar,
-				.AnSISOP_escribir = escribir,
-				.AnSISOP_leer = leer,
-				.AnSISOP_moverCursor = moverCursor,
+		.AnSISOP_wait = ts_wait,
+		.AnSISOP_signal = ts_signale,
+		.AnSISOP_reservar = reservar,
+		.AnSISOP_liberar =liberar,
+		.AnSISOP_abrir = abrir,
+		.AnSISOP_borrar = borrar,
+		.AnSISOP_cerrar = cerrar,
+		.AnSISOP_escribir = escribir,
+		.AnSISOP_leer = leer,
+		.AnSISOP_moverCursor = moverCursor,
 };
