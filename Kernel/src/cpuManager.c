@@ -134,8 +134,39 @@ void responder_solicitud_cpu(int socket_, char *mensaje)
 			free(offset);
 			free(fd_);
 			break;
+		case 5 : ;//pedido de escritura
+
+			char *info = get_mensaje_escritura_info(mensaje);
+			char *fd_fi = get_mensaje_escritura_fd(mensaje);
+			int fd_file = atoi(fd_fi);
+			char *path = get_path(fd_file);
+			char *header = get_header(mensaje);
+			t_TAP *arch = buscar_archivo_TAP(prog->TAP, fd_file);
+
+			if (arch == NULL)
+			{
+				forzar_finalizacion(prog->PID, 0, 13, 1);
+			}else escribir_archivo(0, info, arch->flag, path, socket_, prog);
+
+			free(info);
+			free(header);
+			free(path);
+			free(fd_fi);
+			break;
+		case 6: ;//pedido de lectura
+			char *info2 = get_mensaje_escritura_info(mensaje);
+			int size4 = atoi(info2);
+			char *fd_fi2 = get_mensaje_escritura_fd(mensaje);
+			int fd_file2 = atoi(fd_fi2);
+			char *path2 = get_path(fd_file2);
+
+			pedido_lectura(prog, fd_file2, 0, size4, path2, socket_);
+			break;
 		case 9:	;
 			escribir_log("Se recibió una petición de CPU para obtener valor de variable compartida");
+			char *vglobal = get_mensaje(mensaje);
+			get_vglobal(vglobal,prog, socket_);
+			free(mensaje);
 			break;
 
 		case 10: ;
@@ -157,7 +188,7 @@ void responder_solicitud_cpu(int socket_, char *mensaje)
 			free(mensaje_enviar);
 			break;
 		case 12 : ;
-			char *mensaje_r = get_mensaje(mensaje);
+			char *mensaje_r = get_mensaje_pcb(mensaje);
 			t_PCB *pcb_actualizado =deserializarPCB_CPUKer(mensaje_r);
 			actualizar_pcb(prog, pcb_actualizado);
 			finalizar_quantum(pcb_actualizado->PID);
@@ -168,7 +199,7 @@ void responder_solicitud_cpu(int socket_, char *mensaje)
 			free(mensaje_r);
 			break;
 		case 13: ;
-			char *mensaje_r2 = get_mensaje(mensaje);
+			char *mensaje_r2 = get_mensaje_pcb(mensaje);
 			t_PCB *pcb_actualizado2 =deserializarPCB_CPUKer(mensaje_r2);
 			actualizar_pcb(prog, pcb_actualizado2);
 			finalizar_proceso(pcb_actualizado2->PID, pcb_actualizado2->exit_code);
@@ -190,14 +221,30 @@ void responder_solicitud_cpu(int socket_, char *mensaje)
 			break;
 		case 17: ;//alloc
 			char *mensaje4 = get_mensaje(mensaje);
-			int size = atoi(mensaje4);
-			reservar_memoria_din(prog, size);
+			int size2 = atoi(mensaje4);
+			reservar_memoria_din(prog, size2);
 			free(mensaje4);
 			break;
 		case 18: ;//free
 			char *offset_bloque = get_mensaje(mensaje);
 			liberar_bloque(prog, offset_bloque);
 			free(offset_bloque);
+			break;
+		case 19:;
+			char *mensaje_pcb = recibir(socket_,&controlador);
+			char *cod_pcb = get_codigo(mensaje_pcb);
+			if(atoi(cod_pcb)==20)
+			{
+				char *pcb_serializado = get_mensaje_pcb(mensaje_pcb);
+				t_PCB* pcba = deserializarPCB_CPUKer(pcb_serializado);
+				actualizar_pcb(prog, pcba);
+				finalizar_quantum(prog->PID);
+				free(pcb_serializado);
+			}
+			free(cod_pcb);
+
+			// Agregar PCB a cola correspondiente
+			// Desconectar CPU;
 			break;
 		default:
 			;

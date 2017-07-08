@@ -71,8 +71,8 @@ char * get_mensaje(char *mensaje)
 	return string_substring(mensaje, 13, payload1);
 }
 
-char *get_mensaje_pcb(char *mensaje){
-
+char *get_mensaje_pcb(char *mensaje)
+{
 	char *payload = malloc(10);
 	memcpy(payload,mensaje+3,10);
 	int payload1 = atoi(payload);
@@ -82,5 +82,17 @@ char *get_mensaje_pcb(char *mensaje){
 	memcpy(pcb_serializado,mensaje+13,payload1);
 
 	return pcb_serializado;
+}
 
+char *get_mensaje_escritura_info(char *mensaje)
+{
+	char *payload = string_substring(mensaje, 3, 10);
+	int payload1 = atoi(payload);
+	free(payload);
+	return string_substring(mensaje, 17, payload1-4);
+}
+
+char *get_mensaje_escritura_fd(char *mensaje)
+{
+	return string_substring(mensaje, 13, 4);
 }

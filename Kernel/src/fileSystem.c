@@ -12,6 +12,7 @@
 #include "manejo_errores.h"
 #include "log.h"
 #include "mensaje.h"
+#include "planificador.h"
 
 extern t_list *global_fd;
 extern t_configuracion *config;
@@ -31,7 +32,7 @@ void cerrar_file(t_list *tap, int fd);
 char *get_path_msg(char *mensaje, int *payload1);
 char *get_info(char *mensaje, int payload1, int tam_info);
 void abrir_crear(char *mensaje, t_program *prog, int socket_cpu);
-void escribir_archivo(int offset, char *info, char *flags, char *path, int socket_cpu);
+void escribir_archivo(int offset, char *info, char *flags, char *path, int socket_cpu, t_program *pr);
 void chequear_respuesta(int socket_cpu, char *path, char *flag, t_program *prog);
 void crear_archivo(int socket_cpu, char *path, char *flag, t_program *prog);
 char *armar_info_mensaje(char *info, char* path);
@@ -135,16 +136,18 @@ void pedido_lectura(t_program *prog, int fd, int offs, int size, char *path, int
 				if(cod == 4)
 				{
 					char *mensaje_leido = get_mensaje(mensaje_recibido);
-					enviar(socket_cpu, mensaje_leido, &controlador);
+					char *m_envi = armar_mensaje("K88", mensaje_leido);
+					enviar(socket_cpu, m_envi, &controlador);
 					free(mensaje_leido);
+					free(m_envi);
 				}
 			}
 			free(header);
 			free(mensaje_recibido);
 
-		}else /* eliminar programa, pedido de lectura sin permiso*/;
+		}else forzar_finalizacion(prog->PID, 0, 7, 1);/* eliminar programa, pedido de lectura sin permiso*/;
 
-	}//else //eliminar programa por querer leer un arch no abierto
+	}else forzar_finalizacion(prog->PID, 0, 7, 1);//eliminar programa por querer leer un arch no abierto
 
 }
 
@@ -197,8 +200,8 @@ void mover_puntero(int socket_cpu, int offset, int fd, t_program *prog)
 				t_TAP *arch = buscar_archivo_TAP(prog->TAP, fd);
 				if (arch == NULL)
 				{
-					//hablar con lean
-				}else escribir_archivo(offset, info, arch->flag, path, socket_cpu);
+					forzar_finalizacion(prog->PID, 0, 7, 1);
+				}else escribir_archivo(offset, info, arch->flag, path, socket_cpu, prog);
 				free(info);
 				break;
 			case 6: ;//pedido de lectura
@@ -214,7 +217,7 @@ void mover_puntero(int socket_cpu, int offset, int fd, t_program *prog)
 	free(header);
 }
 
-void escribir_archivo(int offset, char *info, char *flags, char *path, int socket_cpu)
+void escribir_archivo(int offset, char *info, char *flags, char *path, int socket_cpu, t_program *pr)
 {
 	if (string_contains(flags, "w"))
 	{
@@ -232,9 +235,12 @@ void escribir_archivo(int offset, char *info, char *flags, char *path, int socke
 			int codigo = atoi(mensaje);
 			if(codigo== 5)
 			{
-				/*char *mensaje_leido = get_mensaje(mensaje_recibido);
-				enviar(socket_cpu, mensaje_leido, &controlador);*/
+				//char *mensaje_leido = get_mensaje(mensaje_recibido);
+				enviar(socket_cpu, "OK00000", &controlador);
 				//enviar ok 5 ceros
+			}else
+			{
+				forzar_finalizacion(pr->PID, 0, 7, 1);
 			}
 			free(cod);
 		}

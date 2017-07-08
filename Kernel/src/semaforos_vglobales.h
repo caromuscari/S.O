@@ -17,6 +17,6 @@ void inicializar_vglobales();
 int lock_vglobal(t_vglobal *vg, int prog);
 void unlock_vglobal();
 void set_vglobal(char *vglobal, int num, t_program *prog, int socket_);
-void get_vglobal(char *vglobal, int num, t_program *prog, int socket_);
+void get_vglobal(char *vglobal, t_program *prog, int socket_);
 
 #endif /* SEMAFOROS_H_ */

@@ -15,11 +15,12 @@
 #include "metadata.h"
 #include "cpuManager.h"
 
-extern char *sem_id;
-extern char *sem_in;
-extern char *shared;
+//extern char *sem_id;
+//extern char *sem_in;
+//extern char *shared;
 extern t_dictionary *sems;
 extern t_dictionary *vglobales;
+extern t_configuracion *config;
 
 void inicializar_sems();
 void sem_signal(t_program *prog, char *sema, int socket_, int free_all);
@@ -28,11 +29,11 @@ void inicializar_vglobales();
 int lock_vglobal(t_vglobal *vg, int prog);
 void unlock_vglobal();
 void set_vglobal(char *vglobal, int num, t_program *prog, int socket_);
-void get_vglobal(char *vglobal, int num, t_program *prog, int socket_);
+void get_vglobal(char *vglobal, t_program *prog, int socket_);
 
 void inicializar_sems()
 {
-	sems = dictionary_create();
+	/*sems = dictionary_create();
 	t_sem *sem = malloc (sizeof(t_sem));
 	sem->value = 1;
 	sem->procesos = queue_create();
@@ -43,15 +44,11 @@ void inicializar_sems()
 	vg->mutex_ = 1;
 	vg->value = 0;
 	vg->procesos = queue_create();
-	dictionary_put(vglobales, "!Global", vg);
-	/*
+	dictionary_put(vglobales, "!Global", vg);*/
+
 	sems = dictionary_create();
-	int l_id = string_length(sem_id);
-	char *id_aux = string_substring(sem_id, 1, l_id - 1);
-	int l_in = string_length(sem_in);
-	char *in_aux = string_substring(sem_id, 1, l_in - 1);
-	char **ids = string_split(id_aux, ",");
-	char **ins = string_split(in_aux, ",");
+	char **ids = config->sem_ids;
+	char **ins = config->sem_init;
 	int n = 0;
 
 	while (ids[n] != NULL)
@@ -71,13 +68,12 @@ void inicializar_sems()
 
 	free(ids);
 	free(ins);
-	hacer frees*/
 }
 
 void inicializar_vglobales()
 {
 	vglobales = dictionary_create();
-	char **ids = string_split(shared, ",");
+	char **ids = config->shared_vars;
 	int n = 0;
 
 	while (ids[n] != NULL)
@@ -142,25 +138,70 @@ void sem_wait_(t_program *proceso, char *sema, int socket_)
 	}
 }
 
-void sem_signal(t_program *prog, char *sema, int socket_, int free_all)//cuando te mando 1 es porque tenes que liberar todo!!! FEA!!
+void sem_signal(t_program *prog, char *sema, int socket_, int free_all)//cuando te mando 1 es porque tenes que liberar
 {
-	t_sem *sem = (t_sem *)dictionary_get(sems, sema);
-
-	if(sem != NULL)
+	void _eliminar_proceso(t_sem *sem)
 	{
-		sem->value ++;
+		t_queue *sems_aux = queue_create();
 
-		if (sem->value <= 0)
+		while(queue_size(sem->procesos))
+			queue_push(sems_aux,queue_pop(sem->procesos));
+
+		while(queue_size(sems_aux))
 		{
-			int proc = (int)queue_pop(sem->procesos);
-			desbloquear_proceso(proc);
+			int pid =(int) queue_pop(sems_aux);
+			if(pid == prog->PID)
+			{
+				sem->value++;
+
+				if(queue_size(sem->procesos))
+				{
+					if (sem->value <= 0)
+					{
+						int proc = (int)queue_pop(sems_aux);
+						desbloquear_proceso(proc);
+					}
+				}
+				else if (queue_size(sems_aux))
+				{
+					if (sem->value <= 0)
+					{
+						int proc = (int)queue_pop(sem->procesos);
+						desbloquear_proceso(proc);
+					}
+				}
+			}
+			else
+			{
+				queue_push(sem->procesos,(void *)pid);
+			}
 		}
-		int controlador;
-		enviar(socket_, "OK000000000000000", &controlador);
-	}else
+	}
+
+	if (free_all)
 	{
-		//eliminar el proceso, signal a semaforo invalido
-		forzar_finalizacion(prog->PID, 0, 11, 1);
+		dictionary_iterator(sems, (void*)_eliminar_proceso);
+	}
+	else
+	{
+		t_sem *sem = (t_sem *)dictionary_get(sems, sema);
+
+		if(sem != NULL)
+		{
+			sem->value ++;
+
+			if (sem->value <= 0)
+			{
+				int proc = (int)queue_pop(sem->procesos);
+				desbloquear_proceso(proc);
+			}
+			int controlador;
+			enviar(socket_, "OK000000000000000", &controlador);
+		}else
+		{
+			//eliminar el proceso, signal a semaforo invalido
+			forzar_finalizacion(prog->PID, 0, 11, 1);
+		}
 	}
 }
 
@@ -212,7 +253,7 @@ void set_vglobal(char *vglobal, int num, t_program *prog, int socket_)
 	}else forzar_finalizacion(prog->PID, 0, 12, 1);
 }
 
-void get_vglobal(char *vglobal, int num, t_program *prog, int socket_)
+void get_vglobal(char *vglobal, t_program *prog, int socket_)
 {
 	t_vglobal *vg = (t_vglobal *)dictionary_get(vglobales, vglobal);
 	int controlador1;
@@ -221,7 +262,7 @@ void get_vglobal(char *vglobal, int num, t_program *prog, int socket_)
 	{
 		char *pid_aux = string_itoa(vg->value);
 		int size_pid = string_length(pid_aux);
-		char *completar = string_repeat('0', 4 - size_pid);
+		char *completar = string_repeat('0', 10 - size_pid);
 		char *mensaje = strdup("K92");
 		string_append(&mensaje, completar);
 		string_append(&mensaje, pid_aux);
