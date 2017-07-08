@@ -12,12 +12,14 @@
 #include <commons/string.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/socket.h>
 
 #include "estructuras.h"
 #include "log.h"
 #include "socket.h"
 
 extern int tam_pagina_memoria;
+extern t_PCB_CPU* pcb;
 
 t_dictionary* armarDiccionarioEtiquetas(char* etiquetas_serializadas){
 	t_dictionary* dicc = dictionary_create();
@@ -44,28 +46,28 @@ t_dictionary* armarDiccionarioEtiquetas(char* etiquetas_serializadas){
 	return dicc;
 
 }
-char* serializarPCB_CPUKer (t_PCB_CPU* pcb,int * devolveme){
+char* serializarPCB_CPUKer (t_PCB_CPU* pcb1,int * devolveme){
 	char *retorno;
 	//int sizeretorno = tamaño_PCB(pcb);
-	int size_retorno = sizeof(int)*6; //(int) SIZEOF MENSAJE,PID,PC,CANT_PAGINAS,SP,EXIT_CODE
+	int size_retorno = sizeof(int)*5; //(int) SIZEOF MENSAJE,PID,PC,CANT_PAGINAS,SP,EXIT_CODE
 	// TAMAÑO_SENTENCIAS_SERIALIZADAS + SENTENCIAS_SERIALIZADAS (c/sentencias : (int)inicio,(int)offset)
 	// en la serializacion de etiquetas como en el indice hay una extra, de control, con valores negativos
 	int cantidad_sentencias=0;
-	while(pcb->in_cod[cantidad_sentencias].offset_inicio != -1 && pcb->in_cod[cantidad_sentencias].offset_fin != -1 ){
+	while(pcb1->in_cod[cantidad_sentencias].offset_inicio != -1 && pcb1->in_cod[cantidad_sentencias].offset_fin != -1 ){
 		cantidad_sentencias++;
 	}
 	int size_in_sentencias= (cantidad_sentencias+1)*sizeof(t_sentencia);
 	size_retorno += size_in_sentencias + sizeof(int);
 	// SIZE TOTAL DEL INDICE DE ETIQUETAS (SERIALIZACION DE UN DICCIONARIO)
-	int size_in_et = 0; memcpy(&size_in_et,pcb->in_et,4);
+	int size_in_et = 0; memcpy(&size_in_et,pcb1->in_et,4);
 	size_retorno += size_in_et;
 	//(int) SIZE TOTAL INDICE DE STACK + (int) CANT_ELEMENTOS +T_STACK_ELEMENT SERIALIZADO
 	//(c/u t_stack_element: (int) pos+(int)retPos + (13 bytes t_memoria serializada) retVar + (int) size_argumentos + (13bytes*nElemetos) args + (int) size_vars + (13bytes) vars)
 	//(c/u t_memoria : retVar, vars, args: (char) ID, (int) pag,(int) offset,(int) size)
 	int size_in_stack = 0;
-	int n=0; int tam_stack = list_size(pcb->in_stack);
+	int n=0; int tam_stack = list_size(pcb1->in_stack);
 	while (n < tam_stack){
-		t_stack_element* aux = list_get(pcb->in_stack,n);
+		t_stack_element* aux = list_get(pcb1->in_stack,n);
 		size_in_stack += 4* sizeof(int) + sizeof(t_memoria)+ sizeof(t_memoria)*( list_size(aux->args) + list_size(aux->vars) );
 		n++;
 	}
@@ -75,17 +77,17 @@ char* serializarPCB_CPUKer (t_PCB_CPU* pcb,int * devolveme){
 	int desplazamiento = 0;
 
 	// 4 BYTES C/U PARA: SIZE_TOTAL_MENSAJE,PID,PC,CANT_PAGINAS,SP,EXIT_CODE,QUANTUM,QUANTUM_SLEEP
-	memcpy(retorno+desplazamiento,&size_retorno,sizeof(int));
+	/*memcpy(retorno+desplazamiento,&size_retorno,sizeof(int));
+	desplazamiento += sizeof(int);*/
+	memcpy(retorno+desplazamiento,&pcb1->PID,sizeof(int));
 	desplazamiento += sizeof(int);
-	memcpy(retorno+desplazamiento,&pcb->PID,sizeof(int));
+	memcpy(retorno+desplazamiento,&pcb1->PC,sizeof(int));
 	desplazamiento += sizeof(int);
-	memcpy(retorno+desplazamiento,&pcb->PC,sizeof(int));
+	memcpy(retorno+desplazamiento,&pcb1->cant_pag,sizeof(int));
 	desplazamiento += sizeof(int);
-	memcpy(retorno+desplazamiento,&pcb->cant_pag,sizeof(int));
+	memcpy(retorno+desplazamiento,&pcb1->SP,sizeof(int));
 	desplazamiento += sizeof(int);
-	memcpy(retorno+desplazamiento,&pcb->SP,sizeof(int));
-	desplazamiento += sizeof(int);
-	memcpy(retorno+desplazamiento,&pcb->exit_code,sizeof(int));
+	memcpy(retorno+desplazamiento,&pcb1->exit_code,sizeof(int));
 	desplazamiento += sizeof(int);
 
 	// 4 BYTES PARA TAMAÑO_SENTENCIAS_SERIALIZADAS
@@ -94,19 +96,19 @@ char* serializarPCB_CPUKer (t_PCB_CPU* pcb,int * devolveme){
 
 	// SERIALIZO SENTENCIAS
 	n=0;
-	while(pcb->in_cod[n].offset_inicio != -1 &&pcb->in_cod[n].offset_fin != -1 ){
-		memcpy(retorno+desplazamiento, &pcb->in_cod[n].offset_inicio,sizeof(int));
+	while(pcb1->in_cod[n].offset_inicio != -1 &&pcb1->in_cod[n].offset_fin != -1 ){
+		memcpy(retorno+desplazamiento, &pcb1->in_cod[n].offset_inicio,sizeof(int));
 		desplazamiento += sizeof(int);
-		memcpy(retorno+desplazamiento, &pcb->in_cod[n].offset_fin,sizeof(int));
+		memcpy(retorno+desplazamiento, &pcb1->in_cod[n].offset_fin,sizeof(int));
 		desplazamiento += sizeof(int);
 		n++;
 	}
-	memcpy(retorno+desplazamiento, &pcb->in_cod[n].offset_fin,sizeof(int));
+	memcpy(retorno+desplazamiento, &pcb1->in_cod[n].offset_fin,sizeof(int));
 	desplazamiento += sizeof(int);
-	memcpy(retorno+desplazamiento, &pcb->in_cod[n].offset_fin,sizeof(int));
+	memcpy(retorno+desplazamiento, &pcb1->in_cod[n].offset_fin,sizeof(int));
 	desplazamiento += sizeof(int);
 	// AGREGO EL INDICE_ETIQUETAS (DICCIONARIO DE ETIQUETAS SERIALIZADO)
-	memcpy(retorno+desplazamiento,pcb->in_et,size_in_et);
+	memcpy(retorno+desplazamiento,pcb1->in_et,size_in_et);
 	desplazamiento += size_in_et;
 
 	// 4 BYTES C/U PARA : SIZE_IN_STACK, CANT_ELEMENTOS_STACK
@@ -117,7 +119,7 @@ char* serializarPCB_CPUKer (t_PCB_CPU* pcb,int * devolveme){
 
 	n=0;
 	while (n < tam_stack){
-		t_stack_element* aux = list_get(pcb->in_stack,n);
+		t_stack_element* aux = list_get(pcb1->in_stack,n);
 		memcpy(retorno+desplazamiento,&aux->pos,sizeof(int));
 		desplazamiento += sizeof(int);
 		memcpy(retorno+desplazamiento,&aux->retPos,sizeof(int));
@@ -176,27 +178,27 @@ t_PCB_CPU* deserializarPCB_KerCPU (char * pcbserializado){
 	int size_in_cod = 0; int size_in_et = 0;
 	int size_in_stack = 0; int cant_stack = 0;
 
-	t_PCB_CPU *pcb = malloc(sizeof(t_PCB_CPU));
-	memcpy(&pcb->PID,pcbserializado,sizeof(int));
+	t_PCB_CPU *pcb2 = malloc(sizeof(t_PCB_CPU));
+	memcpy(&pcb2->PID,pcbserializado,sizeof(int));
 	desplazamiento += sizeof(int);
-	memcpy(&pcb->PC,pcbserializado+desplazamiento,sizeof(int));
+	memcpy(&pcb2->PC,pcbserializado+desplazamiento,sizeof(int));
 	desplazamiento+= sizeof(int);
-	memcpy(&pcb->cant_pag,pcbserializado+desplazamiento,sizeof(int));
+	memcpy(&pcb2->cant_pag,pcbserializado+desplazamiento,sizeof(int));
 	desplazamiento += sizeof(int);
-	memcpy(&pcb->SP,pcbserializado+desplazamiento,sizeof(int));
+	memcpy(&pcb2->SP,pcbserializado+desplazamiento,sizeof(int));
 	desplazamiento += sizeof(int);
-	memcpy(&pcb->exit_code,pcbserializado+desplazamiento,sizeof(int));
+	memcpy(&pcb2->exit_code,pcbserializado+desplazamiento,sizeof(int));
 	desplazamiento += sizeof(int);
-	memcpy(&pcb->quantum,pcbserializado+desplazamiento,sizeof(int));
+	memcpy(&pcb2->quantum,pcbserializado+desplazamiento,sizeof(int));
 	desplazamiento += sizeof(int);
-	memcpy(&pcb->quantum_sleep,pcbserializado+desplazamiento,sizeof(int));
+	memcpy(&pcb2->quantum_sleep,pcbserializado+desplazamiento,sizeof(int));
 	desplazamiento += sizeof(int);
-	pcb->algoritmo = malloc(2);
-	memcpy(pcb->algoritmo,pcbserializado+desplazamiento,sizeof(char)*2);
+	pcb2->algoritmo = malloc(2);
+	memcpy(pcb2->algoritmo,pcbserializado+desplazamiento,sizeof(char)*2);
 	desplazamiento += sizeof(char)*2;
 	memcpy(&size_in_cod,pcbserializado+desplazamiento,sizeof(int));
 	desplazamiento += sizeof(int);
-	pcb->in_cod = malloc(sizeof(t_sentencia) *(size_in_cod / sizeof(t_sentencia)));
+	pcb2->in_cod = malloc(sizeof(t_sentencia) *(size_in_cod / sizeof(t_sentencia)));
 
 	int n=0;
 	while(n < (size_in_cod / sizeof(t_sentencia))){
@@ -205,19 +207,19 @@ t_PCB_CPU* deserializarPCB_KerCPU (char * pcbserializado){
 		desplazamiento += sizeof(int);
 		memcpy(&aux.offset_fin,pcbserializado+desplazamiento,sizeof(int));
 		desplazamiento += sizeof(int);
-		pcb->in_cod[n]= aux;
+		pcb2->in_cod[n]= aux;
 		n++;
 	}
 	memcpy(&size_in_et,pcbserializado+desplazamiento,sizeof(int));
-	pcb->in_et = malloc(size_in_et);
-	memcpy(pcb->in_et,pcbserializado+desplazamiento,size_in_et);
-	pcb->dicc_et = armarDiccionarioEtiquetas(pcb->in_et);
+	pcb2->in_et = malloc(size_in_et);
+	memcpy(pcb2->in_et,pcbserializado+desplazamiento,size_in_et);
+	pcb2->dicc_et = armarDiccionarioEtiquetas(pcb2->in_et);
 	desplazamiento += size_in_et;
 	memcpy(&size_in_stack,pcbserializado+desplazamiento,sizeof(int));
 	desplazamiento += sizeof(int);
 	memcpy(&cant_stack,pcbserializado+desplazamiento,sizeof(int));
 	desplazamiento += sizeof(int);
-	pcb->in_stack = list_create();
+	pcb2->in_stack = list_create();
 	n=0;
 	while(n < cant_stack){
 		t_stack_element* aux = malloc(sizeof(t_stack_element));
@@ -269,10 +271,10 @@ t_PCB_CPU* deserializarPCB_KerCPU (char * pcbserializado){
 			list_add(aux->vars,aux3);
 			c++;
 		}
-		list_add(pcb->in_stack,aux);
+		list_add(pcb2->in_stack,aux);
 		n++;
 	}
-	return pcb;
+	return pcb2;
 }
 
 
@@ -355,7 +357,15 @@ int calcular_offset(t_list* args,t_list* vars){
 			nuevo_offset = ultima_var->offset + 4;
 			// no hay ni variables ni argumentos
 		}else if(list_size(args)==0 && list_size(vars)==0){
-			nuevo_offset = 0;
+
+			if(list_size(pcb->in_stack)>1){
+				t_stack_element* anterior = list_get(pcb->in_stack,pcb->SP - 1);
+
+				nuevo_offset = calcular_offset(anterior->args,anterior->vars);
+			}else{
+				nuevo_offset = 0;
+			}
+
 		}
 	}
 
@@ -404,3 +414,14 @@ bool linea_esta_dividida(int offset, int largo){
 	return division;
 }
 
+int recibir_no_bloqueante(int socket_receptor, int *controlador,void *buff,int size){
+	int ret;
+
+		*controlador = 1;
+
+		if ((ret = recv(socket_receptor, buff, size,MSG_DONTWAIT)) <= 0)
+		{
+			*controlador = -1;
+		}
+		return ret;
+}

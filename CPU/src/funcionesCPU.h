@@ -24,6 +24,7 @@ void t_memoria_destroy(t_memoria *self);
 int calcular_pagina(int offset,int paginas);
 int calcular_offset_respecto_pagina(int offset);
 bool linea_esta_dividida(int offset, int largo);
+int recibir_no_bloqueante(int, int*, void *,int);
 
 
 #endif /* SRC_FUNCIONESCPU_ */

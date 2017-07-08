@@ -9,6 +9,7 @@
 #define FINALIZAR_POR_ERROR 3
 #define DESCONECTARME 4
 #define BLOQUEAR_PROCESO 5
+#define SALTO_LINEA 1
 
 
 typedef struct

@@ -27,8 +27,10 @@ extern int sockMemCPU;
 extern int fifo;
 int FD;
 extern int accion_siguiente;
+extern int salto_linea;
 
 t_puntero definirVariable(t_nombre_variable identificador_variable) {
+
 
 	t_stack_element* stack_actual = list_get(pcb->in_stack,pcb->SP);
 	t_puntero posicion_retorno;
@@ -60,9 +62,14 @@ t_puntero definirVariable(t_nombre_variable identificador_variable) {
 		free(aux);
 		return NO_EXISTE_VARIABLE;
 	}
+
+
+
 	char *aux= string_from_format("Se ejecutó DEFINIR VARIABLE - identificador:%c - retorno:%d",identificador_variable,posicion_retorno);
 	escribir_log(aux,1);
 	free(aux);
+
+
 	return posicion_retorno;
 
 }
@@ -86,6 +93,8 @@ t_puntero obtenerPosicionVariable(t_nombre_variable identificador_variable) {
 		return posicion_retorno;
 
 	}
+
+
 	char *aux= string_from_format("Se ejecutó OBTENER POSICION VARIABLE - identificador:%c - retorno:%d",identificador_variable,posicion_retorno);
 	escribir_log(aux,1);
 	free(aux);
@@ -101,7 +110,7 @@ t_valor_variable dereferenciar(t_puntero direccion_variable) {
 	char * mensaje = mensaje_leer_memoria(pcb->PID,direccion_variable,pcb->cant_pag,4,&size);
 	enviar(sockMemCPU,mensaje,&controlador,size);
 
-	char* mensaje_aux= malloc(4);
+	char* mensaje_aux= malloc(5);
 	//recibir(sockMemCPU,&controlador,mensaje_aux,13);
 	recv(sockMemCPU,mensaje_aux,4,MSG_WAITALL);
 	/*char *tam_rest = malloc(10);
@@ -116,16 +125,30 @@ t_valor_variable dereferenciar(t_puntero direccion_variable) {
 	int valor = atoi(valor_str);
 
 	free(valor_str); ; free(tam_rest);*/
-	int valor = atoi(mensaje_aux);
-	free(mensaje_aux);free(mensaje);
+	char *str_valor = string_substring(mensaje_aux,0,4);
+	int valor = atoi(str_valor);
+	free(mensaje_aux);
+	free(mensaje);
+	free(str_valor);
 
 
 
 
-
+	if(valor >= 0){
 	char * str_aux= string_from_format("Se ejecuto DEREFERENCIAR en posicion %d y retorno %d",direccion_variable,valor);
 	escribir_log(str_aux,1);
 	free(str_aux);
+	}else{
+		fifo = FINALIZAR_POR_ERROR;
+		accion_siguiente = FINALIZAR_POR_ERROR;
+
+		pcb->exit_code = -5;
+
+		char * str_aux= string_from_format("ERROR DEREFERENCIANDO en posicion %d y error %d",direccion_variable,valor);
+		escribir_log(str_aux,2);
+		free(str_aux);
+	}
+
 
 	return valor;
 }
@@ -146,10 +169,14 @@ void asignar(t_puntero direccion_variable, t_valor_variable valor) {
 		free(str_aux);
 
 	} else if(strncmp(respuesta,"M03",3)==0){
+		fifo= FINALIZAR_POR_ERROR;
+		accion_siguiente = FINALIZAR_POR_ERROR;
+		pcb->exit_code = -5;
 		char * str_aux= string_from_format("ERROR ASIGNANDO en posicion %d y valor %d",direccion_variable,valor);
-		escribir_log(str_aux,1);
+		escribir_log(str_aux,2);
 		free(str_aux);
 	}
+
 	free(respuesta);
 }
 
@@ -164,17 +191,37 @@ t_valor_variable obtenerValorCompartida(t_nombre_compartida variable) {
 	free(mensaje);free(variable_compartida);
 
 	char * mensaje_r = malloc(7);
-	recibir(sockKerCPU,&controlador,mensaje_r,7);
-	char * str_var = malloc(4); int valor_var = 0;
-	memcpy(str_var,mensaje_r+3,4);
-	valor_var = atoi(str_var);
-	free(str_var);free(mensaje_r);
+	recibir(sockKerCPU,&controlador,mensaje_r,13);
+	char *cod = string_substring(mensaje_r,0,3);
+	if(strncmp(cod,"K21",3)==0){
+		fifo = FINALIZAR_POR_ERROR;
+		accion_siguiente = FINALIZAR_POR_ERROR;
 
+
+		char *str_cod_error = malloc(4);
+		recibir(sockKerCPU,&controlador,str_cod_error,4);
+		int codigo_error = (-1)* (atoi(str_cod_error));
+		pcb->exit_code = codigo_error;
+
+		char * aux =string_from_format("ERROR OBTENIENDO VALOR COMPARTIDA %s valor %d",variable,codigo_error);
+		escribir_log(aux,1);
+		free(aux);
+		free(str_cod_error);
+		free(cod);
+		free(mensaje_r);
+		return -1;
+
+	}else{
+	char * str_var = string_substring(mensaje_r,3,10);
+	int valor_var = atoi(str_var);
 	char * aux= string_from_format("Ejecute OBTENER VALOR COMPARTIDA de %s y es %d",variable,valor_var);
 	escribir_log(aux,1);
 	free(aux);
-
+	free(cod);
+	free(str_var);
+	free(mensaje_r);
 	return valor_var;
+	}
 }
 
 t_valor_variable asignarValorCompartida(t_nombre_compartida variable,t_valor_variable valor) {
@@ -222,10 +269,12 @@ void irAlLabel(t_nombre_etiqueta etiqueta) {
 	string_trim(&eti);
 	pcb->PC = (int)dictionary_get(pcb->dicc_et,eti);
 	free(eti);
+	salto_linea= SALTO_LINEA;
 
 	char * aux = string_from_format("Ejecute irALabel:%s",etiqueta);
 	escribir_log(aux,1);
 	free(aux);
+
 }
 
 void llamarConRetorno(t_nombre_etiqueta etiqueta, t_puntero donde_retornar) {
@@ -245,6 +294,7 @@ void llamarConRetorno(t_nombre_etiqueta etiqueta, t_puntero donde_retornar) {
 	char * eti = strdup(etiqueta);
 	string_trim(&eti);
 	pcb->PC =(int) dictionary_get(pcb->dicc_et,eti);
+	salto_linea = SALTO_LINEA;
 	free(eti);
 
 	escribir_log(string_from_format("Ejecute LLAMAR CON RETORNO etiqueta:%s,donde_retornar:%d",etiqueta,donde_retornar),1);
@@ -273,8 +323,8 @@ void retornar(t_valor_variable retorno) {
 	free(mensaje);
 
 	char * respuesta  = malloc(13);
-	recibir(sockKerCPU,&controlador,respuesta,13);
-	if(strncmp(respuesta,"M02",3)==0){
+	recibir(sockMemCPU,&controlador,respuesta,13);
+	if(strncmp(respuesta,"M03",3)==0){
 		char * aux = string_from_format("ALMACENAR BYTES de valor de retorno ",retorno);
 		escribir_log(aux,1);
 		free(aux);
@@ -283,7 +333,7 @@ void retornar(t_valor_variable retorno) {
 		list_remove_and_destroy_element(pcb->in_stack, pcb->SP++,(void*)stack_destroy);
 		escribir_log("Ejecute RETORNAR ",1);
 
-	}else if(strncmp(respuesta,"M03",3)== 0){
+	}else if(strncmp(respuesta,"M02",3)== 0){
 		char * aux = string_from_format("ERROR ejecutando RETORNAR con valor de retorno %d",retorno);
 		escribir_log(aux,2);
 		free(aux);
