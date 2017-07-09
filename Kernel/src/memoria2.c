@@ -34,6 +34,7 @@ t_pagina *_buscar_pagina(t_list *mem, int num_pag);
 void destruir_heap(t_bloque *bl);
 void liberar_pagina(t_pagina *pagina);
 int chequear_pagina(t_pagina *page);
+void juntar_memoria(t_list *hp, t_bloque *blo, t_bloque *blo_liberado, int num_bloque, bool anterior);
 
 void inicializar_pagina_dinamica(t_program *prog, int size_sol)
 {
@@ -48,9 +49,17 @@ void inicializar_pagina_dinamica(t_program *prog, int size_sol)
 
 	t_bloque *bloque = malloc(sizeof(t_bloque));
 	bloque->metadata = heap;
+	bloque->data = malloc(heap->size);
 
-	list_add(pagina->heaps, heap);
-	list_add(prog->memoria_dinamica, bloque);
+	HeapMetadata *hm_libre = malloc(sizeof(HeapMetadata));
+	hm_libre->isFree = true;
+	hm_libre->size = 0;
+
+	t_bloque *bloque_free = malloc(sizeof(t_bloque));
+	bloque_free->metadata = hm_libre;
+
+	list_add(pagina->heaps, bloque);
+	list_add(prog->memoria_dinamica, pagina);
 	reservar_memoria_din(prog, size_sol);
 }
 
@@ -198,6 +207,7 @@ void compactar(t_pagina *pagina)
 
 void _free_bloque(t_bloque *bloque)
 {
+	free(bloque->data);
 	free(bloque->metadata);
 	free(bloque);
 }
@@ -253,6 +263,31 @@ void liberar_bloque(t_program *prog, char *offset)
 		t_bloque *bloque = list_get(page->heaps, heap->bloque);
 		free(bloque->data);
 		bloque->metadata->isFree = true;
+		if((list_size(page->heaps) - 1) > heap->bloque && heap->bloque != 0)
+		{
+			t_bloque *bloque2 = list_get(page->heaps, (heap->bloque - 1));
+			t_bloque *bloque3 = list_get(page->heaps, (heap->bloque + 1));
+
+			if(bloque2->metadata->isFree)
+			{
+				juntar_memoria(page->heaps, bloque2, bloque, heap->bloque, true);
+			}
+			if(bloque3->metadata->isFree)
+			{
+				juntar_memoria(page->heaps, bloque3, bloque, heap->bloque, false);
+			}
+		}
+		if(heap->bloque == 0)
+		{
+			t_bloque *bloque4 = list_get(page->heaps, (heap->bloque + 1));
+			juntar_memoria(page->heaps, bloque4, bloque, heap->bloque, false);
+		}
+		if(heap->bloque == (list_size(page->heaps) -1))
+		{
+			t_bloque *bloque5 = list_get(page->heaps, (heap->bloque - 1));
+			juntar_memoria(page->heaps, bloque5, bloque, heap->bloque, true);
+		}
+
 		if(chequear_pagina(page))
 		{
 			list_remove_and_destroy_element(prog->memoria_dinamica, (page->n_pagina - pag_cod - pag_stack -1),(void *) liberar_pagina);
@@ -319,4 +354,29 @@ int chequear_pagina(t_pagina *page)
 	}
 	else
 		return 0;
+}
+
+void lib_bloque(t_bloque *bl)
+{
+	free(bl->metadata);
+	free(bl);
+}
+
+void juntar_memoria(t_list *hp, t_bloque *blo, t_bloque *blo_liberado, int num_bloque, bool anterior)
+{
+	if(anterior)
+	{
+		blo->metadata->size =+ blo_liberado->metadata->size;
+		free(blo->data);
+		blo->data = malloc(blo->metadata->size);
+
+		list_remove_and_destroy_element(hp, num_bloque, (void *)lib_bloque);
+	}
+	else
+	{
+		blo_liberado->metadata->size =+ blo->metadata->size;
+		blo_liberado->data = malloc(blo_liberado->metadata->size);
+
+		list_remove_and_destroy_element(hp, num_bloque - 1, (void *)lib_bloque);
+	}
 }
