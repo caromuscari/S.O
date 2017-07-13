@@ -31,6 +31,7 @@ int STACK_SIZE;
 int entradasCache;
 int entradasProcesoCache;
 
+
 //Estructuras administrativas
 
 typedef struct{
@@ -44,6 +45,14 @@ t_tablaPagina* tablaPaginas;
 int cantMarcosTablaPag;
 
 int tamTablaPaginas;
+
+typedef struct{
+	int pid;
+	int pag;
+	int LRU;
+} t_LRU_cache;
+
+t_LRU_cache* Cache_LRU;
 
 typedef struct{
 	int pid;
@@ -73,9 +82,14 @@ void mostrar_memoria (void);
 void liberar_valor(char *val);
 int cantMarcosLibre();
 char * solicitarBytes(int pid, int pag, int offset, int tam);
-void almacenarBytes(int pid, int pag, int offset, int tam, char * buf);
+char* almacenarBytes(int pid, int pag, int offset, int tam, char * buf);
 t_cache* crearMemoCache(void);
-
+int buscarPosCache(int pid, int pag);
+t_LRU_cache* crearCacheLRU(void);
+void MostrarCache(void);
+int cantPidEnCache(int pid);
+int sustituirLRU(int pid, int pag);
+void incrementarLRU(int posInicializar);
 
 int main(int argc, char *argv[])
 {
@@ -90,6 +104,7 @@ int main(int argc, char *argv[])
 	tamanioMarco =data_Memoria->MARCO_SIZE;
 	cantMarcos=data_Memoria->MARCOS;
 	entradasCache = data_Memoria->ENTRADAS_CACHE;
+	entradasProcesoCache=data_Memoria->CACHE_X_PROC;
 
 	tamTablaPaginas = sizeof(t_tablaPagina)*cantMarcos;
 	cantMarcosTablaPag = cantidadDePaginas(tamTablaPaginas);
@@ -105,6 +120,8 @@ int main(int argc, char *argv[])
     Cache = malloc (sizeof(t_cache)*entradasCache); //(PID+PAG+*MARCO)*ENTRADASCACHE
     Cache = crearMemoCache();
 
+    Cache_LRU=malloc(sizeof(t_LRU_cache)*entradasCache);
+    Cache_LRU = crearCacheLRU();
 
 	int d;
 	for(d=0;d<entradasCache;d++){
@@ -303,19 +320,23 @@ void esperar_mensaje(void *i) {
 
 											printf("\n ----------------------------- \n");
 											printf("%s \n", mensRec);
-											printf("%d \n",procPid);
-											printf("%d \n",pagsCod);
-											printf("%s", codigo);
+											printf("PID: %d \n",procPid);
+											printf("PCOD: %d \n",pagsCod);
+											printf("CODIGO: %s", codigo);
 											printf("\n ----------------------------- \n");
 										//Meter funciones de guardar codigo
+											sleep(2);
 
 											int i;
 											for (i=0;i<pagsCod; i++)
 											{
+
 											int frame_pos = posPaginaSolicitada(procPid,i);
 											printf("\n POS: %d \n",frame_pos);
 											int pos = posFrameEnMemoria(frame_pos);
 											memcpy(Memoria+pos,codigo+(i*tamanioMarco),tamanioMarco);
+											//actualizarCache
+
 											}
 											free(codigo);
 
@@ -326,12 +347,16 @@ void esperar_mensaje(void *i) {
 										}
 										break;
 
-				case 99: //INICIALIZAR PROGRAMA
-													{
-														mostrar_memoria();
-
-													}
-													break;
+				case 99: //Muestra MP
+										{
+										mostrar_memoria();
+										}
+										break;
+				case 98: //Muestra CACHE
+										{
+										MostrarCache();
+										}
+										break;
 				}
 //				free(cod);
 //				free(mensRec);
@@ -352,9 +377,12 @@ void esperar_mensaje(void *i) {
 
 												printf("\n Solicitar Bytes \nPID:%d \nPAG:%d \nOFFSET:%d \nTAM:%d\n",pid, pag, offset,tam);
 												char * Buffer = solicitarBytes(pid, pag, offset, tam);
+												char *buffer_aux=string_substring(Buffer,0,tam);
+
+
 												printf("\n%s\n", Buffer);
 												//armarmensaje y sale-
-												enviar(cliente,Buffer, &controlador);
+												enviar(cliente,buffer_aux, &controlador);
 
 												free(ppid);
 												free(ppag);
@@ -364,7 +392,7 @@ void esperar_mensaje(void *i) {
 											}
 
 											break;
-										case 8: //K|18|PIDD|CANTIDADBYTES|CODIGO
+										case 8: //K|18|PIDD|CANTIDADBYTES|CODIGO}{}{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}+	¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿||||¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿+´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´
 											{
 												printf("\n CASE 20 DE CPU\n");
 
@@ -381,8 +409,8 @@ void esperar_mensaje(void *i) {
 												printf("\n Almacenar Bytes \nPID:%d \nPAG:%d \nOFFSET:%d \nTAM:%d\n",pid, pag, offset,tam);
 												printf("\n %s",pbuffer);
 
-												almacenarBytes(pid, pag, offset, tam, pbuffer);
-												char* r_OK = armar_mensaje("M02","");
+
+												char* r_OK = almacenarBytes(pid, pag, offset, tam, pbuffer);
 												enviar(cliente,r_OK, &controlador);
 
 
@@ -442,22 +470,6 @@ void cargarCodigoEnMemoria(char * datos, char * Memoria ,t_list * frames_pedidos
 		c++;
 	}
 }
-
-/*void almacenarBytes(int pid, int pag, int offset, int tamanio)
-{
-	int c = 0;
-
-	while(c < ){
-		int frame_pos = list_get(frames_pedidos, c);
-		int pos = posFrameEnMemoria(frame_pos);
-		memcpy(Memoria+pos,datdatosos+(c*tamanioMarco),tamanioMarco);
-		printf("\nSe guardo en el frame: %d \n", frame_pos);
-		c++;
-	}
-
-}
-*/
-
 
 int posFrameEnMemoria(int nroFrame){
 	//Devuelve la posicion de inicio del Frame
@@ -565,6 +577,13 @@ free(imp);
 free(dataFrame);
 }
 printf("\n ------------------------------------------- \n");
+
+int i;
+for(i=0;i<entradasCache;i++){
+	printf("\n%d|%d|%s \n",Cache[i].pid,Cache[i].pag,Cache[i].dataFrame);
+}
+
+
 }
 
 int cantMarcosLibre(){
@@ -584,20 +603,96 @@ int cantMarcosLibre(){
 char * solicitarBytes(int pid, int pag, int offset, int tam)
 {
 	int frame_pos = posPaginaSolicitada(pid,pag);
-	int pos = posFrameEnMemoria(frame_pos);
-	char * dataFrame = malloc (tam);
-	memset(dataFrame,'\0',tam);
-	//dataFrame[tamanioMarco]='\0';
-	memcpy(dataFrame,Memoria+pos+offset,tam);
-	return dataFrame;
+	printf("\n frame_pos: %d\n",frame_pos);
+
+	if (frame_pos <= 0 ) { //No encontro la pagina.
+		char* rta = strdup("-1");
+		return rta;
+	}
+
+	int pEnCache = buscarPosCache(pid, pag);
+
+	if (pEnCache == -1) //La pagina no se encuentra en CACHE
+		{
+			printf("LA PAGINA NO SE ENCUENTRA EN CACHE");
+			sleep(2);
+				int pos = posFrameEnMemoria(frame_pos);
+				char * dataFrame = malloc (tam);
+				memset(dataFrame,'\0',tam);
+				//dataFrame[tamanioMarco]='\0';
+				memcpy(dataFrame,Memoria+pos+offset,tam);
+
+				int entradasPid = cantPidEnCache(pid);
+
+				if (entradasPid < entradasProcesoCache)
+				{
+					int posReemplazoCache = sustituirLRU(pid,pag);
+					char * frame = malloc(tamanioMarco);
+					memset(frame,'\0',tamanioMarco);
+					memcpy(frame,Memoria+pos,tamanioMarco);
+					Cache[posReemplazoCache].pid=pid;
+					Cache[posReemplazoCache].pag=pag;
+					Cache[posReemplazoCache].dataFrame = strdup(frame);
+					//ver de hacer un free FRAME <-- VERERERER!
+					//+++++++++++++++++++++++//
+					// InsertLRU(pid,pag);//
+					//+++++++++++++++++++++++//
+
+				}
+				return dataFrame;
+		}
+	else //La pagina esta en CACHE
+		{
+		char * dataFrame = malloc (tam);
+		memset(dataFrame,'\0',tam);
+		memcpy(dataFrame,Cache[pEnCache].dataFrame+offset, tam);
+		incrementarLRU(pEnCache);
+		Cache_LRU[pEnCache].LRU = 0;
+		//++++++++++++++++++++//
+		// UpdateLRU(pid,pag);//
+		//++++++++++++++++++++//
+		return dataFrame;
+		}
 }
 
-void almacenarBytes(int pid, int pag, int offset, int tam, char * buf)
+char * almacenarBytes(int pid, int pag, int offset, int tam, char * buf)
 {
+	char *res;
 	int frame_pos = posPaginaSolicitada(pid,pag);
-	int pos = posFrameEnMemoria(frame_pos);
+	if (frame_pos <= 0){
+		res=strdup("M030000000000");
+		return res;
+		} else {
+
+			int pEnCache = buscarPosCache(pid, pag);
+
+			if (pEnCache == -1) //La pagina no se encuentra en CACHE
+			{
+					sleep(2);
+					int pos = posFrameEnMemoria(frame_pos);
+					escribir_log_con_numero("Posicion en MRAM", frame_pos);
+					escribir_log_con_numero("Pos MRAM", pos);
+					memcpy(Memoria+pos+offset,buf,tam);
+					res=strdup("M020000000000");
+					return res;
+			}
+			else //La pagina se encuentra en CACHE.
+			{
+				memcpy(Cache[pEnCache].dataFrame+offset, buf,tam);
+				int pos = posFrameEnMemoria(frame_pos);
+				sleep(2);
+				memcpy(Memoria+pos+offset,buf,tam);
+				res=strdup("M020000000000");
+
+				//++++++++++++++++++++//
+				// UpdateLRU(pid,pag);//
+				//++++++++++++++++++++//
+				return res;
+
+			}
+
 	//dataFrame[tamanioMarco]='\0';
-	memcpy(Memoria+pos+offset,buf,tam);
+		}
 }
 
 t_cache* crearMemoCache(void){
@@ -608,6 +703,106 @@ t_cache* crearMemoCache(void){
 		MemoCache[i].pag=-1;
 		MemoCache[i].pid=-1;
 	}
+	//Agrego para mis pruebas.
+/*
+	MemoCache[2].pid=1;
+	MemoCache[2].pag=2;
+	char* fr ;
+	fr=strdup("ChristianMonasterios");
+	MemoCache[2].dataFrame=fr;
+*/
+	//Agrego para mis pruebas.
+
+
 	return MemoCache;
 }
 
+t_LRU_cache* crearCacheLRU(void){
+
+	t_LRU_cache* adminLRU=malloc(sizeof(t_LRU_cache)*entradasCache);
+	int i;
+	for(i=0;i<entradasCache;i++){
+		adminLRU[i].pag=-1;
+		adminLRU[i].pid=-1;
+		adminLRU[i].LRU=-1;
+	}
+	return adminLRU;
+}
+
+int buscarPosCache(int pid, int pag)
+{
+//devuelve la pos si no -1
+	int posCache;
+	int i;
+		for(i=0;i<entradasCache;i++){
+		if (Cache[i].pid == pid && Cache[i].pag == pag){
+			posCache = i;
+			return posCache;
+		} else {
+				posCache = -1;
+		}
+}
+return posCache;
+}
+
+void MostrarCache(void){
+
+	int i;
+	for(i=0;i<entradasCache;i++){
+		printf("\n%d|%d|%d \n",Cache_LRU[i].pid,Cache_LRU[i].pag,Cache_LRU[i].LRU);
+	}
+
+	for(i=0;i<entradasCache;i++){
+		printf("\n%d|%d|%s \n",Cache[i].pid,Cache[i].pag,Cache[i].dataFrame);
+	}
+
+
+}
+
+int cantPidEnCache(int pid){
+	int it;
+	int a=0;
+	for(it=0;it<entradasCache;it++)
+	{
+		if ( Cache_LRU[it].pid== pid)
+			{
+			a++;
+			}
+	}
+	printf("\n----- Cantidad de un Pids en CACHE:%d \n", a);
+	return a;
+}
+
+int sustituirLRU(int pid, int pag)
+{
+int it;
+
+for(it=0;it<entradasCache;it++)
+{
+	if ( Cache_LRU[it].LRU== -1)
+		{
+		incrementarLRU(it);
+		Cache_LRU[it].pid=pid;
+		Cache_LRU[it].pag=pag;
+		Cache_LRU[it].LRU=0;
+
+		return it;
+		}
+	else {
+		//buscarmasgrande();
+
+	}
+}
+}
+
+void incrementarLRU(int posInicializar)
+{
+	int pos;
+	for (pos=0; pos<entradasCache;pos++)
+	{
+		if (pos != posInicializar && Cache_LRU[pos].LRU != -1)
+		{
+		Cache_LRU[pos].LRU=Cache_LRU[pos].LRU+1;
+		}
+	}
+}
