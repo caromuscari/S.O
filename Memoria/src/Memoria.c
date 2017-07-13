@@ -683,7 +683,8 @@ char * almacenarBytes(int pid, int pag, int offset, int tam, char * buf)
 				sleep(2);
 				memcpy(Memoria+pos+offset,buf,tam);
 				res=strdup("M020000000000");
-
+				incrementarLRU(pEnCache);
+				Cache_LRU[pEnCache].LRU = 0;
 				//++++++++++++++++++++//
 				// UpdateLRU(pid,pag);//
 				//++++++++++++++++++++//
