@@ -428,3 +428,53 @@ char *mensaje_leer_kernel(int fd,int tamanio,int *size){
 
 	return mensaje;
 }
+
+char *mensaje_escibir_noint_memoria(int fpid,t_puntero direccion_variable,int cant_pag,int largo,void *valor,int *size){
+
+		char * mensaje = malloc(19+largo);
+		char * pid; char * pagina; char *offset; char *tam;
+		char * aux_ceros;
+		int desplazamiento=0;
+		pid = string_itoa(fpid);
+		pagina = string_itoa(calcular_pagina(direccion_variable,cant_pag));
+		offset = string_itoa(calcular_offset_respecto_pagina(direccion_variable));
+		tam = string_itoa(largo);
+		// COD
+		memcpy(mensaje+desplazamiento,"P08",3);
+		desplazamiento += 3;
+		// PID
+		aux_ceros = string_repeat('0',4-strlen(pid));
+		memcpy(mensaje+desplazamiento,aux_ceros,4-strlen(pid));
+		free(aux_ceros);
+		desplazamiento += 4-strlen(pid);
+		memcpy(mensaje+desplazamiento,pid,strlen(pid));
+		desplazamiento += strlen(pid);
+		// PAGINA
+		aux_ceros = string_repeat('0',4-strlen(pagina));
+		memcpy(mensaje+desplazamiento,aux_ceros,4-strlen(pagina));
+		free(aux_ceros);
+		desplazamiento += 4-strlen(pagina);
+		memcpy(mensaje+desplazamiento,pagina,strlen(pagina));
+		desplazamiento += strlen(pagina);
+		// OFFSET
+		aux_ceros = string_repeat('0',4-strlen(offset));
+		memcpy(mensaje+desplazamiento,aux_ceros,4-strlen(offset));
+		free(aux_ceros);
+		desplazamiento += 4-strlen(offset);
+		memcpy(mensaje+desplazamiento,offset,strlen(offset));
+		desplazamiento += strlen(offset);
+		// TAMAÑO
+		aux_ceros = string_repeat('0',4-strlen(tam));
+		memcpy(mensaje+desplazamiento,aux_ceros,4-strlen(tam));
+		free(aux_ceros);
+		desplazamiento += 4-strlen(tam);
+		memcpy(mensaje+desplazamiento,tam,strlen(tam));
+		desplazamiento += strlen(tam);
+		// VALOR
+
+		memcpy(mensaje+desplazamiento,valor,largo);
+		desplazamiento += largo;
+
+		free(pid); free(pagina); free(offset); free(tam);
+		return mensaje;
+}

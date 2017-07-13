@@ -29,6 +29,7 @@ t_PCB_CPU* pcb;
 char* programa;
 int fifo;
 int salto_linea;
+int ABORTAR;
 
 static const char* prueba_ansisop =
 		"#!/usr/bin/ansisop\n"
@@ -119,6 +120,7 @@ int main(int argc, char *argv[])
 	int res;int chau = 0;
 	salto_linea = 0;
 	accion_siguiente = CONTINUAR;
+	ABORTAR = 0;
 	res = conexion_Kernel(puertoK, ipK);
 	if(res != 0){
 		cerrar_conexion(sockKerCPU);
@@ -159,7 +161,6 @@ int main(int argc, char *argv[])
 		switch (atoi(idmensaje)){
 		case 07:
 			escribir_log("CASE N° 7: iniciar procesamiento de PCB",1);
-			//iniciar_pcb_falsa();
 			memcpy(sizemensaje,buff+3,10);
 			largomensaje = atoi(sizemensaje);
 			char *mensajeEntero = malloc(largomensaje);
@@ -175,11 +176,6 @@ int main(int argc, char *argv[])
 			pcb->exit_code = codigo_error;
 			free(cod_error);
 			break;
-		case 22:
-			escribir_log("CASE N°22: me desconectaron",1);
-			accion_siguiente = DESCONECTARME;
-			break;
-
 
 		default:
 			escribir_log("CASE DEFAULT: error - CPU desconoce ese mensaje",2);
@@ -232,26 +228,20 @@ int main(int argc, char *argv[])
 			free(mensaje);
 			break;
 
-		case DESCONECTARME:
+		case CONTINUAR:
+			escribir_log("CONTINUAR CON MI TRABAJO DE CPU",1);
+		}
+		if(ABORTAR == 1){
 
 			escribir_log("FINALICE EL PROGRAMA ACTUAL PORQUE ME MANDARON A DESCONECTARME/MORIR... devolviendo pcb",1);
 			chau = 1;
 
-			mensaje = strdup("P19");
+			char *mensaje = strdup("P19");
 			enviar(sockKerCPU,mensaje,&controlador,3);
 			free(mensaje);
 
-			pcb_serializado  = serializarPCB_CPUKer(pcb,&size);
-			mensaje = mensaje_pcb("P20",pcb_serializado,size);
-			enviar(sockKerCPU,mensaje,&controlador,size);
-
-			free(pcb_serializado);
-			free(mensaje);
-			break;
-
-		default:
-			escribir_log("CONTINUAR CON MI TRABAJO DE CPU",1);
 		}
+
 		fin2: printf("\nfin\n");
 		free(buff);
 		free(idmensaje);
@@ -295,25 +285,30 @@ void procesar(){
 		//PROCESAR SEGUN QUANTUM/QUANTUM_SLEEP EL PCB
 		int instrucciones_realizadas=0;
 		accion_siguiente = CONTINUAR;
-		while(instrucciones_realizadas < pcb->quantum && accion_siguiente != FINALIZAR_POR_ERROR && accion_siguiente != FINALIZAR_PROGRAMA && accion_siguiente != BLOQUEAR_PROCESO){
+		while(instrucciones_realizadas < pcb->quantum && accion_siguiente != FINALIZAR_POR_ERROR && accion_siguiente != FINALIZAR_PROGRAMA && accion_siguiente != BLOQUEAR_PROCESO ){
+
 			char * linea= pedir_linea_memoria();
+
 			escribir_log(linea,1);
 			analizadorLinea(linea,&funcionesTodaviaSirve,&funcionesKernelTodaviaSirve);
 			free(linea);
+
 			instrucciones_realizadas ++;
 			if(salto_linea == SALTO_LINEA){
 			salto_linea = 0;
 			}else{
 				pcb->PC++;
 			}
+
 			int controlador = 0;
+
 			char *mensaje = malloc(17); memset(mensaje,'0',17);
 					recibir_no_bloqueante(sockKerCPU,&controlador,mensaje,17);
 					if(controlador == 1){
 						char *cod = string_substring(mensaje,0,3);
 						if(strncmp(cod,"K21",3) == 0){
 
-							char *str_cod = string_substring(mensaje,13,4);
+						char *str_cod = string_substring(mensaje,13,4);
 						int cod_error = (-1)* (atoi(str_cod));
 						pcb->exit_code = cod_error;
 						escribir_log("LOGEO CASO 21,DEVUELVO POR ERROR",1);
@@ -331,6 +326,7 @@ void procesar(){
 		if(instrucciones_realizadas == pcb->quantum && accion_siguiente != FINALIZAR_PROGRAMA){
 			accion_siguiente = FINALIZAR_POR_QUANTUM;
 		}
+
 	}else if(strncmp(pcb->algoritmo,"FF",2) == 0){
 
 		// PROCESAR SEGUN FIFO
@@ -446,7 +442,7 @@ char* pedir_linea_memoria(){
 void finalizar_por_senial(int sig){
 
 	signal(sig, SIG_IGN);
-	accion_siguiente = DESCONECTARME;
+	ABORTAR = 1;
 }
 
 void liberar_pcb(){

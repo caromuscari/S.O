@@ -57,6 +57,8 @@ t_puntero definirVariable(t_nombre_variable identificador_variable) {
 		posicion_retorno = nueva_var->offset;
 		//list_replace_and_destroy_element(pcb->in_stack, pcb->SP,stack_actual,(void*) stack_destroy);
 	}else{
+		fifo = FINALIZAR_POR_ERROR;
+		accion_siguiente = FINALIZAR_POR_ERROR;
 		char * aux= string_from_format("DEFINIR VARIABLE:%c identificador no aceptado",identificador_variable);
 		escribir_log(aux,2);
 		free(aux);
@@ -87,6 +89,8 @@ t_puntero obtenerPosicionVariable(t_nombre_variable identificador_variable) {
 		posicion_retorno = buscar_offset_variable(stack_actual->vars,identificador_variable);
 	}
 	if(posicion_retorno == -1){
+		fifo = FINALIZAR_POR_ERROR;
+		accion_siguiente = FINALIZAR_POR_ERROR;
 		char * aux= string_from_format("OBTENER POSICION VARIABLE:%c no existe variable",identificador_variable);
 		escribir_log(aux,2);
 		free(aux);
@@ -297,20 +301,39 @@ void llamarConRetorno(t_nombre_etiqueta etiqueta, t_puntero donde_retornar) {
 	salto_linea = SALTO_LINEA;
 	free(eti);
 
-	escribir_log(string_from_format("Ejecute LLAMAR CON RETORNO etiqueta:%s,donde_retornar:%d",etiqueta,donde_retornar),1);
+	char *logggear = string_from_format("Ejecute LLAMAR CON RETORNO etiqueta:%s,donde_retornar:%d",etiqueta,donde_retornar);
+	escribir_log(logggear,1);
+	free(logggear);
 }
 
 void llamarSinRetorno (t_nombre_etiqueta etiqueta){
 
-	escribir_log("Ejecute llamarSinRetorno",1);
+	pcb->SP ++;
+	t_stack_element * nuevo_el = malloc(sizeof (t_stack_element));
+	nuevo_el->pos = pcb->SP;
+	nuevo_el->retPos = pcb->PC;
+	nuevo_el->args = list_create();
+	nuevo_el->vars = list_create();
+	list_add(pcb->in_stack,nuevo_el);
+
+	char * eti = strdup(etiqueta);
+	string_trim(&eti);
+	pcb->PC =(int) dictionary_get(pcb->dicc_et,eti);
+	salto_linea = SALTO_LINEA;
+	free(eti);
+
+	char *logggear = string_from_format("Ejecute LLAMAR SIN RETORNO etiqueta:%s",etiqueta);
+	escribir_log(logggear,1);
+	free(logggear);
 }
 
 void finalizar(void) {
+
 	fifo = FINALIZAR_PROGRAMA;
 	accion_siguiente = FINALIZAR_PROGRAMA;
 
-
 	escribir_log("Ejecute FINALIZAR",1);
+
 }
 
 void retornar(t_valor_variable retorno) {
@@ -324,17 +347,21 @@ void retornar(t_valor_variable retorno) {
 
 	char * respuesta  = malloc(13);
 	recibir(sockMemCPU,&controlador,respuesta,13);
-	if(strncmp(respuesta,"M03",3)==0){
-		char * aux = string_from_format("ALMACENAR BYTES de valor de retorno ",retorno);
+	if(strncmp(respuesta,"M02",3)==0){
+		char * aux = string_from_format("ALMACENADOS bytes de retorno(%d) en memoria",retorno);
 		escribir_log(aux,1);
 		free(aux);
+		int sp_anterior = pcb->SP;
 		pcb->SP --;
 		pcb->PC = aux_stack_el->retPos;
-		list_remove_and_destroy_element(pcb->in_stack, pcb->SP++,(void*)stack_destroy);
+		list_remove_and_destroy_element(pcb->in_stack,sp_anterior,(void*)stack_destroy);
 		escribir_log("Ejecute RETORNAR ",1);
 
-	}else if(strncmp(respuesta,"M02",3)== 0){
-		char * aux = string_from_format("ERROR ejecutando RETORNAR con valor de retorno %d",retorno);
+	}else if(strncmp(respuesta,"M03",3)== 0){
+		fifo= FINALIZAR_POR_ERROR;
+		accion_siguiente = FINALIZAR_POR_ERROR;
+		pcb->exit_code = -5;
+		char * aux = string_from_format("ERROR ejecutando RETORNAR, al almacenar bytes, con valor de retorno %d",retorno);
 		escribir_log(aux,2);
 		free(aux);
 	}
@@ -581,7 +608,7 @@ void moverCursor (t_descriptor_archivo descriptor_archivo, t_valor_variable posi
 	enviar(sockKerCPU,mensaje,&controlador,size);
 	free(mensaje);
 
-	char *aux_log = string_from_format("Ejecute CERRAR en FD %d",descriptor_archivo);
+	char *aux_log = string_from_format("Ejecute MOVER CURSOR en FD %d a posicion %d",descriptor_archivo,posicion);
 	escribir_log(aux_log,1);
 	free(aux_log);
 }
@@ -619,6 +646,28 @@ void leer (t_descriptor_archivo descriptor_archivo, t_puntero informacion, t_val
 		recibir(sockKerCPU,&controlador,lectura,size_mensaj);
 
 		//preguntar si lo escribo en memoria o lo asigno en una variable alocada dinamicamente
+		int sizet = 0;
+
+		char *mensaje = mensaje_escibir_noint_memoria(descriptor_archivo,informacion,pcb->cant_pag,size_mensaj,lectura,&sizet);
+		enviar(sockMemCPU,mensaje,&controlador,sizet);
+
+		char * respuesta2 = malloc(13);
+		recibir(sockMemCPU,&controlador,respuesta2,13);
+
+			if (strncmp(respuesta2,"M02",3)==0){
+				char * str_aux= string_from_format("Informacion de lectura asignada correctamente en memoria %s",lectura);
+				escribir_log(str_aux,1);
+				free(str_aux);
+
+			} else if(strncmp(respuesta2,"M03",3)==0){
+				fifo= FINALIZAR_POR_ERROR;
+				accion_siguiente = FINALIZAR_POR_ERROR;
+				pcb->exit_code = -5;
+
+				char * str_aux= string_from_format("ERROR ASIGNANDO bytes de lectura en memoria");
+				escribir_log(str_aux,2);
+				free(str_aux);
+			}
 
 		char * logi = string_from_format("Ejecute LEER %d con file descriptor %d alojar en %d",tamanio,descriptor_archivo,informacion);
 		escribir_log(logi,1);
@@ -626,6 +675,7 @@ void leer (t_descriptor_archivo descriptor_archivo, t_puntero informacion, t_val
 
 		free(size_mensaje);
 		free(lectura);
+		free(mensaje);
 	}
 
 	free(respuesta);
