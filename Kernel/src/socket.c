@@ -142,11 +142,11 @@ int enviar(int socket_emisor, char *mensaje_a_enviar, int *controlador) {
 char *recibir(int socket_receptor, int *controlador) {
 	int ret;
 
-	char *buffer = malloc(1024);
+	char *buffer = malloc(9000);
 
 	*controlador = 0;
 
-	if ((ret = recv(socket_receptor, buffer, 1024, 0)) <= 0) {
+	if ((ret = recv(socket_receptor, buffer, 9000, 0)) <= 0) {
 		//printf("error receiving or connection lost \n");
 		if (ret == 0) {
 			*controlador = 8;

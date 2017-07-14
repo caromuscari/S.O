@@ -219,9 +219,9 @@ void desbloquear_proceso(int pid)
 
 void finalizar_proceso(int pid, int codigo_finalizacion)
 {
-	int _buscar_proceso(t_PCB *un_proceso)
+	bool _buscar_proceso(t_PCB *un_proceso)
 	{
-		return !(pid == un_proceso->PID);
+		return (pid == un_proceso->PID);
 	}
 
 	pthread_mutex_lock(&mutex_lista_ejecutando);
@@ -233,8 +233,8 @@ void finalizar_proceso(int pid, int codigo_finalizacion)
 	escribir_log_con_numero("Se ha finalizado el proceso: ", programa->PID);
 	avisar_consola_proceso_murio(programa);
 
-	list_destroy_and_destroy_elements(programa->memoria_dinamica, (void *)liberar_pagina);
 	sem_signal(programa, "", programa->socket_consola, 1);
+	list_destroy_and_destroy_elements(programa->memoria_dinamica, (void *)liberar_pagina);
 
 	pthread_mutex_lock(&mutex_lista_finalizados);
 	list_add(list_finalizados, programa);

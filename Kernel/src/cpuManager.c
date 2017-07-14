@@ -210,7 +210,8 @@ void responder_solicitud_cpu(int socket_, char *mensaje)
 			free(mensaje_r);
 			break;
 		case 13: ;
-			char *mensaje_r2 = get_mensaje_pcb(mensaje);
+			//char *mensaje_r2 = get_mensaje_pcb(mensaje);
+			char *mensaje_r2 = get_mensaje(mensaje);
 			t_PCB *pcb_actualizado2 =deserializarPCB_CPUKer(mensaje_r2);
 			actualizar_pcb(prog, pcb_actualizado2);
 			finalizar_proceso(pcb_actualizado2->PID, pcb_actualizado2->exit_code);
