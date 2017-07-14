@@ -291,7 +291,9 @@ void forzar_finalizacion(int pid, int cid, int codigo_finalizacion, int aviso)
 	while(contador)
 	{
 		pthread_mutex_lock(&mutex_lista_ejecutando);
-		list_add(encontrados_ejec, list_remove_by_condition(list_ejecutando, (void*)_buscar_program));
+		t_program *proo = list_remove_by_condition(list_ejecutando, (void*)_buscar_program);
+		list_add(encontrados_ejec,proo);
+		list_add(list_ejecutando,proo);
 		pthread_mutex_unlock(&mutex_lista_ejecutando);
 		contador --;
 	}

@@ -16,6 +16,7 @@
 #include "planificador.h"
 
 extern t_configuracion *config;
+extern char *offs;
 extern int tam_pagina;
 extern int pag_cod;
 extern int pag_stack;
@@ -23,9 +24,9 @@ int posicion_pagina;
 int inicio_bloque;
 
 t_bloque *find_first_fit(t_list *hs, int t_sol);
-int reservar_memoria_din(t_program *program, int size_solicitado, char *bla);
-void inicializar_pagina_dinamica(t_program *prog, int size_sol, char *offs);
-int ubicar_bloque(t_pagina *pagina,int tam_sol, t_program *program, char*bla);
+int reservar_memoria_din(t_program *program, int size_solicitado);
+void inicializar_pagina_dinamica(t_program *prog, int size_sol);
+int ubicar_bloque(t_pagina *pagina,int tam_sol, t_program *program);
 void compactar(t_pagina *pagina);
 void _free_bloque(t_bloque *bloque);
 int pedir_pagina();
@@ -36,7 +37,7 @@ void liberar_pagina(t_pagina *pagina);
 int chequear_pagina(t_pagina *page);
 void juntar_memoria(t_list *hp, t_bloque *blo, t_bloque *blo_liberado, int num_bloque, bool anterior);
 
-void inicializar_pagina_dinamica(t_program *prog, int size_sol, char *offs)
+void inicializar_pagina_dinamica(t_program *prog, int size_sol)
 {
 	t_pagina *pagina = malloc(sizeof(t_pagina));
 	pagina->heaps = list_create();
@@ -59,11 +60,12 @@ void inicializar_pagina_dinamica(t_program *prog, int size_sol, char *offs)
 	bloque_free->metadata = hm_libre;
 
 	list_add(pagina->heaps, bloque);
+	list_add(pagina->heaps, bloque_free);
 	list_add(prog->memoria_dinamica, pagina);
-	reservar_memoria_din(prog, size_sol, offs);
+	reservar_memoria_din(prog, size_sol);
 }
 
-int reservar_memoria_din(t_program *program, int size_solicitado, char *offs)
+int reservar_memoria_din(t_program *program, int size_solicitado)
 {
 	int retorno = 0;
 	program->syscall++;
@@ -85,7 +87,7 @@ int reservar_memoria_din(t_program *program, int size_solicitado, char *offs)
 
 				if (size_disponible >= size_solicitado)
 				{
-					ubicado = ubicar_bloque(page, size_solicitado, program, offs);
+					ubicado = ubicar_bloque(page, size_solicitado, program);
 					retorno = 1;
 				}
 				else n++;
@@ -96,24 +98,29 @@ int reservar_memoria_din(t_program *program, int size_solicitado, char *offs)
 			int pedido = pedir_pagina(program);
 
 			if(pedido)
-				inicializar_pagina_dinamica(program, size_solicitado, offs);
+			{
+				inicializar_pagina_dinamica(program, size_solicitado);
+				retorno = 1;
+			}
+
 			else
-				forzar_finalizacion(program->PID, 0, 5, 1);
+				forzar_finalizacion(program->PID, 0, 5, 0);
 		}
 	}else
-		forzar_finalizacion(program->PID, 0, 8, 1);
+		forzar_finalizacion(program->PID, 0, 8, 0);
 	return retorno;
 }
 
-int ubicar_bloque(t_pagina *pagina,int tam_sol, t_program *program, char *off_dev)//usa algoritmo first fit -> el resumen dice que es el mas kpo
+int ubicar_bloque(t_pagina *pagina,int tam_sol, t_program *program)//usa algoritmo first fit -> el resumen dice que es el mas kpo
 {
-	t_bloque *bloque = malloc (sizeof(t_bloque));
+	t_bloque *bloque;// = malloc (sizeof(t_bloque));
 	bloque = find_first_fit(pagina->heaps, tam_sol);
 
 	if (bloque != NULL)
 	{
 		int sz = bloque->metadata->size;
 		bloque->metadata->isFree = false;
+		free(bloque->data);
 		bloque->data = malloc(tam_sol);
 		bloque->metadata->size = tam_sol;
 
@@ -121,9 +128,9 @@ int ubicar_bloque(t_pagina *pagina,int tam_sol, t_program *program, char *off_de
 		infheap->bloque = posicion_pagina;
 		infheap->pagina = pagina->n_pagina;
 		int offset = pagina->n_pagina*tam_pagina + inicio_bloque + 5;
-		char *offs = string_itoa(offset);
-		off_dev = offs;
-		dictionary_put(program->posiciones, offs ,infheap);
+		char *offs_ = string_itoa(offset);
+		offs = offs_;
+		dictionary_put(program->posiciones, offs_ ,infheap);
 
 		if (tam_sol < sz)
 		{
@@ -145,21 +152,23 @@ int ubicar_bloque(t_pagina *pagina,int tam_sol, t_program *program, char *off_de
 
 t_bloque *find_first_fit(t_list *hs, int t_sol)
 {
+//	t_bloque *nes;
+//	int encontrado = 1;
 	posicion_pagina = 0;
 	inicio_bloque  = 0;
 
-	bool _first_fit(t_bloque h)
+	bool _first_fit(t_bloque *h)
 	{
-		bool libre = h.metadata->isFree;
-		bool entra = (t_sol <= h.metadata->size);
+		bool libre = h->metadata->isFree;
+		bool entra = (t_sol <= h->metadata->size);
 		posicion_pagina++;
 		if(!libre || !entra)
-			inicio_bloque =+ h.metadata->size;
-
+			inicio_bloque =+ h->metadata->size;
 		return (libre && entra);
 	}
-	t_bloque *nes = list_find(hs, (void *)_first_fit);
-	return nes;
+
+	//list_iterate(hs, (void *)_first_fit);
+	return list_find(hs, (void *)_first_fit);//nes;
 }
 
 void compactar(t_pagina *pagina)
@@ -219,11 +228,11 @@ int pedir_pagina(t_program *program)
 		controlador = 0;
 		char *respuesta = recibir(config->cliente_memoria, &controlador);
 		char *codigo = get_codigo(respuesta);
-		int cod = atoi(mensaje);
+		int cod = atoi(codigo);
 		if(cod == 2)
-		{
 			res = 1;
-		}else res = 0;
+		else
+			res = 0;
 
 		free(respuesta);
 		free(codigo);

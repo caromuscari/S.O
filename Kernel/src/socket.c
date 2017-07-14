@@ -118,7 +118,8 @@ int aceptar_conexion(int socketServidor, int *controlador) {
 	return client_sock_accepted;
 }
 
-int enviar(int socket_emisor, char *mensaje_a_enviar, int *controlador) {
+int enviar(int socket_emisor, char *mensaje_a_enviar, int *controlador)
+{
 	escribir_log_compuesto("mensaje_a_enviar: ", mensaje_a_enviar);
 
 	int ret;
@@ -183,5 +184,7 @@ int enviar_pcb(int socket_emisor, char *mensaje_a_enviar, int *controlador,int s
 		//Este mensaje debera esta en la funcion que invoque esta
 		//escribir_log_con_numero("Kernel - Exito al enviar mensaje a PID: ", *prog->PID);
 	}
+	printf("Queremos enviar: %d : \n", size);
+	printf("Estamos enviando: %d \n", ret);
 	return ret;
 }

@@ -15,7 +15,6 @@
 extern t_configuracion *config;
 extern t_list *list_consolas;
 extern pthread_mutex_t mutex_lista_consolas;
-extern int tam_pagina;
 fd_set master;
 fd_set read_fds;
 int fdmax;
@@ -266,13 +265,6 @@ char *armar_mensaje_memoria(char *mensaje_recibido)
 
 int calcular_pag_stack()
 {
-	int tamanio = config->stack_size;
-	int paginas = (int)(tamanio/tam_pagina);
-
-	if (tamanio % tam_pagina > 0)
-	{
-		paginas ++;
-	}
-	pag_stack = paginas;
-	return paginas;
+	pag_stack = config->stack_size;
+	return pag_stack;
 }

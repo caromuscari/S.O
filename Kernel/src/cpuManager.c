@@ -16,6 +16,7 @@
 
 extern t_list *list_cpus;
 extern pthread_mutex_t mutex_lista_cpus;
+extern char *offs ;
 fd_set master;
 fd_set read_fds;
 int fdmax;
@@ -192,7 +193,7 @@ void responder_solicitud_cpu(int socket_, char *mensaje)
 			char *mensaje_armado = armar_valor(pid_,mensaje_recibido);
 			char *mensaje_enviar = armar_mensaje("K09", mensaje_armado);
 			enviar(prog->socket_consola, mensaje_enviar, &controlador);
-			enviar(socket_, "OK", &controlador);
+			enviar(socket_, "OK000000000000000", &controlador);
 			free(mensaje_recibido);
 			free(mensaje_enviar);
 			free(mensaje_armado);
@@ -212,6 +213,7 @@ void responder_solicitud_cpu(int socket_, char *mensaje)
 		case 13: ;
 			//char *mensaje_r2 = get_mensaje_pcb(mensaje);
 			char *mensaje_r2 = get_mensaje(mensaje);
+			escribir_log(mensaje_r2);
 			t_PCB *pcb_actualizado2 =deserializarPCB_CPUKer(mensaje_r2);
 			actualizar_pcb(prog, pcb_actualizado2);
 			finalizar_proceso(pcb_actualizado2->PID, pcb_actualizado2->exit_code);
@@ -235,8 +237,8 @@ void responder_solicitud_cpu(int socket_, char *mensaje)
 			char *mensaje4 = get_mensaje(mensaje);
 			int cont = 0;
 			int size2 = atoi(mensaje4);
-			char *offs = strdup("");
-			if (reservar_memoria_din(prog, size2, offs))
+			offs = strdup("");
+			if (reservar_memoria_din(prog, size2) == 1)
 			{
 				char *men = armar_mensaje("K99", offs);
 				enviar(socket_, men, &cont);

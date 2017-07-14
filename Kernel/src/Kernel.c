@@ -30,6 +30,7 @@ t_configuracion *config;
 char *sem_id;
 char *sem_in;
 char *shared;
+char *offs;
 t_dictionary *sems;
 t_dictionary *vglobales;
 t_list *list_cpus;
