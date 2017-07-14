@@ -437,6 +437,7 @@ void esperar_mensaje(void *i) {
 									free(ptam);
 									free(poffset);
 									free(Buffer);
+									free(buffer_aux);
 								}
 
 								break;
@@ -467,6 +468,7 @@ void esperar_mensaje(void *i) {
 									free(ptam);
 									free(pbuffer);
 									free(poffset);
+									free(r_OK);
 								}
 							break;
 

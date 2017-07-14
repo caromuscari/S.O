@@ -48,8 +48,10 @@ t_dictionary* armarDiccionarioEtiquetas(char* etiquetas_serializadas){
 }
 char* serializarPCB_CPUKer (t_PCB_CPU* pcb1,int * devolveme){
 	char *retorno;
+	char *str_int;
+	char *aux_ceros;
 	//int sizeretorno = tamaño_PCB(pcb);
-	int size_retorno = sizeof(int)*5; //(int) SIZEOF MENSAJE,PID,PC,CANT_PAGINAS,SP,EXIT_CODE
+	int size_retorno = sizeof(int)*5; //(int) PID,PC,CANT_PAGINAS,SP,EXIT_CODE
 	// TAMAÑO_SENTENCIAS_SERIALIZADAS + SENTENCIAS_SERIALIZADAS (c/sentencias : (int)inicio,(int)offset)
 	// en la serializacion de etiquetas como en el indice hay una extra, de control, con valores negativos
 	int cantidad_sentencias=0;
@@ -72,8 +74,8 @@ char* serializarPCB_CPUKer (t_PCB_CPU* pcb1,int * devolveme){
 		n++;
 	}
 	size_retorno += size_in_stack + 2 * sizeof(int);
-	retorno = malloc(size_retorno);
-	*devolveme = size_retorno;
+	retorno = malloc(size_retorno+1); bzero(retorno,size_retorno+1);
+	*devolveme = size_retorno+1;
 	int desplazamiento = 0;
 
 	// 4 BYTES C/U PARA: SIZE_TOTAL_MENSAJE,PID,PC,CANT_PAGINAS,SP,EXIT_CODE,QUANTUM,QUANTUM_SLEEP
@@ -168,7 +170,7 @@ char* serializarPCB_CPUKer (t_PCB_CPU* pcb1,int * devolveme){
 
 		n++;
 	}
-
+	retorno[size_retorno]='\0';
 	return retorno;
 
 
@@ -318,19 +320,23 @@ int handshakeMemoria(int socketMP){
 				escribir_log("error enviando mensaje al Memoria",2);
 			}
 			escribir_log("handshake Memoria realizado exitosamente",1);
-			char *tammensaje=malloc(10);int tamimensaje;
-			memcpy(tammensaje,handshake+3,10);
-			tamimensaje = atoi(tammensaje);
+			char *tammensaje= string_substring(handshake,3,10);
+			int tamimensaje= atoi(tammensaje);
 			free(tammensaje);
-			char *tampag = malloc(tamimensaje);
+			char *tampag = malloc(tamimensaje+1);
+			memset(tampag,'\0',tamimensaje+1);
 			recibir(socketMP,&control,tampag,tamimensaje);
-			tamanopag = atoi(tampag); free(tampag);
+			tamanopag = atoi(tampag);
+			free(tampag);
 
 
 		}
 	}
 	free (handshake);
 	tam_pagina_memoria = tamanopag;
+	char *tmp= string_from_format("tamanio pagina %d",tam_pagina_memoria);
+	escribir_log(tmp,1);
+	free(tmp);
 	return control;
 
 }

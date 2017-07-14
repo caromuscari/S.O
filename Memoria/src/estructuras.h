@@ -21,4 +21,28 @@ typedef struct{
 	int SOCKET;
 }t_memoria;
 
+typedef struct{
+	int estado;
+	int pid;
+	int pag;
+} t_tablaPagina;
+
+
+typedef struct{
+	int pid;
+	int pag;
+	int LRU;
+}t_LRU_cache;
+
+typedef struct{
+	int pid;
+	int pag;
+	char * dataFrame;
+} t_cache;
+
+typedef struct{
+	int pid;
+	int cantPaginas;
+}t_proceso;
+
 #endif /* ESTRUCTURAS_H_ */

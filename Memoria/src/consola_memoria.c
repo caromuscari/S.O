@@ -4,158 +4,150 @@
  *  Created on: 8/7/2017
  *      Author: utnso
  */
+
 #include "consola_memoria.h"
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <commons/string.h>
 #include <commons/collections/list.h>
 #include <commons/log.h>
+#include <commons/string.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "gestionar_procesos.h"
+#include "estructuras.h"
 #include "hash.h"
 
-typedef struct{
-	int pid;
-	int pag;
-	char *dataFrame;
-}t_cache;
-typedef struct{
-	int estado;
-	int pid;
-	int pag;
-} t_tablaPagina;
-
-t_tablaPagina* tablaPaginas;
-int terminar_hilo;
-int retardo;
 extern int cantMarcos;
 extern int cantMarcosTablaPag;
-t_cache* Cache;
-int entradasCache;
 extern int tamanioMarco;
 extern char *Memoria;
-extern int tamTablaPaginas;
+extern t_cache* Cache;
+extern t_LRU_cache* Cache_LRU;
+extern int entradasCache;
+extern t_tablaPagina* tablaPaginas;
+extern int retardo;
+extern t_list *procesos;
+
+int terminar_hilo;
 int cantidad_de_dump_cache;
 int cantidad_de_dump_estructuras;
 int cantidad_de_dump_frames;
+
+
+
+
 void hilo_consola_memoria(){
 
 	cantidad_de_dump_cache = 0;
 	cantidad_de_dump_estructuras = 0;
 	cantidad_de_dump_frames = 0;
 	terminar_hilo = 0;
-	char *input = malloc(50);
-	memset(input,'0',50);
+
 	while(terminar_hilo == 0){
 
-		scanf("%[^\n]s",input);
-		int caso = que_case_es(input);
+		char *input;
+		display_menu_principal();
+		scanf("%ms",&input);
+		int caso = atoi(input);
 		free(input);
 
 		switch(caso){
 		case 1:;
-			int nuevo_retardo = 0;
-			printf("Por favor, ingrese un nuevo valor de retardo (en milisegundos)\n");
-			scanf("%d",&nuevo_retardo);
-			retardo = nuevo_retardo;
-			printf(" （＾－＾） Muchas Gracias, en unos instantes podras ver el menu principal nuevamente\n\n");
-			break;
+		int nuevo_retardo = 0;
+		printf("\n Por favor, ingrese un nuevo valor de retardo (en milisegundos) \n\n");
+		scanf("%d",&nuevo_retardo);
+		retardo = nuevo_retardo;
+		printf("\n Nuevo retardo:%d \n\n",retardo);
+		printf("\n （＾－＾） Muchas Gracias, en unos instantes podras ver el menu principal nuevamente \n\n");
+
+		break;
 		case 2:;
-			char *que_dump = malloc(50);
-			display_menu_dump();
-			scanf("%[^\n]s",que_dump);
-			if(strncmp(que_dump,"Cache",strlen("Cache"))==0){
-				char *path = dump_cache();
-				printf("El path del estado actual de la cache archivado es: %s \n",path);
-				free(path);
-			}else if(strncmp(que_dump,"Estructuras de Memoria",strlen("Estructuras de Memoria"))==0){
-				char *path = dump_estructuras();
-				printf("El path del estado actual de la Tabla de Archvos archivado es: %s \n",path);
-				free(path);
+		char *que_dump;
+		display_menu_dump();
+		scanf("%ms",&que_dump);
+		int caso_dump = atoi(que_dump);
+		if(caso_dump == 6){
+			char *path = dump_cache();
+			printf("\n El path del estado actual de la cache archivado es: %s \n\n",path);
+			free(path);
+		}else if(caso_dump == 7){
+			char *path = dump_estructuras();
+			printf("\n El path del estado actual de la Tabla de Archvos archivado es: %s \n\n",path);
+			free(path);
 
-			}else if(strncmp(que_dump,"Contenido en Marcos",strlen("Estructuras de Memoria"))==0){
-				printf("Si quiere ver todo el contenido de los marco ingrese -1 \n");
-				printf("Si quiere marcos particulares de un proceso ingrese su PID \n");
-				int pid = 0;
-				scanf("%d",&pid);
-				char *path = dump_datos(pid);
-				printf("El path del estado actual de los datos de pid :%d archivado es: %s \n",pid,path);
-				free(path);
-			}else{
-				printf("Lo siento,pero no conozco el comando ingresado,volveremos al menu principal \n");
-			}
-			free(que_dump);
-			printf(" （＾－＾） Muchas Gracias, en unos instantes podras ver el menu principal nuevamente\n\n");
+		}else if(caso_dump == 8){
+			printf("\n Si quiere ver todo el contenido de los marco ingrese -1 \n\n");
+			printf("\n Si quiere marcos particulares de un proceso ingrese su PID \n\n");
+			int pid = 0;
+			scanf("%d",&pid);
+			char *path = dump_datos(pid);
+			printf("\n El path del estado actual de los datos de pid :%d archivado es: %s \n\n",pid,path);
+			free(path);
+		}else{
+			printf("\n Lo siento,pero no conozco el comando ingresado,volveremos al menu principal \n\n");
+		}
+		free(que_dump);
+		printf("\n （＾－＾） Muchas Gracias, en unos instantes podras ver el menu principal nuevamente \n\n");
 
-			break;
+		break;
 		case 3:
-			printf("Limpiando contenido de la Caché \n");
+			printf("\n Limpiando contenido de la Caché... \n\n");
 			limpiar_cache();
-			printf(" （＾－＾） Muchas Gracias, en unos instantes podras ver el menu principal nuevamente\n\n");
+			printf("\n（＾－＾） Muchas Gracias, en unos instantes podras ver el menu principal nuevamente \n\n");
 
 			break;
 		case 4:
-			printf("Tamaño de la Memoria \n");
-			printf("Cantidad de Marcos : %d \n",cantMarcos);
+			printf("\n Tamaño de la Memoria \n\n");
+			printf("\n Cantidad de Marcos : %d \n\n",cantMarcos);
 			int libres = marcos_libres();
-			printf("Cantidad de Marcos Libres : %d \n",libres); //calcular marcos libre
-			printf("Cantidad de Marcos Ocupados : %d \n",cantMarcos-libres); // restarle los marcos libres
+			printf("\n Cantidad de Marcos Libres : %d \n\n",libres); //calcular marcos libre
+			printf("\n Cantidad de Marcos Ocupados : %d \n\n",cantMarcos-libres); // restarle los marcos libres
 
-			printf(" （＾－＾） Muchas Gracias, en unos instantes podras ver el menu principal nuevamente\n\n");
+			printf("\n （＾－＾） Muchas Gracias, en unos instantes podras ver el menu principal nuevamente \n\n");
 			break;
 		case 5:;
-			int pid;
-			printf("Ingrese el PID del que quiere saber el tamaño \n");
-			scanf("%d",&pid);
-			int cantpagspid = calcular_paginas_de_proceso(pid);
-			int size_proceso = cantpagspid * tamanioMarco;
-			printf("Size del PID %d es :%d \n",pid,size_proceso);
-			printf(" （＾－＾） Muchas Gracias, en unos instantes podras ver el menu principal nuevamente\n\n");
-			break;
+		int pid;
+		printf("\n Ingrese el PID del que quiere saber el tamaño \n\n");
+		scanf("%d",&pid);
+		int cantpagspid = ultimoNumeroPagina(pid) + 1;
+		int size_proceso = cantpagspid * tamanioMarco;
+		printf("\n El tamaño del PID %d es :%d bytes \n",pid,size_proceso);
+		printf("\n （＾－＾） Muchas Gracias, en unos instantes podras ver el menu principal nuevamente\n\n");
+		break;
 		case 6:
-			printf("ಠ-ಠ ¿Qué ingresaste? ಠ-ಠ \n");
+			printf("\n\n    \033[1m\x1b[45;36mಠ-ಠ ¿Qué ingresaste? ಠ-ಠ\x1b[0m  \n\n");
 			break;
 		}
-		display_menu_principal();
+		sleep(2);
+		printf("\n\n");
 	}
 }
 
-int que_case_es(char *input){
 
-	int retornar;
-	if(strncmp(input,"Modificar Retardo",17)==0){
-		retornar = 1;
-	}else if(strncmp(input,"Dump",4)==0){
-		retornar = 2;
-	}else if(strncmp(input,"Flush",5)==0){
-		retornar = 3;
-	}else if(strncmp(input,"Size Memoria",12)==0){
-		retornar = 4;
-	}else if(strncmp(input,"Size PID",8)==0){
-		retornar = 5;
-	}else{
-		retornar = 6;
-	}
-
-	return retornar;
-}
 void display_menu_principal(){
 
-	printf("Bienvenid@ （‐＾▽＾‐） \n");
-	printf("Ingrese alguna de las siguientes opciones\n");
-	printf("	Modificar Retardo\n");
-	printf("	Dump\n");
-	printf("	Flush\n");
-	printf("	Size Memoria\n");
-	printf("	Size PID\n\n");
+	printf("----------------------------------------------\n\n");
+	printf("        \033[1m\x1b[93;41mBienvenid@ （‐＾▽＾‐)\x1b[0m \n\n");
+	printf("Ingrese el numero de alguna de las siguientes opciones\n");
+	printf("1-	Modificar_Retardo\n");
+	printf("2-	Dump\n");
+	printf("3-	Flush\n");
+	printf("4-	Size_Memoria\n");
+	printf("5-	Size_PID\n\n");
+	printf("----------------------------------------------\n\n");
 
 }
 void display_menu_dump(){
 
-	printf("Bienvenid@ al menu del comando Dump（‐＾▽＾‐） \n");
-	printf("¿Sobre qué quiere realizar el Dump?\n");
-	printf("	Cache\n");
-	printf("	Esctructuras de Memoria\n");
-	printf("	Contenido en Marcos\n\n");
+	printf("----------------------------------------------\n\n");
+	printf("   \033[1m\x1b[93;41m  Bienvenid@ al menu del comando Dump（‐＾▽＾‐） \x1b[0m \n\n");
+	printf("¿Sobre qué numero de opción quiere realizar el Dump?\n");
+	printf("6-	Cache\n");
+	printf("7-	Esctructuras_de_Memoria\n");
+	printf("8-	Contenido_en_Marcos\n");
+	printf("----------------------------------------------\n\n");
 
 }
 
@@ -172,20 +164,22 @@ void limpiar_cache(){
 char *dump_cache(){
 	cantidad_de_dump_cache ++;
 	char *path = string_from_format("/home/utnso/dump_cache_%d",cantidad_de_dump_cache);
-	FILE * fd = fopen(path,"ar+");
+	t_log* logi = log_create(path,"DUMP_CACHE",true,LOG_LEVEL_INFO);
 	int i;
-	int desplazamiento=0;
-	fseek(fd,desplazamiento,SEEK_SET);
+	char *linea;
+	char *linea2;
+	log_info(logi,"IMPRIMIENDO CONTENIDO MEMORIA CACHÉ");
 	for(i=0; i<entradasCache ; i++){
-		char *linea = string_from_format("Pid:%s-Pag:%s-Data:%s \n",Cache[i].pid,Cache[i].pag,Cache[i].dataFrame);
-		printf("Info posicion %d de cache",i);
-		printf("%s",linea);
-		fwrite(linea,sizeof(char),strlen(linea),fd);
+		linea = string_from_format("\n PID :%s \n PAG :%s \n DATA :%s \n",Cache[i].pid,Cache[i].pag,Cache[i].dataFrame);
+		linea2 = string_from_format("\n POSICIÓN Nro %d DE LA MEMORIA CACHÉ \n",i);
+		log_info(logi,linea2);
+		log_info(logi,linea);
+
 		free(linea);
-		desplazamiento += strlen(linea);
+		free(linea2);
 	}
-	fclose(fd);
-return path;
+	log_destroy(logi);
+	return path;
 }
 char *dump_estructuras(){
 
@@ -193,20 +187,28 @@ char *dump_estructuras(){
 	char *path = string_from_format("/home/utnso/dump_estructuras_%d",cantidad_de_dump_estructuras);
 	t_log* logi = log_create(path,"DUMP_ESTRUCTURAS",true,LOG_LEVEL_INFO);
 	int a;
-	log_info(logi,"Tabla De Paginas");
+	log_info(logi,"IMPRIMIENDO TABLA DE PAGINAS");
 	char *linea;
 	char *aux;
 
 	for(a=0;a<cantMarcos;a++){
-		aux = string_from_format("Entrada correspondiente al marco %d",a);
+		aux = string_from_format("\n ENTRADA CORRESPONDIENTE AL MARCO %d \n",a);
 		log_info(logi,aux);
 		free(aux);
 
-		linea = string_from_format("PID:%d-PAG:%d-ESTADO:%d",tablaPaginas[a].pid,tablaPaginas[a].pag,tablaPaginas[a].estado);
+		linea = string_from_format("\n PID: %d \n PAG:%d \n ESTADO:%d \n",tablaPaginas[a].pid,tablaPaginas[a].pag,tablaPaginas[a].estado);
 		log_info(logi,linea);
 		free(linea);
 	}
-
+	log_info(logi,"IMPRIMIENDO PROCESOS ACTIVOS");
+	int c;
+	char *otra;
+	for(c=0;c<list_size(procesos);c++){
+		t_proceso *aux = list_get(procesos,c);
+		otra = string_from_format("PID ACTIVO: %d",aux->pid);
+		log_info(logi,otra);
+		free(otra);
+	}
 	log_destroy(logi);
 	return path;
 }
@@ -215,21 +217,22 @@ char *dump_datos(int pid){
 	char *path = string_from_format("/home/utnso/dump_frames_%d",cantidad_de_dump_estructuras);
 	t_log* logi = log_create(path,"DUMP_FRAMES",true,LOG_LEVEL_INFO);
 	if(pid == -1){
-		log_info(logi,"Imprimir todos los frames de memoria");
-		int a;
+		log_info(logi,"\n IMPRIMIENDO TODO EL CONTENIDO DE FRAMES PARA PROCESOS \n");
+		int a;int count=1;
 		for (a = cantMarcosTablaPag+1; a<cantMarcos; a ++ ) {
-		char *dataFrame = malloc (tamanioMarco); memset(dataFrame,'\0',tamanioMarco);
-		int pos= (a* tamanioMarco)-1;
-		memcpy(dataFrame,Memoria+pos,tamanioMarco);
+			char *dataFrame = malloc (tamanioMarco+1); memset(dataFrame,'\0',tamanioMarco+1);
+			int pos= (a* tamanioMarco)-1;
+			memcpy(dataFrame,Memoria+pos,tamanioMarco);
 
-		char *imp = string_from_format("|%s|\n",dataFrame);
-		log_info(logi,imp);
-		free(imp);
-		free(dataFrame);
+			char *imp = string_from_format("\n MARCO Nro:%d \n DATOS: |%s|\n",count,dataFrame);
+			log_info(logi,imp);
+			free(imp);
+			free(dataFrame);
+			count ++;
 		}
 
 	}else{
-		char *aux= string_from_format("Imprimir todos los frames del PID: %d",pid);
+		char *aux= string_from_format("\n IMPRIMIENDO TODOS LOS FRAMES DEL PID %d \n",pid);
 		log_info(logi,aux);
 		free(aux);
 
@@ -254,7 +257,7 @@ int marcos_libres(){
 int calcular_paginas_de_proceso(int pid){
 	int ret = 0;
 	int a;
-	for(a=tamTablaPaginas;a<cantMarcos;a++){
+	for(a=cantMarcosTablaPag;a<cantMarcos;a++){
 		if(tablaPaginas[a].pid == pid){
 			ret++;
 		}
@@ -265,7 +268,7 @@ int calcular_paginas_de_proceso(int pid){
 char *info_marco_proceso(int pid){
 
 
-	int cant_pagina = calcular_paginas_de_proceso(pid);
+	int cant_pagina = ultimoNumeroPagina(pid)+1;
 	char *datos = malloc(cant_pagina * tamanioMarco);
 	int i;
 	int desplazamiento = 0;

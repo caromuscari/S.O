@@ -163,6 +163,9 @@ int main(int argc, char *argv[])
 			escribir_log("CASE N° 7: iniciar procesamiento de PCB",1);
 			memcpy(sizemensaje,buff+3,10);
 			largomensaje = atoi(sizemensaje);
+			char *loh = string_from_format("size del resto del mensaje%d",largomensaje);
+			escribir_log(loh,1);
+			free(loh);
 			char *mensajeEntero = malloc(largomensaje);
 			recibir(sockKerCPU,&controlador,mensajeEntero,largomensaje);
 			pcb = deserializarPCB_KerCPU(mensajeEntero);
@@ -409,14 +412,13 @@ char* pedir_linea_memoria(){
 
 		char *mensaje2 = mensaje_leer_memoria(pcb->PID,offset+nuevo_largo1,0,nuevo_largo2,&size);
 		enviar(sockMemCPU,mensaje2,&controlador,size);
-		recibir(sockMemCPU,&controlador,segunda_parte,nuevo_largo1);
+		recibir(sockMemCPU,&controlador,segunda_parte,nuevo_largo2);
 
 		linea = string_from_format("%s%s",primera_parte,segunda_parte);
 
 		free(primera_parte);
 		free(segunda_parte);
-		free(mensaje);
-		free(mensaje2);
+
 	}else{
 
 		char *mensaje = mensaje_leer_memoria(pcb->PID,offset,0,largo,&size);

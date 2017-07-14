@@ -158,10 +158,25 @@ char *recibir(int socket_receptor, int *controlador) {
 		*controlador = 1;
 		error_sockets(controlador, "");
 	}
+	char *buffer_aux;
+	char *cod = malloc(3);
+	memcpy(cod,buffer,3);
+	if((strncmp(cod,"P13",3)==0 )||(strncmp(cod,"P12",3)==0 )|| (strncmp(cod,"P20",3)==0 )){
+		char *str_size = malloc(10);
+		memcpy(str_size,buffer+3,10);
+		int size = atoi(str_size);
+		free(str_size);
+		buffer_aux= malloc(size+13);
+		memcpy(buffer_aux,buffer,size+13);
+		escribir_log_con_numero("size mensaje",size);
+		escribir_log_con_numero("size mensaje entero",size+13);
 
-	char *buffer_aux = strdup(buffer);
-	escribir_log_compuesto("recibido: ", buffer);
+	}else{
+		buffer_aux = strdup(buffer);
+		escribir_log_compuesto("recibido: ", buffer);
+	}
 	free(buffer);
+	free(cod);
 	return buffer_aux;
 }
 

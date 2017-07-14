@@ -28,6 +28,7 @@ extern int fifo;
 int FD;
 extern int accion_siguiente;
 extern int salto_linea;
+extern int tam_pagina_memoria;
 
 t_puntero definirVariable(t_nombre_variable identificador_variable) {
 
@@ -151,6 +152,8 @@ t_valor_variable dereferenciar(t_puntero direccion_variable) {
 		char * str_aux= string_from_format("ERROR DEREFERENCIANDO en posicion %d y error %d",direccion_variable,valor);
 		escribir_log(str_aux,2);
 		free(str_aux);
+
+		valor =0;
 	}
 
 
@@ -455,7 +458,7 @@ t_puntero reservar (t_valor_variable espacio){
 
 		char *str_puntero = malloc(size_mensaje);
 		recibir(sockKerCPU,&controlador,str_puntero,size_mensaje);
-		puntero_retorno = atoi(str_puntero);
+		puntero_retorno = (atoi(str_puntero)-((pcb->cant_pag)*tam_pagina_memoria));
 
 		char *aux_log = string_from_format("Ejecute RESERVAR heap de %d y Kernel lo aloco en el puntero %d",espacio,puntero_retorno);
 		escribir_log(aux_log,1);
@@ -465,8 +468,10 @@ t_puntero reservar (t_valor_variable espacio){
 
 	}else  if(strncmp(respuesta,"K21",3)==0){
 
-		char *str_error=string_substring(respuesta,13,4);
-		int cod_error = atoi(str_error);
+		char *error = malloc(5); memset(error,'0',5);
+		recibir(sockKerCPU,&controlador,error,4);
+		char *str_error = string_substring(error,0,4);
+		int cod_error = (-1)*(atoi(str_error));
 		pcb->exit_code = cod_error;
 
 		fifo= FINALIZAR_POR_ERROR;
@@ -476,7 +481,7 @@ t_puntero reservar (t_valor_variable espacio){
 		escribir_log(aux_log,2);
 		free(aux_log);
 		free(str_error);
-
+		free(error);
 	}
 
 	free(respuesta);
@@ -501,8 +506,10 @@ void liberar (t_puntero puntero){
 
 	}else  if(strncmp(respuesta,"K21",3)==0){
 
-		char *str_error=string_substring(respuesta,13,4);
-		int cod_error = atoi(str_error);
+		char *error = malloc(5); memset(error,'0',5);
+		recibir(sockKerCPU,&controlador,error,4);
+		char *str_error = string_substring(error,0,4);
+		int cod_error = (-1)*(atoi(str_error));
 		pcb->exit_code = cod_error;
 
 		fifo= FINALIZAR_POR_ERROR;
