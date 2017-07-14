@@ -23,9 +23,9 @@ int posicion_pagina;
 int inicio_bloque;
 
 t_bloque *find_first_fit(t_list *hs, int t_sol);
-void reservar_memoria_din(t_program *program, int size_solicitado);
-void inicializar_pagina_dinamica(t_program *prog, int size_sol);
-int ubicar_bloque(t_pagina *pagina,int tam_sol, t_program *program);
+int reservar_memoria_din(t_program *program, int size_solicitado, char *bla);
+void inicializar_pagina_dinamica(t_program *prog, int size_sol, char *offs);
+int ubicar_bloque(t_pagina *pagina,int tam_sol, t_program *program, char*bla);
 void compactar(t_pagina *pagina);
 void _free_bloque(t_bloque *bloque);
 int pedir_pagina();
@@ -36,7 +36,7 @@ void liberar_pagina(t_pagina *pagina);
 int chequear_pagina(t_pagina *page);
 void juntar_memoria(t_list *hp, t_bloque *blo, t_bloque *blo_liberado, int num_bloque, bool anterior);
 
-void inicializar_pagina_dinamica(t_program *prog, int size_sol)
+void inicializar_pagina_dinamica(t_program *prog, int size_sol, char *offs)
 {
 	t_pagina *pagina = malloc(sizeof(t_pagina));
 	pagina->heaps = list_create();
@@ -60,11 +60,12 @@ void inicializar_pagina_dinamica(t_program *prog, int size_sol)
 
 	list_add(pagina->heaps, bloque);
 	list_add(prog->memoria_dinamica, pagina);
-	reservar_memoria_din(prog, size_sol);
+	reservar_memoria_din(prog, size_sol, offs);
 }
 
-void reservar_memoria_din(t_program *program, int size_solicitado)
+int reservar_memoria_din(t_program *program, int size_solicitado, char *offs)
 {
+	int retorno = 0;
 	program->syscall++;
 	program->allocs++;
 
@@ -83,28 +84,10 @@ void reservar_memoria_din(t_program *program, int size_solicitado)
 				size_disponible = page->esp_libre;
 
 				if (size_disponible >= size_solicitado)
-					ubicado = ubicar_bloque(page, size_solicitado, program);
-
-				else n++;
-			}
-
-			n = 0;
-			while(n < size_lpages && ubicado == 0)
-			{
-				t_pagina *page_ = list_get(program->memoria_dinamica, n);
-				compactar(page_);
-				n++;
-			}
-
-			n = 0;
-			while(n < size_lpages && ubicado == 0)
-			{
-				t_pagina *page = list_get(program->memoria_dinamica, n);
-				size_disponible = page->esp_libre;
-
-				if (size_disponible >= size_solicitado)
-					ubicado = ubicar_bloque(page, size_solicitado, program);
-
+				{
+					ubicado = ubicar_bloque(page, size_solicitado, program, offs);
+					retorno = 1;
+				}
 				else n++;
 			}
 		}
@@ -113,15 +96,16 @@ void reservar_memoria_din(t_program *program, int size_solicitado)
 			int pedido = pedir_pagina(program);
 
 			if(pedido)
-				inicializar_pagina_dinamica(program, size_solicitado);
+				inicializar_pagina_dinamica(program, size_solicitado, offs);
 			else
 				forzar_finalizacion(program->PID, 0, 5, 1);
 		}
 	}else
 		forzar_finalizacion(program->PID, 0, 8, 1);
+	return retorno;
 }
 
-int ubicar_bloque(t_pagina *pagina,int tam_sol, t_program *program)//usa algoritmo first fit -> el resumen dice que es el mas kpo
+int ubicar_bloque(t_pagina *pagina,int tam_sol, t_program *program, char *off_dev)//usa algoritmo first fit -> el resumen dice que es el mas kpo
 {
 	t_bloque *bloque = malloc (sizeof(t_bloque));
 	bloque = find_first_fit(pagina->heaps, tam_sol);
@@ -138,6 +122,7 @@ int ubicar_bloque(t_pagina *pagina,int tam_sol, t_program *program)//usa algorit
 		infheap->pagina = pagina->n_pagina;
 		int offset = pagina->n_pagina*tam_pagina + inicio_bloque + 5;
 		char *offs = string_itoa(offset);
+		off_dev = offs;
 		dictionary_put(program->posiciones, offs ,infheap);
 
 		if (tam_sol < sz)

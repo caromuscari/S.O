@@ -233,8 +233,16 @@ void responder_solicitud_cpu(int socket_, char *mensaje)
 			break;
 		case 17: ;//alloc
 			char *mensaje4 = get_mensaje(mensaje);
+			int cont = 0;
 			int size2 = atoi(mensaje4);
-			reservar_memoria_din(prog, size2);
+			char *offs = strdup("");
+			if (reservar_memoria_din(prog, size2, offs))
+			{
+				char *men = armar_mensaje("K99", offs);
+				enviar(socket_, men, &cont);
+				free(men);
+			}
+			free(offs);
 			free(mensaje4);
 			break;
 		case 18: ;//free
