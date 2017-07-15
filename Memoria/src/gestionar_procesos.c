@@ -15,7 +15,7 @@ extern t_list *procesos;
 void crear_proceso(int pid, int pag){
 	t_proceso *proceso_nuevo = malloc(sizeof(t_proceso));
 	proceso_nuevo->pid = pid;
-	proceso_nuevo->pid = pag;
+	proceso_nuevo->cantPaginas = pag;
 	list_add(procesos,proceso_nuevo);
 }
 int buscar_proceso(int pid){

@@ -24,7 +24,6 @@ extern int cantMarcosTablaPag;
 extern int tamanioMarco;
 extern char *Memoria;
 extern t_cache* Cache;
-extern t_LRU_cache* Cache_LRU;
 extern int entradasCache;
 extern t_tablaPagina* tablaPaginas;
 extern int retardo;
@@ -170,7 +169,7 @@ char *dump_cache(){
 	char *linea2;
 	log_info(logi,"IMPRIMIENDO CONTENIDO MEMORIA CACHÉ");
 	for(i=0; i<entradasCache ; i++){
-		linea = string_from_format("\n PID :%s \n PAG :%s \n DATA :%s \n",Cache[i].pid,Cache[i].pag,Cache[i].dataFrame);
+		linea = string_from_format("\n PID :%d \n PAG :%d \n DATA :%s \n",Cache[i].pid,Cache[i].pag,Cache[i].dataFrame);
 		linea2 = string_from_format("\n POSICIÓN Nro %d DE LA MEMORIA CACHÉ \n",i);
 		log_info(logi,linea2);
 		log_info(logi,linea);
