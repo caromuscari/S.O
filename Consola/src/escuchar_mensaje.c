@@ -75,14 +75,16 @@ void escuchar_mensaje()
 				pthread_create(&hiloPrograma,NULL,(void*)programa,pid);
 				hilo->hilo= hiloPrograma;
 
-				escribir_log_con_numero("Se inicio el programa: ", atoi(pid));
+				//escribir_log_con_numero("Se inicio el programa: ", atoi(pid));
+				printf("Se inicio el programa: %s \n", pid);
 
 				dictionary_put(p_pid,pid,hilo);
 				dictionary_put(h_pid,string_itoa(hiloPrograma),pid);
 
 				break;
 			case 5:
-				escribir_log("No se pudo iniciar el programa por falta de memoria");
+				//escribir_log("No se pudo iniciar el programa por falta de memoria");
+				printf("No se pudo iniciar el programa por falta de memoria \n");
 				free(sema);
 				free(cant);
 				free(smod);
