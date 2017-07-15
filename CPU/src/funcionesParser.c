@@ -460,13 +460,15 @@ t_puntero reservar (t_valor_variable espacio){
 
 		char *str_puntero = malloc(size_mensaje);
 		recibir(sockKerCPU,&controlador,str_puntero,size_mensaje);
-		puntero_retorno = (atoi(str_puntero)-((pcb->cant_pag)*tam_pagina_memoria));
+		char *aux_puntero = string_substring(str_puntero,0,size_mensaje);
+		puntero_retorno = (atoi(aux_puntero)-((pcb->cant_pag)*tam_pagina_memoria));
 
 		char *aux_log = string_from_format("Ejecute RESERVAR heap de %d y Kernel lo aloco en el puntero %d",espacio,puntero_retorno);
 		escribir_log(aux_log,1);
 		free(aux_log);
 		free(str_size_mensaje);
 		free(str_puntero);
+		free(aux_puntero);
 
 	}else  if(strncmp(respuesta,"K21",3)==0){
 

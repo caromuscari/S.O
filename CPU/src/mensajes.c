@@ -25,8 +25,11 @@ char *mensaje_escibir_memoria(int fpid,t_puntero direccion_variable,int cant_pag
 		tam = strdup("0004");
 	}
 
-
+	if(strlen(str_valor)>4){
 	mensaje = malloc(19+ strlen(str_valor));
+	}else{
+		mensaje = malloc(19+ 4);
+	}
 	// COD
 	memcpy(mensaje+desplazamiento,"P08",3);
 	desplazamiento += 3;
