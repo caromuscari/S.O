@@ -15,6 +15,7 @@
 #include "log.h"
 #include <semaphore.h>
 #include <time.h>
+#include <signal.h>
 
 t_consola *arch_config;
 pthread_t hiloUsuario;
@@ -40,6 +41,7 @@ void escuchar_mensaje();
 
 int main(int argc, char * argv[])
 {
+	signal(SIGINT,desconectar_consola);
 	crear_archivo_log("/home/utnso/log_consola.txt");
 	escribir_log("Se inicializan los parametros y diccionarios");
 	inicializar_parametros();
