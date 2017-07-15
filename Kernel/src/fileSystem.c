@@ -35,7 +35,7 @@ void abrir_crear(char *mensaje, t_program *prog, int socket_cpu);
 void escribir_archivo(int offset, char *info, char *flags, char *path, int socket_cpu, t_program *pr);
 int chequear_respuesta(int socket_cpu, char *path, char *flag, t_program *prog);
 void crear_archivo(int socket_cpu, char *path, char *flag, t_program *prog);
-char *armar_info_mensaje(char *info, char* path);
+char *armar_info_mensaje(char *info, char* path, char *o);
 
 void abrir_crear(char *mensaje, t_program *prog, int socket_cpu)
 {
@@ -77,13 +77,12 @@ void abrir_crear(char *mensaje, t_program *prog, int socket_cpu)
 		free(me);
 		free(fd_char);
 	}
-
+	free(path);
+	free(flag);
 }
 
 int abrir_archivo(char *path, char* flag, t_program *prog)
 {
-	/*t_TAG *ag = malloc(sizeof(t_TAG));
-	ag->FD = 0;*/
 	t_TAG *ag = buscar_archivo_TAG(path);
 
 	//agrega a la tabla de archivos globales
@@ -104,9 +103,6 @@ int abrir_archivo(char *path, char* flag, t_program *prog)
 	ar_p->FD = list_size(prog->TAP) + 3;
 
 	list_add(prog->TAP, ar_p);
-	free(path);
-	free(flag);
-
 	return ar_p->FD;
 }
 
@@ -227,7 +223,7 @@ void mover_puntero(int socket_cpu, int offset, int fd, t_program *prog)
 				free(info);
 				break;
 			case 6: ;//pedido de lectura
-				int size = atoi(mensaje);
+				int size = atoi(info);
 				pedido_lectura(prog, fd, offset, size, path, socket_cpu);
 				break;
 		}
@@ -244,10 +240,11 @@ void escribir_archivo(int offset, char *info, char *flags, char *path, int socke
 	if (string_contains(flags, "w"))
 	{
 		int controlador;
-		char *mensaje = armar_info_mensaje(info, path);
+		char *o = string_itoa(offset);
+		char *mensaje = armar_info_mensaje(info, path, o);
 		char *mensaje_enviar = armar_mensaje("K15", mensaje);
 		enviar(config->cliente_fs, mensaje_enviar, &controlador);
-
+		free(o);
 		char *mensaje_recibido = recibir(config->cliente_fs, &controlador);
 		char *header = get_header(mensaje);
 
@@ -300,7 +297,6 @@ void cerrar_file(t_list *tap, int fd)
 
 	if(ex_f)
 	{
-
 		t_TAP *p_ap = malloc(sizeof(t_TAP));
 		p_ap = buscar_archivo_TAP(tap, fd);
 
@@ -389,22 +385,39 @@ int chequear_respuesta(int socket_cpu, char *path, char *flag, t_program *prog)
 	return no_existe;
 }
 
-char *armar_info_mensaje(char *info, char* path)
+char *armar_info_mensaje(char *info, char* path, char *off)
 {
 	char *payload_char = string_itoa(string_length(info));
 	int size_payload = string_length(payload_char);
-	free(payload_char);
+
 	char *primera_parte = string_repeat('0', 4 - size_payload);
 
 	char *payload_char2 = string_itoa(string_length(path));
 	int size_payload2 = string_length(payload_char2);
-	free(payload_char2);
+
 	char *segunda_parte = string_repeat('0', 4 - size_payload2);
 
 	char *mensaje = strdup("");
 
-	string_append(&mensaje, primera_parte);
-	string_append(&mensaje, segunda_parte);
+	//char *of = string_itoa(off);
+	int l = string_length(off);
+	char *st = string_itoa(l);
+	char *otra_parte = string_repeat('0', 4 - l);
 
+
+	string_append(&mensaje, segunda_parte);
+	string_append(&mensaje, payload_char2);
+	string_append(&mensaje, path);
+	string_append(&mensaje, otra_parte);
+	string_append(&mensaje, st);
+	string_append(&mensaje, off);
+	string_append(&mensaje, primera_parte);
+	string_append(&mensaje, payload_char);
+	string_append(&mensaje, info);
+
+
+	free(payload_char2);
+	free(payload_char);
+	free(st);
 	return mensaje;
 }

@@ -22,6 +22,8 @@ extern int pag_stack;
 int posicion_pagina;
 int inicio_bloque;
 
+
+void handshakearMemory();
 t_bloque *find_first_fit(t_list *hs, int t_sol);
 int reservar_memoria_din(t_program *program, int size_solicitado, int so_cpu);
 void inicializar_pagina_dinamica(t_program *prog, int size_sol);
@@ -35,6 +37,25 @@ void destruir_heap(t_bloque *bl);
 void liberar_pagina(t_pagina *pagina);
 int chequear_pagina(t_pagina *page);
 void juntar_memoria(t_list *hp, t_bloque *blo, t_bloque *blo_liberado, int num_bloque, bool anterior);
+
+void handshakearMemory()
+{
+	int controlador = 0;
+	char *mensaje = armar_mensaje("K00","");
+	char *respuesta;
+
+	enviar(config->cliente_memoria, mensaje, &controlador);
+	respuesta = recibir(config->cliente_memoria, &controlador);
+	char *codigo = get_codigo(respuesta);
+	int cod = atoi(codigo);
+	char *mensaje33 = get_mensaje(respuesta);
+
+	if(cod == 0)
+		tam_pagina = atoi(mensaje33);
+
+	free(mensaje);
+	free(mensaje33);
+}
 
 void inicializar_pagina_dinamica(t_program *prog, int size_sol)
 {
@@ -151,6 +172,7 @@ int ubicar_bloque(t_pagina *pagina, int tam_sol, t_program *program, int so_cpu)
 		if (tam_sol < sz)
 		{
 			t_bloque *bl = malloc(sizeof(t_bloque));
+			bl->metadata = malloc(sizeof(HeapMetadata));
 			bl->metadata->isFree = 1;
 			bl->metadata->size = sz - tam_sol;
 
@@ -178,7 +200,7 @@ t_bloque *find_first_fit(t_list *hs, int t_sol)
 		//bool libre = h->metadata->isFree;
 		//bool entra = (t_sol <= h->metadata->size);
 		posicion_pagina++;
-		if((h->metadata->isFree==1) && ((t_sol <= h->metadata->size)))
+		if(!(h->metadata->isFree==1) || (!(t_sol <= h->metadata->size)))
 			inicio_bloque =+ h->metadata->size;
 
 		return ((h->metadata->isFree==1) && ((t_sol <= h->metadata->size)));

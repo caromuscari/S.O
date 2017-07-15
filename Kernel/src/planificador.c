@@ -360,9 +360,9 @@ void forzar_finalizacion(int pid, int cid, int codigo_finalizacion, int aviso)
 
 void finalizar_quantum(int pid)
 {
-	int _buscar_proceso(t_PCB *un_proceso)
+	bool _buscar_proceso(t_PCB *un_proceso)
 	{
-		return !(pid == un_proceso->PID);
+		return (pid == un_proceso->PID);
 	}
 
 	pthread_mutex_lock(&mutex_lista_ejecutando);

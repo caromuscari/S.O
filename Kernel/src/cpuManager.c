@@ -35,7 +35,8 @@ char *get_numero(char *mensaje);
 void pedir_pcb_error(t_program *prg, int exit_code);
 char *armar_valor(char *pid_, char *mensaje);
 
-void realizar_handShake_cpu(int nuevo_socket) {
+void realizar_handShake_cpu(int nuevo_socket)
+{
 	//Envio mensaje a CPU pidiendo sus datos
 	char *mensaje = strdup("K00");
 	enviar(nuevo_socket, mensaje, &controlador_cpu);
@@ -78,6 +79,7 @@ void realizar_handShake_cpu(int nuevo_socket) {
 			free(header);
 		}
 	}
+	free(mensaje);
 }
 
 void actualizar_pcb(t_program *programa, t_PCB *pcb)
@@ -204,8 +206,8 @@ void responder_solicitud_cpu(int socket_, char *mensaje)
 			actualizar_pcb(prog, pcb_actualizado);
 			finalizar_quantum(pcb_actualizado->PID);
 
-			free(cpu_ejecutando->program);
-			cpu_ejecutando->program = malloc(sizeof(t_program));
+			//free(cpu_ejecutando->program);
+			//cpu_ejecutando->program = malloc(sizeof(t_program));
 			cpu_ejecutando->ejecutando = 0;
 			free(mensaje_r);
 			break;
@@ -233,19 +235,18 @@ void responder_solicitud_cpu(int socket_, char *mensaje)
 			free(mensaje3);
 			break;
 		case 17: ;//alloc
-			int cont_mem = 0;
 			char *mensaje4 = get_mensaje(mensaje);
 			int size2 = atoi(mensaje4);
 			int offset_alloc = reservar_memoria_din(prog, size2, socket_);
 
-			if (offset_alloc>0)
+			/*if (offset_alloc>0)
 			{
 				char *off_char = string_itoa(offset_alloc);
 				char *men = armar_mensaje("K99", off_char);
 				enviar(socket_, men, &cont_mem);
 				free(men);
 				free(off_char);
-			}
+			}*/
 			free(mensaje4);
 			break;
 		case 18: ;//free
@@ -279,6 +280,7 @@ void responder_solicitud_cpu(int socket_, char *mensaje)
 			//if (controlador > 0) desconectar_consola(socket_);
 		}
 		free(header);
+		free(cod);
 	} else
 		escribir_error_log("No se reconocio el mensaje de CPU"); //emisor no reconocido
 }

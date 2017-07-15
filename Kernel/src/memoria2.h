@@ -8,6 +8,7 @@
 #ifndef MEMORIA2_H_
 #define MEMORIA2_H_
 
+void handshakearMemory();
 t_bloque *find_first_fit(t_list *hs, int t_sol);
 int reservar_memoria_din(t_program *program, int size_solicitado, int so_cpu);
 void inicializar_pagina_dinamica(t_program *prog, int size_sol);

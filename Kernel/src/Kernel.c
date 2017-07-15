@@ -20,7 +20,7 @@
 #include "planificador.h"
 #include "estructuras.h"
 #include "cpuManager.h"
-#include "memoria.h"
+#include "memoria2.h"
 #include "mensaje.h"
 #include "socket.h"
 #include "log.h"
@@ -56,6 +56,9 @@ int tam_pagina = 0;
 int pag_cod = 0;
 int pag_stack = 0;
 
+#define PAGE_SIZE 4096
+#define STK_SIZE (10 * PAGE_SIZE)
+
 void inicializar_variables();
 void liberar_memoria();
 void handshakearFS();
@@ -73,6 +76,13 @@ int main(int argc, char*argv[])
 	pthread_t hiloListos;
 	pthread_t hiloConsolaKernel;
 
+	//Nuevo intento de que funque tod bien
+	pthread_attr_t attr;
+
+	pthread_attr_init(&attr);
+	pthread_attr_setstacksize(&attr,STK_SIZE);
+
+
 	ruta_config = strdup(argv[1]);
 
 	crear_archivo_log("/home/utnso/log_kernel");
@@ -87,7 +97,8 @@ int main(int argc, char*argv[])
 	handshakearMemory();
 	handshakearFS();
 
-	pthread_create(&hiloConsolaConsola, NULL, (void*)manejo_conexiones, NULL);
+	pthread_create(&hiloConsolaConsola,&attr, (void*)manejo_conexiones, NULL);
+
 	pthread_create(&hiloNuevos, NULL, (void*)programas_nuevos_A_listos, NULL);
 	pthread_create(&hiloListos, NULL, (void*)programas_listos_A_ejecutar, NULL);
 	pthread_create(&hiloConsolaKernel, NULL, (void*)leer_consola, NULL);
