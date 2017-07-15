@@ -32,7 +32,7 @@ mv /home/utnso/tp-2017-1c-TodaviaSirve/evaluacion-final-esther/FS-ejemplo/SADICA
 
 cd /home/utnso/tp-2017-1c-TodaviaSirve/Consola/src
 
-gcc Consola.c escuchar_mensaje.c hilo_programa.c hilo_usuario.c loc.c mensaje.c parametros.c socket_cliente.c escuchar_mensaje.h hilo_programa.h estructuras.h hilo_usuario.h log.h mensaje.h parametros.h socket_cliente.h -o Consola -lcommons -lpthread
+gcc Consola.c escuchar_mensaje.c hilo_programa.c hilo_usuario.c log.c mensaje.c parametros.c socket_cliente.c escuchar_mensaje.h hilo_programa.h estructuras.h hilo_usuario.h log.h mensaje.h parametros.h socket_client.h -o Consola -lcommons -lpthread
 
 echo "Consola compilada, ejecutar normalmente"
 
@@ -48,7 +48,7 @@ echo "CPU compilada, ejecutar normalmente"
 
 cd /home/utnso/tp-2017-1c-TodaviaSirve/FileSystem/src
 
-gcc FileSystem.c archivos.c fsecundarias.c funciones.c log.c manejar_errores.c mensaje.c socket.c archivos.h estructuras.h fsecundarias.h funciones.h log.h manejo_errores.h mensaje.h socket.h -o FileSystem -lcommons -lpthread
+gcc FileSystem.c archivos.c fsecundarias.c funciones.c log.c manejo_errores.c mensaje.c socket.c archivos.h estructuras.h fsecundarias.h funciones.h log.h manejo_errores.h mensaje.h socket.h -o FileSystem -lcommons -lpthread
 
 cd --
 
