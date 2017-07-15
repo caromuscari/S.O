@@ -101,7 +101,7 @@ typedef struct
 typedef struct
 {
 	int size;
-	bool isFree;
+	int isFree;//1:true  0:false
 }HeapMetadata;
 
 typedef struct
@@ -134,7 +134,7 @@ typedef struct
 {
 	char *path;
 	int FD;
-	int open;
+	int open_;
 }t_TAG;
 
 typedef struct

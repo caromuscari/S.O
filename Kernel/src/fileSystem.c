@@ -33,47 +33,69 @@ char *get_path_msg(char *mensaje, int *payload1);
 char *get_info(char *mensaje, int payload1, int tam_info);
 void abrir_crear(char *mensaje, t_program *prog, int socket_cpu);
 void escribir_archivo(int offset, char *info, char *flags, char *path, int socket_cpu, t_program *pr);
-void chequear_respuesta(int socket_cpu, char *path, char *flag, t_program *prog);
+int chequear_respuesta(int socket_cpu, char *path, char *flag, t_program *prog);
 void crear_archivo(int socket_cpu, char *path, char *flag, t_program *prog);
 char *armar_info_mensaje(char *info, char* path);
 
 void abrir_crear(char *mensaje, t_program *prog, int socket_cpu)
 {
-	int payload;
-	char *path = get_path_msg(mensaje, &payload);
-	char *flag = get_info(mensaje, payload, 1);
+	char *payload_path = string_substring(mensaje,13,4);
+	int payload_path_int = atoi(payload_path);
 
-	if(string_contains(flag, "c"))
+	char *payload_flag = string_substring(mensaje,17+payload_path_int,1);
+	int payload_flag_int = atoi(payload_flag);
+
+	char *path = string_substring(mensaje,17,payload_path_int);
+	char *flag = string_substring(mensaje,17+payload_path_int+1,payload_flag_int);
+
+	free(payload_path);
+	free(payload_flag);
+
+	int existe;
+
+	char *men = armar_mensaje("K11", path);
+	int controlador;
+	enviar(config->cliente_fs, men, &controlador);
+	free(men);
+
+	existe = chequear_respuesta(socket_cpu, path, flag, prog);
+
+	if(string_contains(flag,"c") && existe == 1)
 	{
 		crear_archivo(socket_cpu, path, flag, prog);
+		abrir_archivo(path, flag, prog);
 	}
-	else
+	else if (existe == 0)
 	{
-		char *mensaje = armar_mensaje("K12", path);
-		int controlador;
-		enviar(config->cliente_fs, mensaje, &controlador);
-		free(mensaje);
-
-		chequear_respuesta(socket_cpu, path, flag, prog);
+		abrir_archivo(path, flag, prog);
 	}
-	abrir_archivo(path, flag, prog);
+	else if(existe == 1)
+	{
+		char *fd_char = string_itoa(-2);
+		char *me = armar_mensaje("K16", fd_char);
+		enviar(socket_cpu, me, &controlador);
+		free(me);
+		free(fd_char);
+	}
+
 }
 
 int abrir_archivo(char *path, char* flag, t_program *prog)
 {
-	t_TAG *ag = malloc(sizeof(t_TAG));
-	ag->FD = 0;
-	ag = buscar_archivo_TAG(path);
+	/*t_TAG *ag = malloc(sizeof(t_TAG));
+	ag->FD = 0;*/
+	t_TAG *ag = buscar_archivo_TAG(path);
 
 	//agrega a la tabla de archivos globales
-	if(ag->FD == 0)
+	if(ag == NULL)
 	{
-		ag->open = 1;
+		ag = malloc(sizeof(t_TAG));
+		ag->open_ = 1;
 		ag->FD = list_size(global_fd) + 3;
 		ag->path = strdup(path);
 
 		list_add(global_fd, ag);
-	}else ag->open ++;
+	}else ag->open_ ++;
 
 	//agrega a la tabla de archivos del proceso
 	t_TAP *ar_p = malloc(sizeof(t_TAP)); //armar para la función para los free :)
@@ -283,14 +305,14 @@ void cerrar_file(t_list *tap, int fd)
 		p_ap = buscar_archivo_TAP(tap, fd);
 
 		t_TAG *ag = buscar_archivo_TAG_fd(p_ap->FD);
-		ag->open --;
+		ag->open_ --;
 
 		bool _archivo_fd(t_TAG *ag2)
 		{
 			return ag2->FD == fd;
 		}
 
-		if(ag->open == 0)
+		if(ag->open_ == 0)
 		{
 			list_remove_and_destroy_by_condition(global_fd, (void *)_archivo_fd, (void *)destruir_file_TAG);
 		}
@@ -320,11 +342,12 @@ char *get_info(char *mensaje, int payload1, int tam_info)
 	return string_substring(mensaje, (17+payload1+tam_info), payload2);
 }
 
-void chequear_respuesta(int socket_cpu, char *path, char *flag, t_program *prog)
+int chequear_respuesta(int socket_cpu, char *path, char *flag, t_program *prog)
 {
 	int controlador;
 	char *mensaje_recibido = recibir(config->cliente_fs, &controlador);
 	char *header = get_header(mensaje_recibido);
+	int no_existe = 0;
 
 	if(comparar_header(header, "F"))
 	{
@@ -338,6 +361,18 @@ void chequear_respuesta(int socket_cpu, char *path, char *flag, t_program *prog)
 			free(mensaje);
 			free(fd_char);
 		}
+		else if(!(strcmp(info,"no")))
+		{
+			no_existe = 1;
+		}else
+		{
+			char *fd_char = string_itoa(-2);
+			char *mensaje = armar_mensaje("K16", fd_char);
+			enviar(socket_cpu, mensaje, &controlador);
+			free(mensaje);
+			free(fd_char);
+			no_existe = 2;
+		}
 		free(info);
 	}
 	else
@@ -347,10 +382,11 @@ void chequear_respuesta(int socket_cpu, char *path, char *flag, t_program *prog)
 		enviar(socket_cpu, mensaje, &controlador);
 		free(mensaje);
 		free(fd_char);
+		no_existe = 2;
 	}
-
 	free(mensaje_recibido);
 	free(header);
+	return no_existe;
 }
 
 char *armar_info_mensaje(char *info, char* path)

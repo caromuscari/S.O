@@ -146,15 +146,15 @@ void sem_wait_(t_program *proceso, char *sema, int socket_)
 
 void sem_signal(t_program *prog, char *sema, int socket_, int free_all)//cuando te mando 1 es porque tenes que liberar
 {
-	void _eliminar_proceso(t_sem *semf)
+	void _eliminar_proceso(char *key, t_sem *semf)
 	{
-		prog->syscall++;
+		//prog->syscall++;
 		t_queue *sems_aux = queue_create();
 
 		while(queue_size(semf->procesos)>1)
 			queue_push(sems_aux,queue_pop(semf->procesos));
 
-		while(queue_size(sems_aux))
+		while(queue_size(sems_aux)>1)
 		{
 			int pid =(int) queue_pop(sems_aux);
 			if(pid == prog->PID)

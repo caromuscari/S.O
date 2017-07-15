@@ -88,6 +88,7 @@ void programas_listos_A_ejecutar()
 				printf("%s\n",mensaje_env);
 				escribir_log_compuesto("mensaje_env",mensaje_env);
 				enviar_pcb(cpu_disponible->socket_cpu, mensaje_env, &controlador, tam_prog+13);
+				free(pcb_serializado);
 
 				if(controlador>0)
 				{
@@ -272,7 +273,7 @@ void forzar_finalizacion(int pid, int cid, int codigo_finalizacion, int aviso)
 
 	void _procesar_finalizacion(t_program *pr)
 	{
-		if(aviso) avisar_consola_proceso_murio(pr);
+		//if(aviso) avisar_consola_proceso_murio(pr);
 		pedir_pcb_error(pr,codigo_finalizacion);
 	}
 

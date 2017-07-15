@@ -18,12 +18,12 @@ extern int tam_pagina;
 
 void manejar_respuesta(char *);
 void handshakearMemory();
-void reservar_memoria_din(t_program *, int);
-int ubicar_bloque(t_pagina *,int, int *);
-HeapMetadata*find_first_fit(t_list *hs, int t_sol);
-void pedir_pagina();
-void ubicar_en_pagina(t_dictionary *, char *, int);
-void crear_dict_pagina(t_dictionary *);
+//void reservar_memoria_din(t_program *, int);
+//int ubicar_bloque(t_pagina *,int, int *);
+//HeapMetadata*find_first_fit(t_list *hs, int t_sol);
+//void pedir_pagina();
+//void ubicar_en_pagina(t_dictionary *, char *, int);
+//void crear_dict_pagina(t_dictionary *);
 
 void handshakearMemory()
 {

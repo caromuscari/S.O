@@ -101,7 +101,7 @@ int escuchar_conexiones(int socketServidor, int *controlador) {
 }
 
 int aceptar_conexion(int socketServidor, int *controlador) {
-	int c;
+	int c = 0;
 	struct sockaddr_in client;
 	*controlador = 0;
 
@@ -120,7 +120,7 @@ int aceptar_conexion(int socketServidor, int *controlador) {
 
 int enviar(int socket_emisor, char *mensaje_a_enviar, int *controlador)
 {
-	escribir_log_compuesto("mensaje_a_enviar: ", mensaje_a_enviar);
+	escribir_log_compuesto("MENSAJE_ENVIAR: ", mensaje_a_enviar);
 
 	int ret;
 	signal(SIGPIPE, SIG_IGN);
@@ -140,43 +140,54 @@ int enviar(int socket_emisor, char *mensaje_a_enviar, int *controlador)
 	return ret;
 }
 
-char *recibir(int socket_receptor, int *controlador) {
-	int ret;
-
-	char *buffer = malloc(9000);
-
+char *recibir(int socket_receptor, int *controlador)
+{
+	int ret, seg;
+	char *buffer = malloc(13 + 1);
+	buffer[13] = '\0';
 	*controlador = 0;
 
-	if ((ret = recv(socket_receptor, buffer, 9000, 0)) <= 0) {
-		//printf("error receiving or connection lost \n");
-		if (ret == 0) {
+	if((ret = recv(socket_receptor, buffer, 13, MSG_WAITALL)) <= 0)
+	{
+		if(ret == 0)
+		{
 			*controlador = 8;
 			char *receptor = string_itoa(socket_receptor);
 			error_sockets(controlador, receptor);
 			free(receptor);
 		}
-		*controlador = 1;
-		error_sockets(controlador, "");
+		else
+		{
+			*controlador = 1;
+			error_sockets(controlador, "");
+		}
 	}
-	char *buffer_aux;
-	char *cod = malloc(3);
-	memcpy(cod,buffer,3);
-	if((strncmp(cod,"P13",3)==0 )||(strncmp(cod,"P12",3)==0 )|| (strncmp(cod,"P20",3)==0 )){
+
+	//if((strncmp(cod,"P13",3)==0)||(strncmp(cod,"P12",3)==0)||(strncmp(cod,"P20",3)==0))
+	//{
 		char *str_size = malloc(10);
-		memcpy(str_size,buffer+3,10);
+		str_size = string_substring(buffer, 3, 10);
+		//memcpy(str_size,buffer+3,10);
+
 		int size = atoi(str_size);
 		free(str_size);
-		buffer_aux= malloc(size+13);
-		memcpy(buffer_aux,buffer,size+13);
-		escribir_log_con_numero("size mensaje",size);
-		escribir_log_con_numero("size mensaje entero",size+13);
+		char *resto_mensaje = malloc(size);
+		if(size>0) seg = recv(socket_receptor, resto_mensaje, size, 0);
 
-	}else{
+		char *buffer_aux= malloc(size+13);
+		memcpy(buffer_aux,buffer,13);
+		memcpy(buffer_aux+13,resto_mensaje,size);
+
+		free(resto_mensaje);
+		escribir_log_compuesto("MENSAJE_RECIBIDO: ", buffer_aux);
+	/*}
+	else
+	{
+		buffer_aux[ret] = '\0';
 		buffer_aux = strdup(buffer);
 		escribir_log_compuesto("recibido: ", buffer);
-	}
+	}*/
 	free(buffer);
-	free(cod);
 	return buffer_aux;
 }
 

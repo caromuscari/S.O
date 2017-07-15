@@ -305,7 +305,7 @@ void imprimir_tabla_archivos()
 	void _imprimir(t_TAG *tg)
 	{
 		printf("Archivo: %s\n", tg->path);
-		printf("Open: %i\n\n", tg->open);
+		printf("Open: %i\n\n", tg->open_);
 	}
 
 	pthread_mutex_lock(&mutex_lista_fs);

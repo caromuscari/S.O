@@ -16,7 +16,6 @@
 
 extern t_list *list_cpus;
 extern pthread_mutex_t mutex_lista_cpus;
-extern char *offs ;
 fd_set master;
 fd_set read_fds;
 int fdmax;
@@ -218,8 +217,8 @@ void responder_solicitud_cpu(int socket_, char *mensaje)
 			actualizar_pcb(prog, pcb_actualizado2);
 			finalizar_proceso(pcb_actualizado2->PID, pcb_actualizado2->exit_code);
 
-			free(cpu_ejecutando->program);
-			cpu_ejecutando->program = malloc(sizeof(t_program));
+			//free(cpu_ejecutando->program);
+			//cpu_ejecutando->program = malloc(sizeof(t_program));
 			cpu_ejecutando->ejecutando = 0;
 			free(mensaje_r2);
 			break;
@@ -234,17 +233,19 @@ void responder_solicitud_cpu(int socket_, char *mensaje)
 			free(mensaje3);
 			break;
 		case 17: ;//alloc
+			int cont_mem = 0;
 			char *mensaje4 = get_mensaje(mensaje);
-			int cont = 0;
 			int size2 = atoi(mensaje4);
-			offs = strdup("");
-			if (reservar_memoria_din(prog, size2) == 1)
+			int offset_alloc = reservar_memoria_din(prog, size2, socket_);
+
+			if (offset_alloc>0)
 			{
-				char *men = armar_mensaje("K99", offs);
-				enviar(socket_, men, &cont);
+				char *off_char = string_itoa(offset_alloc);
+				char *men = armar_mensaje("K99", off_char);
+				enviar(socket_, men, &cont_mem);
 				free(men);
+				free(off_char);
 			}
-			free(offs);
 			free(mensaje4);
 			break;
 		case 18: ;//free
