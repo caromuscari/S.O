@@ -31,10 +31,8 @@ void imprimir_menu();
 
 void hilousuario()
 {
-	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE,NULL);
-	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,NULL);
-	//t_dictionary* switch_;
-	//cargar_switch(switch_);
+	//pthread_setcancelstate(PTHREAD_CANCEL_ENABLE,NULL);
+	//pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,NULL);
 
 	while(flag == 0)
 	{
@@ -44,28 +42,6 @@ void hilousuario()
 		char *identi;
 		scanf("%ms", &ingreso);
 
-		/*int data=dictionary_get(switch_,ingreso);
-				  switch(data){
-				  	case 1:
-				  		printf("ingresar la ruta del programa: ");
-						scanf("%s",identi);
-						iniciar_programa(identi,socket_);
-						break;
-					case 2:
-						printf("ingresar el PID del programa: ");
-						scanf("%s",identi);
-						finalizar_programa(atol(identi),socket_);
-						break;
-					case 3:
-						desconectar_consola();
-						break;
-					case 4:
-						system("clear");
-						break;
-					default:
-
-		}
-		*/
 		switch(atoi(ingreso))
 		{
 		case 1:
@@ -112,14 +88,6 @@ void hilousuario()
 	}
 	pthread_exit(NULL);
 }
-
-/*void cargar_switch(t_dictionary * switch_){
-	switch_=dictionary_create();
-	dictionary_put(switch_,"iniciar_programa",1);
-	dictionary_put(switch_,"finalizar_programa",2);
-	dictionary_put(switch_,"desconectar_consola",3);
-	dictionary_put(switch_,"limpiar_consola",4);
-}*/
 
 void iniciar_programa(char *ruta, int socket_)
 {
@@ -172,7 +140,7 @@ void finalizar_programa(char *pid, int socket_)
 			pid2 = dictionary_get(h_pid,var);
 			mensaje = armar_mensaje("C02",pid2);
 			enviar(socket_, mensaje, string_length(mensaje));
-			printf("Se finalizo el programa: %d\n", atoi(pid));
+			escribir_log_con_numero("Se finalizo el programa: ", atoi(pid));
 			tiempofinal_impresiones(pid2);
 
 			free(dictionary_remove(h_pid,var));
@@ -203,9 +171,7 @@ void tiempofinal_impresiones(char* pid)
 	t_tiempo *tiempoinicial;
 	time_t *tiempoI;
 	double diferencia;
-	//struct tm* tm_info;
 	struct tm* tm_info2;
-	//char buffer[26];
 	char buffer1[26];
 
 	cant = dictionary_get(impresiones,pid);
@@ -236,10 +202,7 @@ void desconectar_consola()
 	enviar(socket_, mensaje, string_length(mensaje));
 	printf("Se desconecta la consola\n");
 	free(mensaje);
-	//pthread_cancel(hiloMensaje);
 	pthread_kill(hiloMensaje,SIGKILL);
-	//pthread_cancel(hiloUsuario);
-	//flag = 1;
 	pthread_exit(NULL);
 }
 

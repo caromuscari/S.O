@@ -17,8 +17,6 @@
 #include "log.h"
 #include "estructuras.h"
 
-//extern int socket_;
-//extern int tamAimprimir;
 extern t_dictionary * sem;
 extern sem_t semaforo;
 extern sem_t x;
@@ -33,10 +31,8 @@ void programa(char* pid)
 {
 	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE,NULL);
 	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,NULL);
-	//char * mensaje;
 	t_chequeo *semp;
 	t_impresiones *impresiones2;
-	//struct tm* tm_info;
 	t_tiempo * tiempo2;
 
 	tiempo2 = malloc(sizeof(t_tiempo));
@@ -58,8 +54,6 @@ void programa(char* pid)
 		if(semp->valor==1)
 		{
 			sem_wait(&semaforo);
-			//escribir_log_con_numero("Tamanio a imprimir: ", tamAimprimir);
-			//mensaje = recibir(socket_,tamAimprimir);
 			escribir_log_compuesto("Mensaje a imprimir: ",aImprimir);
 			printf("%s", aImprimir);
 			impresiones2->cantidad++;

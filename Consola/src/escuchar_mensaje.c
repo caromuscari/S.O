@@ -29,7 +29,6 @@ extern sem_t semaforo;
 extern sem_t x;
 extern int flag;
 extern int socket_;
-//extern int tamAimprimir;
 pthread_t hiloPrograma;
 extern char * aImprimir;
 
@@ -40,8 +39,8 @@ void senial();
 void escuchar_mensaje()
 {
 	signal(SIGKILL,senial);
-	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE,NULL);
-	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,NULL);
+	//pthread_setcancelstate(PTHREAD_CANCEL_ENABLE,NULL);
+	//pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,NULL);
 	char *mensaje;
 	char *mensaje2;
 	sem_init(&semaforo,0,2);
@@ -56,9 +55,9 @@ void escuchar_mensaje()
 		t_impresiones *cant = malloc(sizeof(t_impresiones));
 		t_hilo *hilo = malloc(sizeof(t_hilo));
 		mensaje = recibir(socket_,13);
-		escribir_log(mensaje);
+		//escribir_log(mensaje);
 		mensaje2 = get_codigo(mensaje);
-		escribir_log(mensaje2);
+		//escribir_log(mensaje2);
 
 		switch(atoi(mensaje2))
 		{
@@ -76,14 +75,14 @@ void escuchar_mensaje()
 				pthread_create(&hiloPrograma,NULL,(void*)programa,pid);
 				hilo->hilo= hiloPrograma;
 
-				printf("Se inicio el programa: %d\n", atoi(pid));
+				escribir_log_con_numero("Se inicio el programa: ", atoi(pid));
 
 				dictionary_put(p_pid,pid,hilo);
 				dictionary_put(h_pid,string_itoa(hiloPrograma),pid);
 
 				break;
 			case 5:
-				printf("No se pudo iniciar el programa por falta de memoria\n");
+				escribir_log("No se pudo iniciar el programa por falta de memoria");
 				free(sema);
 				free(cant);
 				free(smod);
@@ -93,10 +92,9 @@ void escuchar_mensaje()
 				char *pid2 = recibir(socket_,1);
 				char *size = get_payload(mensaje);
 				escribir_log(pid2);
-				//tamAimprimir= atoi(size)-1;
 
 				aImprimir = recibir(socket_, atoi(size)-1);
-				escribir_log_compuesto("A imprimir: ", aImprimir);
+				//escribir_log_compuesto("A imprimir: ", aImprimir);
 
 				smod=dictionary_get(sem,pid2);
 				smod->valor=1;
@@ -150,7 +148,7 @@ void finalizar(char *pid, int socket_)
 		if(pthread_cancel(hilo->hilo)==0)
 		{
 			pid2 = dictionary_get(h_pid,var);
-			printf("Se finalizo el programa: %d\n", atoi(pid));
+			escribir_log_con_numero("Se finalizo el programa: ", atoi(pid));
 			tiempofinal_impresiones(pid2);
 
 			free(dictionary_remove(h_pid,var));
@@ -159,7 +157,7 @@ void finalizar(char *pid, int socket_)
 			free(dictionary_remove(sem,pid));
 			free(dictionary_remove(tiempo,pid));
 		}
-		else printf("No se pudo finalizar el programa\n");
+		else escribir_log("No se pudo finalizar el programa");
 	}
 }
 
