@@ -52,8 +52,6 @@ void actualizar_paginas(int pid,int asumar){
 	int pos = buscar_proceso(pid);
 	t_proceso *aux = list_get(procesos,pos);
 	aux->cantPaginas += asumar;
-	list_replace_and_destroy_element(procesos,pos,aux,(void *)destructor);
-
 }
 int ultimoNumeroPagina(int pid){
 

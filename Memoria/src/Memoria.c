@@ -78,7 +78,7 @@ int maxPaginaPid(int p_pid);
 
 int posPaginaSolicitada(int pid,int paginaSolicitada);
 int cantMarcosLibre();
-int buscarPosCache(int pid, int pag);
+int posLibreMemoria(int pos);
 
 bool f_mayor(int a, int b);
 
@@ -330,9 +330,9 @@ void esperar_mensaje(void *i) {
 				//PPPP: Pid
 				//XXXX: CantidadPaginasCodigo
 				//YYYY: CantidadPaginasSTACK
-				char *log_aux = string_from_format("K06-Guardando codigo: %d",cliente);
-				escribir_log(log_aux);
-				free(log_aux);
+				char *log_aux3 = string_from_format("K06-Inicializar Programa %d",cliente);
+				escribir_log(log_aux3);
+				free(log_aux3);
 
 				escribir_log_compuesto("\n MENSAJE RECIBIDO \n\n ",mensRec);
 
@@ -397,7 +397,7 @@ void esperar_mensaje(void *i) {
 
 			case 20: //K|18|CANTIDADBYTES|CODIGO|PID
 			{
-				char *escribir =string_from_format("K06 - Guardando codigo: %d ",cliente);
+				char *escribir =string_from_format("K20 - Guardando codigo: %d ",cliente);
 				escribir_log(escribir);
 				free(escribir);
 
@@ -420,9 +420,8 @@ void esperar_mensaje(void *i) {
 				escribir_log_compuesto("CODIGO: ", codigo);
 				escribir_log("\n ----------------------------- \n");
 				//Meter funciones de guardar codigo
-
-				sleep(2);
-				//sleep(retardo/1000);
+				escribir_log("\n Accediendo a Memoria Principal ... \n");
+				sleep(retardo/1000);
 				pthread_mutex_lock(&mutex_memoria);
 				int i;
 				for (i=0;i<pagsCod; i++)
@@ -448,9 +447,9 @@ void esperar_mensaje(void *i) {
 				//K|19|PPPP|XXXX.
 				//PPPP: PID.
 				//XXXX: CantidadPaginas.
-				char *log_aux = string_from_format("K19-Guardando codigo: %d",cliente);
-				escribir_log(log_aux);
-				free(log_aux);
+				char *log_aux4 = string_from_format("K19-Solicitar Paginas HEAP: %d",cliente);
+				escribir_log(log_aux4);
+				free(log_aux4);
 
 				escribir_log_compuesto("\n MENSAJE RECIBIDO:   ",mensRec);
 				char *str_pid = string_substring(mensRec, 3, 4);
@@ -505,6 +504,10 @@ void esperar_mensaje(void *i) {
 			break;
 			case 25:
 			{
+				char *log_aux6 = string_from_format("K25 - Liberar Proceso: %d",cliente);
+				escribir_log(log_aux6);
+				free(log_aux6);
+
 				char *procpid = string_substring(mensRec,3,4);
 				int pid = atoi(procpid);
 				pthread_mutex_lock(&mutex_cache);
@@ -519,8 +522,13 @@ void esperar_mensaje(void *i) {
 				escribir_log_con_numero("\n FINALIZAR PROGRAMA REALIZADO POR PID  ",pid);
 			}
 			break;
-			case 24:
+			case 24: //K24|PID|PAG
 			{
+
+				char *log_aux7 = string_from_format("K24-Liberar Pagina de un proceso: %d",cliente);
+				escribir_log(log_aux7);
+				free(log_aux7);
+
 				char *ppid = string_substring(mensRec,3,4);
 				int pid = atoi(ppid);
 				char *ppag = string_substring(mensRec,7,4);
@@ -532,7 +540,8 @@ void esperar_mensaje(void *i) {
 				pthread_mutex_unlock(&mutex_cache);
 				actualizar_paginas(pid,-1);
 
-				escribir_log_con_numero("\n FINALIZAR PROGRAMA REALIZADO POR PID ",pid);
+				escribir_log_con_numero("\n FINALIZAR PID",pid);
+				escribir_log_con_numero("\n FINALIZAR PAGINA",pag);
 
 			}
 			break;
@@ -557,6 +566,9 @@ void esperar_mensaje(void *i) {
 			{
 			case 01: //Solicitar Bytes de Memoria
 			{
+				char *log_aux1 = string_from_format("P01-Solicitar Bytes: %d",cliente);
+				escribir_log(log_aux1);
+				free(log_aux1);
 				char *ppid = string_substring(mensRec, 3, 4);
 				int pid = atoi(ppid);
 				char *ppag = string_substring(mensRec, 7, 4);
@@ -589,7 +601,10 @@ void esperar_mensaje(void *i) {
 			break;
 			case 8: //K|18|PIDD|CANTIDADBYTES|CODIGO}{}{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}+	¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿||||¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿¿+´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´´
 			{
-				printf("\n CASE 8 DE CPU\n");
+				char *log_aux2 = string_from_format("P08-Almacenar Bytes: %d",cliente);
+				escribir_log(log_aux2);
+				free(log_aux2);
+
 
 				char *ppid = string_substring(mensRec, 3, 4);
 				int pid = atoi(ppid);
@@ -628,7 +643,7 @@ void esperar_mensaje(void *i) {
 
 
 		chau:
-		printf("Chau \n");
+		printf("Ejecutada \n");
 	}
 
 }
@@ -679,7 +694,7 @@ void inicializarPrograma (int pid,int cantPaginasAgrabar)
 			tablaPaginas[pos_ReHash].estado = 1;
 			tablaPaginas[pos_ReHash].pid = pid;
 			tablaPaginas[pos_ReHash].pag = maxPagPid+1;
-			printf("\n pos_RE_has: %d \n",pos_ReHash);
+		//	printf("\n pos_RE_has: %d \n",pos_ReHash);
 			maxPagPid++;
 		}
 	}
@@ -716,11 +731,9 @@ void mostrar_memoria (void)
 		char * dataFrame = malloc (tamanioMarco); memset(dataFrame,'\0',tamanioMarco);
 		memcpy(dataFrame,Memoria+pos,tamanioMarco);
 
-	printf("|%s| - %d \n",dataFrame,a);
-	/*	char * imp = string_from_format("|%s| - %d \n",dataFrame,a);
+		char * imp = string_from_format("|%s| - %d \n",dataFrame,a);
 		escribir_log(imp);
 		free(imp);
-	*/
 		free(dataFrame);
 	}
 
@@ -730,11 +743,11 @@ void mostrar_memoria (void)
 	char * imp;
 	for(i=0;i<entradasCache;i++){
 
-		printf("\n%d|%d|%s \n",Cache[i].pid,Cache[i].pag,Cache[i].dataFrame);
-		/*imp = string_from_format("\n%d|%d|%s \n",Cache[i].pid,Cache[i].pag,Cache[i].dataFrame);
+	//	printf("\n%d|%d|%s \n",Cache[i].pid,Cache[i].pag,Cache[i].dataFrame);
+		imp = string_from_format("\n%d|%d|%s \n",Cache[i].pid,Cache[i].pag,Cache[i].dataFrame);
 		escribir_log(imp);
 		free(imp);
-		*/
+
 	}
 
 
@@ -787,12 +800,10 @@ void MostrarCache(void){
 	char *imp_lru;
 	for(i=0;i<entradasCache;i++){
 
-		printf("\n%d|%d|%d \n",Cache_LRU[i].pid,Cache_LRU[i].pag,Cache_LRU[i].LRU);
-		/*
+
 		imp_lru = string_from_format("\n%d|%d|%d \n",Cache_LRU[i].pid,Cache_LRU[i].pag,Cache_LRU[i].LRU);
 		escribir_log(imp_lru);
 		free(imp_lru);
-		*/
 
 	}
 	escribir_log("\n ------------------------------------------- \n");
@@ -800,11 +811,11 @@ void MostrarCache(void){
 	char *imp_cache;
 	for(i=0;i<entradasCache;i++){
 
-		printf("\n%d|%d|%s \n",Cache[i].pid,Cache[i].pag,Cache[i].dataFrame);
-		/*imp_cache = string_from_format("\n%d|%d|%s \n",Cache[i].pid,Cache[i].pag,Cache[i].dataFrame);
+
+	imp_cache = string_from_format("\n%d|%d|%s \n",Cache[i].pid,Cache[i].pag,Cache[i].dataFrame);
 		escribir_log(imp_cache);
 		free(imp_cache);
-		*/
+
 	}
 	escribir_log("\n ------------------------------------------- \n");
 
@@ -849,8 +860,8 @@ char * solicitarBytes(int pid, int pag, int offset, int tam)
 		if (pEnCache == -1) //La pagina no se encuentra en CACHE
 		{
 			escribir_log("LA PAGINA NO SE ENCUENTRA EN CACHE");
-			sleep(2);
-			//sleep(retardo/1000);
+			escribir_log("\n Accediendo a Memoria Principal ... \n");
+			sleep(retardo/1000);
 			int pos = posFrameEnMemoria(frame_pos);
 			char * dataFrame = malloc (tam);
 			memset(dataFrame,'\0',tam);
@@ -897,8 +908,8 @@ char * solicitarBytes(int pid, int pag, int offset, int tam)
 
 		}
 	}else{ //CACHE DESHABILITADA
-		sleep(2);
-		//sleep(retardo/1000);
+		escribir_log("\n Accediendo a Memoria Principal ... \n");
+		sleep(retardo/1000);
 		int pos = posFrameEnMemoria(frame_pos);
 		char *dataFrame = malloc (tam);
 		memset(dataFrame,'\0',tam);
@@ -1039,8 +1050,8 @@ char * almacenarBytes(int pid, int pag, int offset, int tam, char * buf)
 
 			if (pEnCache == -1) //La pagina no se encuentra en CACHE
 			{
-				sleep(2);
-				//sleep(retardo/1000);
+				escribir_log("\n Accediendo a Memoria Principal ... \n");
+				sleep(retardo/1000);
 				int pos = posFrameEnMemoria(frame_pos);
 				memcpy(Memoria+pos+offset,buf,tam);
 				res=strdup("M020000000000");
@@ -1050,8 +1061,8 @@ char * almacenarBytes(int pid, int pag, int offset, int tam, char * buf)
 			{
 				memcpy(Cache[pEnCache].dataFrame+offset, buf,tam);
 				int pos = posFrameEnMemoria(frame_pos);
-				sleep(2);
-				//sleep(retardo/1000);
+				escribir_log("\n Accediendo a Memoria Principal ... \n");
+				sleep(retardo/1000);
 				memcpy(Memoria+pos+offset,buf,tam);
 				res=strdup("M020000000000");
 				incrementarLRU(pEnCache);
@@ -1063,8 +1074,8 @@ char * almacenarBytes(int pid, int pag, int offset, int tam, char * buf)
 
 			}
 		}else{ // CACHE DESHABILITDA
-			sleep(2);
-			//sleep(retardo/1000);
+			escribir_log("\n Accediendo a Memoria Principal ... \n");
+			sleep(retardo/1000);
 			int pos = posFrameEnMemoria(frame_pos);
 			memcpy(Memoria+pos+offset,buf,tam);
 			res=strdup("M020000000000");
@@ -1097,10 +1108,16 @@ void liberar_paginas_pid(int pid){
 int count ;
 int pag = 0;
 int maximasPaginas = ultimoNumeroPagina(pid);
-for(count=0;count < maximasPaginas+1;count ++){
+//printf("\n MAX PAGINAS %d",maximasPaginas);
 
+for(count=0;count <= maximasPaginas;count ++){
+
+ int posPag =posPaginaSolicitada(pid,pag);
+
+ if (posLibreMemoria(posPag)==1)
+ {
 	liberar_una_pagina(pid,pag);
-
+ }
 	pag++;
 }
 
@@ -1121,7 +1138,11 @@ void liberar_una_pagina(int pid, int pag){
 		frame_pos = re_hash_pos;
 	}
 
-	int eliminar_colisio = !es_marco_correcto(pid,pag,hash_pos);
+/*	printf("\n Nro de Frame en Memo HASH:%d", hash_pos);
+	printf("\n Nro de Frame en Memo REHASH:%d", re_hash_pos);
+	printf("\n Nro de Frame en Memo POS:%d", frame_pos);
+*/
+	int eliminar_colisio =! es_marco_correcto(pid,pag,hash_pos);
 
 	if(entradasCache != 0){ // CACHE HABILITADA
 		int pEnCache = buscarPosCache(pid, pag);
@@ -1165,4 +1186,14 @@ void liberar_una_pagina(int pid, int pag){
 			eliminar_colision(pid,pag,hash_pos);
 		}
 	}
+}
+int posLibreMemoria(int pos)
+{
+ //Retorna 0=LIBRE 1=OCUPADO
+if (tablaPaginas[pos].estado== -1 )
+{
+	return 0;
+}
+	return 1;
+
 }

@@ -25,6 +25,7 @@ extern int cantMarcosTablaPag;
 extern int tamanioMarco;
 extern char *Memoria;
 extern t_cache* Cache;
+extern t_LRU_cache *Cache_LRU;
 extern int entradasCache;
 extern t_tablaPagina* tablaPaginas;
 extern int retardo;
@@ -162,8 +163,16 @@ void limpiar_cache(){
 			Cache[i].pid = -1;
 			Cache[i].pag = -1;
 			free(Cache[i].dataFrame);
-		}
+			Cache[i].dataFrame = NULL;
+			}
 	}
+	for(i=0;i<entradasCache;i++){
+		Cache_LRU[i].pag=-1;
+		Cache_LRU[i].pid=-1;
+		Cache_LRU[i].LRU=-1;
+	}
+
+
 }
 char *dump_cache(){
 	cantidad_de_dump_cache ++;
