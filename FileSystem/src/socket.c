@@ -131,7 +131,7 @@ int enviar(int socket_emisor, char *mensaje_a_enviar, int *controlador)
 {
 	int ret;
 	signal(SIGPIPE, SIG_IGN);
-	size_t sbuffer = sizeof(char)*sizeof(mensaje_a_enviar);
+	size_t sbuffer = sizeof(char)*string_length(mensaje_a_enviar);
 	*controlador = 0;
 
 	char *buffer = string_substring(mensaje_a_enviar,0,sbuffer);

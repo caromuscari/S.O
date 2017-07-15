@@ -134,7 +134,7 @@ void handshake1()
 {
 	char *handshake;
 	int esKernel=0;
-	char *mensaje;
+	//char *mensaje;
 	while(esKernel == 0)
 	{
 		cliente = escuchar_conexiones(socketfs,&flagsocket);
@@ -142,9 +142,9 @@ void handshake1()
 		if (verificarHS(handshake)== 1)
 		{
 			esKernel = 1;
-			mensaje = armar_mensaje("F00","");
-			enviar(cliente,mensaje,&flagsocket);
-			free(mensaje);
+			//mensaje = armar_mensaje("F00","");
+			//enviar(cliente,mensaje,&flagsocket);
+			//free(mensaje);
 		}else{
 			cerrar_conexion(cliente);
 			printf("intruso no kernel eliminado \n");
