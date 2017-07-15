@@ -22,10 +22,13 @@ echo "Commons y Parser listos"
 cd /home/utnso/tp-2017-1c-TodaviaSirve/evaluacion-final-esther/FS-ejemplo
 
 tar -xzvf FS.tgz
+tar -xzvf SADICA_FS_V2.tar.gz
 
 cd --
 
-mv /home/utnso/tp-2017-1c-TodaviaSirve/evaluacion-final-esther/FS-ejemplo /home/utnso/FS_SADICA
+mv /home/utnso/tp-2017-1c-TodaviaSirve/evaluacion-final-esther/FS-ejemplo/FS /home/utnso/FS_SADICA
+
+mv /home/utnso/tp-2017-1c-TodaviaSirve/evaluacion-final-esther/FS-ejemplo/SADICA_FS /home/utnso/FS_SADICA2
 
 cd /home/utnso/tp-2017-1c-TodaviaSirve/Consola/src
 
@@ -61,7 +64,7 @@ echo "Kernel compilado, ejecutar normalmente"
 
 cd /home/utnso/tp-2017-1c-TodaviaSirve/Memoria/src
 
-gcc Memoria.c consola_memoria.c hash.c log.c manejo_errores.c mensaje.c socket.c consola_memoria.h estructuras.h hash.h log.h manejo_errores.h mensaje.h socket.h -o Memoria -lcommons -lpthread
+gcc Memoria.c consola_memoria.c gestionar_procesos.c hash.c log.c manejo_errores.c mensaje.c socket.c consola_memoria.h estructuras.h gestionar_procesos.h hash.h log.h manejo_errores.h mensaje.h socket.h -o Memoria -lcommons -lpthread
 
 cd --
 

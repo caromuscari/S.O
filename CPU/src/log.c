@@ -20,7 +20,9 @@ void crear_archivo_log(char *file)
 {
 
 	logi = log_create(file,"CPU",true, LOG_LEVEL_INFO);
-	log_info(logi, string_from_format("se crea archivo de log en ruta: %s",file));
+	char *info = string_from_format("se crea archivo de log en ruta: %s",file);
+	log_info(logi, info);
+	free(info);
 }
 
 void escribir_log(char *mensaje,int cod)

@@ -45,6 +45,9 @@ int cantMarcosTablaPag;
 int tamTablaPaginas;
 int ultimo_frame_libre_asignado;
 
+pthread_mutex_t mutex_memoria;
+pthread_mutex_t mutex_cache;
+
 t_tablaPagina *tablaPaginas;
 t_memoria *data_Memoria;
 t_log *log_;
@@ -66,6 +69,8 @@ void MostrarCache(void);
 void incrementarLRU(int posInicializar);
 void asignarPaginasProceso (int pid,int cantPaginasAgrabar);
 void cargarTablaPaginasEnMemoria();
+void liberar_paginas_pid(int pid);
+void liberar_una_pagina(int pid,int pag);
 
 int cantidadDePaginas(int tamanioBytes);
 int posFrameEnMemoria(int nroFrame);
@@ -225,6 +230,8 @@ void inicializar_variables(){
 	inicializar_array_colisiones();
 	retardo = data_Memoria->RETARDO_MEMORIA;
 	procesos = list_create();
+	pthread_mutex_init(&mutex_memoria,NULL);
+	pthread_mutex_init(&mutex_cache,NULL);
 
 }
 
@@ -344,9 +351,11 @@ void esperar_mensaje(void *i) {
 
 				if ( libres >= (pagsCodigo + STACK_SIZE))
 				{
+
 					inicializarPrograma (procPid,pagsCodigo);
+					crear_proceso(procPid,pagsCodigo-1);
 					inicializarPrograma (procPid,STACK_SIZE);
-					crear_proceso(procPid,pagsCodigo+STACK_SIZE-1);
+					actualizar_paginas(procPid,STACK_SIZE);
 
 					char* r_OK = armar_mensaje("M02","");
 					enviar(cliente,r_OK, &controlador);
@@ -414,7 +423,7 @@ void esperar_mensaje(void *i) {
 
 				sleep(2);
 				//sleep(retardo/1000);
-
+				pthread_mutex_lock(&mutex_memoria);
 				int i;
 				for (i=0;i<pagsCod; i++)
 				{
@@ -425,6 +434,7 @@ void esperar_mensaje(void *i) {
 					//actualizarCache
 
 				}
+				pthread_mutex_unlock(&mutex_memoria);
 
 				free(codigo);
 
@@ -456,7 +466,7 @@ void esperar_mensaje(void *i) {
 				if ( libres >= (pagsHEAP))
 				{
 					asignarPaginasProceso (procPid,pagsHEAP);
-					//actualizar_paginas(procPid,pagsHEAP);
+					actualizar_paginas(procPid,pagsHEAP);
 					char* r_OK = armar_mensaje("M02","");
 					enviar(cliente,r_OK, &controlador);
 					free(r_OK);
@@ -493,7 +503,39 @@ void esperar_mensaje(void *i) {
 
 			}
 			break;
+			case 25:
+			{
+				char *procpid = string_substring(mensRec,3,4);
+				int pid = atoi(procpid);
+				pthread_mutex_lock(&mutex_cache);
+				liberar_paginas_pid(pid);
+				pthread_mutex_unlock(&mutex_cache);
+				free(procpid);
 
+				char *mesaje = armar_mensaje("M02","");
+				enviar(cliente,mesaje,&controlador);
+				free(mesaje);
+
+				escribir_log_con_numero("\n FINALIZAR PROGRAMA REALIZADO POR PID  ",pid);
+			}
+			break;
+			case 24:
+			{
+				char *ppid = string_substring(mensRec,3,4);
+				int pid = atoi(ppid);
+				char *ppag = string_substring(mensRec,7,4);
+				int pag = atoi(ppag);
+
+				free(ppid);free(ppag);
+				pthread_mutex_lock(&mutex_cache);
+				liberar_una_pagina(pid,pag);
+				pthread_mutex_unlock(&mutex_cache);
+				actualizar_paginas(pid,-1);
+
+				escribir_log_con_numero("\n FINALIZAR PROGRAMA REALIZADO POR PID ",pid);
+
+			}
+			break;
 			case 99: //Muestra MP
 			{
 				mostrar_memoria();
@@ -504,6 +546,9 @@ void esperar_mensaje(void *i) {
 				MostrarCache();
 			}
 			break;
+			case 66:
+				chau =1;
+				break;
 			}
 
 			free(header);
@@ -525,7 +570,9 @@ void esperar_mensaje(void *i) {
 				escribir_log(logi);
 				free(logi);
 
+				pthread_mutex_lock(&mutex_cache);
 				char * Buffer = solicitarBytes(pid, pag, offset, tam);
+				pthread_mutex_unlock(&mutex_cache);
 				char *buffer_aux=string_substring(Buffer,0,tam);
 
 				escribir_log_compuesto("\n BUFFER RETORNO SOLICITAR BYTES \n", buffer_aux);
@@ -557,8 +604,9 @@ void esperar_mensaje(void *i) {
 				char *logi = string_from_format("\n Almacenar Bytes \nPID:%d \nPAG:%d \nOFFSET:%d \nTAM:%d\n BUFFER:%s \n",pid, pag, offset,tam,pbuffer);
 				escribir_log(logi);
 				free(logi);
-
+				pthread_mutex_lock(&mutex_memoria);
 				char* r_OK = almacenarBytes(pid, pag, offset, tam, pbuffer);
+				pthread_mutex_unlock(&mutex_memoria);
 				enviar(cliente,r_OK, &controlador);
 
 
@@ -570,7 +618,9 @@ void esperar_mensaje(void *i) {
 				free(r_OK);
 			}
 			break;
-
+			case 66:
+				chau =1;
+				break;
 
 			}
 		}
@@ -1042,3 +1092,77 @@ for (z=0; z<entradasCache; z++ )
 return max;
 }
 
+void liberar_paginas_pid(int pid){
+
+int count ;
+int pag = 0;
+int maximasPaginas = ultimoNumeroPagina(pid);
+for(count=0;count < maximasPaginas+1;count ++){
+
+	liberar_una_pagina(pid,pag);
+
+	pag++;
+}
+
+eliminar_proceso(pid);
+
+}
+
+void liberar_una_pagina(int pid, int pag){
+
+	int hash_pos = hash(pid,pag);
+	int re_hash_pos;
+	int frame_pos;
+	if (es_marco_correcto(pid, pag,hash_pos) == true ) {
+		frame_pos = hash_pos;
+	}
+	else {
+		re_hash_pos = buscar_marco_colision(pid,pag,hash_pos);
+		frame_pos = re_hash_pos;
+	}
+
+	int eliminar_colisio = !es_marco_correcto(pid,pag,hash_pos);
+
+	if(entradasCache != 0){ // CACHE HABILITADA
+		int pEnCache = buscarPosCache(pid, pag);
+		if (pEnCache == -1) //La pagina no se encuentra en CACHE
+		{
+			tablaPaginas[frame_pos].estado = 0;
+			tablaPaginas[frame_pos].pag = -1;
+			tablaPaginas[frame_pos].pid = -1;
+
+			if(eliminar_colisio == true){
+				eliminar_colision(pid,pag,hash_pos);
+			}
+
+		}
+		else //La pagina esta en CACHE
+		{
+			free(Cache[pEnCache].dataFrame);
+			Cache[pEnCache].dataFrame = NULL;
+			Cache[pEnCache].pag = -1;
+			Cache[pEnCache].pid = -1;
+
+			Cache_LRU[pEnCache].pag = -1;
+			Cache_LRU[pEnCache].pid = -1;
+			Cache_LRU[pEnCache].LRU = -1;
+
+			tablaPaginas[frame_pos].estado = 0;
+			tablaPaginas[frame_pos].pag = -1;
+			tablaPaginas[frame_pos].pid = -1;
+
+			if(eliminar_colisio == true){
+				eliminar_colision(pid,pag,hash_pos);
+			}
+		}
+	}else{ //CACHE DESHABILITADA
+
+		tablaPaginas[frame_pos].estado = 0;
+		tablaPaginas[frame_pos].pag = -1;
+		tablaPaginas[frame_pos].pid = -1;
+
+		if(eliminar_colisio == true){
+			eliminar_colision(pid,pag,hash_pos);
+		}
+	}
+}

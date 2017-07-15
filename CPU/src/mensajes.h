@@ -14,7 +14,7 @@
 #include <string.h>
 #include "funcionesCPU.h"
 
-char *mensaje_escibir_memoria(int fpid,t_puntero direccion_variable,int cant_pag,int valor);
+char *mensaje_escibir_memoria(int fpid,t_puntero direccion_variable,int cant_pag,int valor,int *size);
 char *mensaje_escibir_noint_memoria(int fpid,t_puntero direccion_variable,int cant_pag,int largo,void *valor,int *size);
 char *mensaje_semaforo(char * cod,char * semaforo,int *);
 char *mensaje_leer_memoria(int fpid,t_puntero direccion_variable, int cant_pag,int size_lectura,int *size);

@@ -170,6 +170,10 @@ int main(int argc, char *argv[])
 			recibir(sockKerCPU,&controlador,mensajeEntero,largomensaje);
 			pcb = deserializarPCB_KerCPU(mensajeEntero);
 			procesar();
+			free(mensajeEntero);
+			free(buff);
+			free(idmensaje);
+			free(sizemensaje);
 			break;
 		case 21:
 			escribir_log("CASE N°21: devolver cpu por error",1);
@@ -178,6 +182,9 @@ int main(int argc, char *argv[])
 			int codigo_error= (-1)*(atoi(cod_error));
 			pcb->exit_code = codigo_error;
 			free(cod_error);
+			free(buff);
+			free(idmensaje);
+			free(sizemensaje);
 			break;
 
 		default:
@@ -200,7 +207,7 @@ int main(int argc, char *argv[])
 			enviar(sockKerCPU,mensaje,&controlador,size);
 			free(pcb_serializado);
 			free(mensaje);
-
+			accion_siguiente = CONTINUAR;
 			break;
 
 		case FINALIZAR_POR_QUANTUM:
@@ -211,6 +218,7 @@ int main(int argc, char *argv[])
 			enviar(sockKerCPU,mensaje,&controlador,size);
 			free(pcb_serializado);
 			free(mensaje);
+			accion_siguiente = CONTINUAR;
 			break;
 
 		case FINALIZAR_POR_ERROR :
@@ -221,6 +229,7 @@ int main(int argc, char *argv[])
 			enviar(sockKerCPU,mensaje,&controlador,size);
 			free(pcb_serializado);
 			free(mensaje);
+			accion_siguiente = CONTINUAR;
 			break;
 
 		case BLOQUEAR_PROCESO:
@@ -229,10 +238,12 @@ int main(int argc, char *argv[])
 			enviar(sockKerCPU,mensaje,&controlador,size);
 			free(pcb_serializado);
 			free(mensaje);
+			accion_siguiente = CONTINUAR;
 			break;
 
 		case CONTINUAR:
 			escribir_log("CONTINUAR CON MI TRABAJO DE CPU",1);
+			accion_siguiente = CONTINUAR;
 		}
 		if(ABORTAR == 1){
 
@@ -246,11 +257,9 @@ int main(int argc, char *argv[])
 		}
 
 		fin2: printf("\nfin\n");
-		free(buff);
-		free(idmensaje);
-		free(sizemensaje);
 
-		//liberar_pcb();
+
+		liberar_pcb();
 
 	}
 	//printf("Me fui\n");
@@ -449,6 +458,7 @@ void finalizar_por_senial(int sig){
 
 void liberar_pcb(){
 
+	escribir_log("LIBERAR PCB",1);
 	free(pcb->algoritmo);
 	free(pcb->in_et);
 	free(pcb->in_cod);

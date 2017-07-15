@@ -7,16 +7,26 @@
 
 #include "mensajes.h"
 
-char *mensaje_escibir_memoria(int fpid,t_puntero direccion_variable,int cant_pag,int valor){
+char *mensaje_escibir_memoria(int fpid,t_puntero direccion_variable,int cant_pag,int valor,int *size){
 
-	char * mensaje = malloc(19+ sizeof(int));
+	char * mensaje;
 	char * pid; char * pagina; char *offset; char *tam;
 	char * aux_ceros;
 	int desplazamiento=0;
 	pid = string_itoa(fpid);
 	pagina = string_itoa(calcular_pagina(direccion_variable,cant_pag));
 	offset = string_itoa(calcular_offset_respecto_pagina(direccion_variable));
-	tam = strdup("0004");
+	char *str_valor = string_itoa(valor);
+	if(strlen(str_valor)>4){
+		char *aux_2 = string_repeat('0',4-strlen(str_valor));
+		tam = string_from_format("%s%d",aux_2,strlen(str_valor));
+		free(aux_2);
+	}else{
+		tam = strdup("0004");
+	}
+
+
+	mensaje = malloc(19+ strlen(str_valor));
 	// COD
 	memcpy(mensaje+desplazamiento,"P08",3);
 	desplazamiento += 3;
@@ -43,17 +53,23 @@ char *mensaje_escibir_memoria(int fpid,t_puntero direccion_variable,int cant_pag
 	desplazamiento += strlen(offset);
 	// TAMAÑO
 	memcpy(mensaje+desplazamiento,tam,4);
-	desplazamiento +=4;
+	desplazamiento += 4;
 	// VALOR
-	char * str_valor = string_itoa(valor);
-	aux_ceros = string_repeat('0',4-strlen(str_valor));
-	memcpy(mensaje+desplazamiento,aux_ceros,4-strlen(str_valor));
-	free(aux_ceros);
-	desplazamiento += 4-strlen(str_valor);
-	memcpy(mensaje+desplazamiento,str_valor,strlen(str_valor));
-	desplazamiento += strlen(str_valor);
+	if(strlen(str_valor)>4){
+		memcpy(mensaje+desplazamiento,str_valor,strlen(str_valor));
+		desplazamiento += strlen(str_valor);
+	}else{
+		aux_ceros = string_repeat('0',4-strlen(str_valor));
+		memcpy(mensaje+desplazamiento,aux_ceros,4-strlen(str_valor));
+		free(aux_ceros);
+		desplazamiento += 4-strlen(str_valor);
+		memcpy(mensaje+desplazamiento,str_valor,strlen(str_valor));
+		desplazamiento += strlen(str_valor);
+	}
+	*size = desplazamiento;
 
 	free(pid); free(pagina); free(offset); free(tam); free(str_valor);
+
 	return mensaje;
 }
 char *mensaje_semaforo(char * cod,char * semaforo,int *size){
@@ -346,8 +362,7 @@ char *mensaje_abrir(char *direccion,t_banderas flags,int *size){
 	int desplazamiento = 0;
 	char *mensaje;
 	char *banderas = strdup("");
-	char *size_mensaje = string_itoa(strlen(direccion));
-	char *aux_ceros = string_repeat('0',10-strlen(size_mensaje));
+	char *str_direccion = string_itoa(strlen(direccion));
 	int cantidad_banderas=0;
 	char *c = strdup("c");char *r = strdup("r");char *w = strdup("w");
 
@@ -363,8 +378,10 @@ char *mensaje_abrir(char *direccion,t_banderas flags,int *size){
 		string_append(&banderas,r);
 		cantidad_banderas ++;
 	}
+	char *size_mensaje = string_itoa(strlen(direccion)+4+1+cantidad_banderas);
+	char *aux_ceros = string_repeat('0',10-strlen(size_mensaje));
 
-	mensaje = malloc(13+strlen(direccion)+1+cantidad_banderas);
+	mensaje = malloc(13+strlen(direccion)+4+1+cantidad_banderas);
 	char *str_banderas = string_itoa(cantidad_banderas);
 
 	memcpy(mensaje+desplazamiento,"P02",3);
@@ -373,6 +390,12 @@ char *mensaje_abrir(char *direccion,t_banderas flags,int *size){
 	desplazamiento += 10-strlen(size_mensaje);
 	memcpy(mensaje+desplazamiento,size_mensaje,strlen(size_mensaje));
 	desplazamiento += strlen(size_mensaje);
+	free(aux_ceros);
+	aux_ceros = string_repeat('0',4-strlen(str_direccion));
+	memcpy(mensaje+desplazamiento,aux_ceros,4-strlen(str_direccion));
+	desplazamiento += 4-strlen(str_direccion);
+	memcpy(mensaje+desplazamiento,str_direccion,strlen(str_direccion));
+	desplazamiento += strlen(str_direccion);
 	memcpy(mensaje+desplazamiento,direccion,strlen(direccion));
 	desplazamiento += strlen(direccion);
 	memcpy(mensaje+desplazamiento,str_banderas,1);
@@ -389,6 +412,7 @@ char *mensaje_abrir(char *direccion,t_banderas flags,int *size){
 	free(r);
 	free(w);
 	free(str_banderas);
+	free(str_direccion);
 
 	return mensaje;
 }

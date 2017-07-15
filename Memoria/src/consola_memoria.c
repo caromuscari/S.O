@@ -7,6 +7,7 @@
 
 #include "consola_memoria.h"
 #include <commons/collections/list.h>
+#include <pthread.h>
 #include <commons/log.h>
 #include <commons/string.h>
 #include <stdbool.h>
@@ -28,6 +29,8 @@ extern int entradasCache;
 extern t_tablaPagina* tablaPaginas;
 extern int retardo;
 extern t_list *procesos;
+extern pthread_mutex_t mutex_cache;
+
 
 int terminar_hilo;
 int cantidad_de_dump_cache;
@@ -93,7 +96,9 @@ void hilo_consola_memoria(){
 		break;
 		case 3:
 			printf("\n Limpiando contenido de la Caché... \n\n");
+			pthread_mutex_lock(&mutex_cache);
 			limpiar_cache();
+			pthread_mutex_unlock(&mutex_cache);
 			printf("\n（＾－＾） Muchas Gracias, en unos instantes podras ver el menu principal nuevamente \n\n");
 
 			break;

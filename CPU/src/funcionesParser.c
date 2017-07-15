@@ -162,9 +162,10 @@ t_valor_variable dereferenciar(t_puntero direccion_variable) {
 
 void asignar(t_puntero direccion_variable, t_valor_variable valor) {
 
-	char *mensaje = mensaje_escibir_memoria(pcb->PID,direccion_variable,pcb->cant_pag,valor);
+	int size=0;
+	char *mensaje = mensaje_escibir_memoria(pcb->PID,direccion_variable,pcb->cant_pag,valor,&size);
 	int controlador=0;
-	enviar(sockMemCPU,mensaje,&controlador,19+sizeof(int));
+	enviar(sockMemCPU,mensaje,&controlador,size);
 	free(mensaje);
 
 	char * respuesta = malloc(13);
@@ -342,10 +343,10 @@ void finalizar(void) {
 void retornar(t_valor_variable retorno) {
 
 	t_stack_element *aux_stack_el = list_get(pcb->in_stack,pcb->SP);
-
-	char * mensaje = mensaje_escibir_memoria(pcb->PID,aux_stack_el->retVar.offset,pcb->cant_pag,retorno);
+	int size = 0;
+	char * mensaje = mensaje_escibir_memoria(pcb->PID,aux_stack_el->retVar.offset,pcb->cant_pag,retorno,&size);
 	int controlador =0 ;
-	enviar(sockMemCPU,mensaje,&controlador,19);
+	enviar(sockMemCPU,mensaje,&controlador,size);
 	free(mensaje);
 
 	char * respuesta  = malloc(13);
@@ -379,6 +380,7 @@ void ts_wait(t_nombre_semaforo identificador_semaforo) {
 	char *mensaje = mensaje_semaforo("P14",semaforo,&size);
 	enviar(sockKerCPU,mensaje,&controlador,size);
 	free(mensaje);
+	free(semaforo);
 
 	char *respuesta = malloc(17);
 	recibir(sockKerCPU,&controlador,respuesta,17);
@@ -571,6 +573,7 @@ t_descriptor_archivo abrir (t_direccion_archivo direccion, t_banderas flags){
 	char *mensaje = mensaje_abrir(aux_dire,flags,&size);
 	enviar(sockKerCPU,mensaje,&controlador,size);
 	free(mensaje);
+	free(aux_dire);
 
 	char *respuesta = malloc(13);
 	char *str_tam;
