@@ -21,6 +21,7 @@ int abrir_archivo(char *path, char* flag, t_program *prog);
 t_TAG *buscar_archivo_TAG(char *p_sol);
 void abrir_crear(char *mensaje, t_program *prog, int socket_cpu);
 void pedido_lectura(t_program *prog, int fd, int offs, int size, char *path, int socket_cpu);
+char *info_lectura(char *path,int offs,int size);
 t_TAP *buscar_archivo_TAP(t_list *tap, int fd);
 char *get_path(int fd);
 t_TAG *buscar_archivo_TAG_fd(int fd);
@@ -140,7 +141,8 @@ void pedido_lectura(t_program *prog, int fd, int offs, int size, char *path, int
 		{
 			int controlador;
 		//	char *path = get_path(ap->FD);
-			char *mensaje = armar_mensaje("K14", path);
+			char * info = info_lectura(path,offs,size);
+			char *mensaje = armar_mensaje("K14", info);
 			enviar(config->cliente_fs, mensaje, &controlador);
 			free(mensaje);
 
@@ -162,11 +164,55 @@ void pedido_lectura(t_program *prog, int fd, int offs, int size, char *path, int
 			}
 			free(header);
 			free(mensaje_recibido);
+			free(info);
 
 		}else forzar_finalizacion(prog->PID, 0, 7, 1);/* eliminar programa, pedido de lectura sin permiso*/;
 
 	}else forzar_finalizacion(prog->PID, 0, 7, 1);//eliminar programa por querer leer un arch no abierto
 
+}
+
+char *info_lectura(char *path,int offs,int s)
+{
+	char * mensaje = strdup("");
+
+	char * off = string_itoa(offs);
+	char * size_buffer = string_itoa(s);
+
+	char *size_path = string_itoa(string_length(path));
+	int size_payload2 = string_length(size_path);
+	char *spath = string_repeat('0', 4 - size_payload2);
+
+	char *size_offset = string_itoa(string_length(off));
+	int payload = string_length(off);
+	char *soffset = string_repeat('0', 4 - payload);
+
+	char *size_ = string_itoa(string_length(size_buffer));
+	int size = string_length(size_);
+	char *osize = string_repeat('0', 4 - size);
+
+
+	string_append(&mensaje, spath);
+	string_append(&mensaje, size_path);
+	string_append(&mensaje, path);
+
+	string_append(&mensaje, soffset);
+	string_append(&mensaje, size_offset);
+	string_append(&mensaje, off);
+
+	string_append(&mensaje,osize);
+	string_append(&mensaje,size_);
+	string_append(&mensaje,size_buffer);
+
+	free(off);
+	free(size_buffer);
+	free(size_path);
+	free(spath);
+	free(size_offset);
+	free(soffset);
+	free(size_);
+	free(osize);
+	return mensaje;
 }
 
 t_TAP *buscar_archivo_TAP(t_list *tap, int fd)
@@ -385,39 +431,52 @@ int chequear_respuesta(int socket_cpu, char *path, char *flag, t_program *prog)
 	return no_existe;
 }
 
-char *armar_info_mensaje(char *info, char* path, char *off)
+char *armar_info_mensaje(char *buffer, char* path, char *off)
 {
-	char *payload_char = string_itoa(string_length(info));
-	int size_payload = string_length(payload_char);
-
-	char *primera_parte = string_repeat('0', 4 - size_payload);
-
-	char *payload_char2 = string_itoa(string_length(path));
-	int size_payload2 = string_length(payload_char2);
-
-	char *segunda_parte = string_repeat('0', 4 - size_payload2);
-
 	char *mensaje = strdup("");
 
-	//char *of = string_itoa(off);
-	int l = string_length(off);
-	char *st = string_itoa(l);
-	char *otra_parte = string_repeat('0', 4 - l);
+	char *size_buffer = string_itoa(string_length(buffer));
+	int size_payload = string_length(size_buffer);
+	char *sbuffer = string_repeat('0', 4 - size_payload);
+
+	char *size_path = string_itoa(string_length(path));
+	int size_payload2 = string_length(size_path);
+	char *spath = string_repeat('0', 4 - size_payload2);
+
+	char *size_offset = string_itoa(string_length(off));
+	int payload = string_length(off);
+	char *soffset = string_repeat('0', 4 - payload);
+
+	char *size_ = string_itoa(string_length(size_buffer));
+	int size = string_length(size_);
+	char *osize = string_repeat('0', 4 - size);
 
 
-	string_append(&mensaje, segunda_parte);
-	string_append(&mensaje, payload_char2);
+	string_append(&mensaje, spath);
+	string_append(&mensaje, size_path);
 	string_append(&mensaje, path);
-	string_append(&mensaje, otra_parte);
-	string_append(&mensaje, st);
+
+	string_append(&mensaje, sbuffer);
+	string_append(&mensaje, size_offset);
 	string_append(&mensaje, off);
-	string_append(&mensaje, primera_parte);
-	string_append(&mensaje, payload_char);
-	string_append(&mensaje, info);
+
+	string_append(&mensaje,osize);
+	string_append(&mensaje,size_);
+	string_append(&mensaje,size_buffer);
+
+	string_append(&mensaje, sbuffer);
+	string_append(&mensaje, size_buffer);
+	string_append(&mensaje, buffer);
 
 
-	free(payload_char2);
-	free(payload_char);
-	free(st);
+	free(size_buffer);
+	free(sbuffer);
+	free(size_path);
+	free(spath);
+	free(size_offset);
+	free(soffset);
+	free(size_);
+	free(osize);
+
 	return mensaje;
 }

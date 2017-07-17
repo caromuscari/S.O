@@ -8,6 +8,7 @@ int abrir_archivo(char *path, char* flag, t_program *prog);
 t_TAG *buscar_archivo_TAG(char *p_sol);
 void abrir_crear(char *mensaje, t_program *prog, int socket_cpu);
 void pedido_lectura(t_program *prog, int fd, int offs, int size, char *path, int socket_cpu);
+char *info_lectura(char *path,int offs,int size);
 t_TAP *buscar_archivo_TAP(t_list *tap, int fd);
 char *get_path(int fd);
 t_TAG *buscar_archivo_TAG_fd(int fd);
