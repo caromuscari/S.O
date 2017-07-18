@@ -33,6 +33,7 @@ int cliente[20];
 pthread_t hiloEsperarMensaje[20];
 
 // Variables Globales
+int hilo;
 int tamanioMarco;
 int cantMarcos;
 int retardo;
@@ -150,16 +151,16 @@ int main(int argc, char *argv[])
 
 	pthread_create(&hiloConsolaMemoria, NULL, (void*)hilo_consola_memoria, NULL);
 
-	int i = 0;
-	while (i < 20) {
+	hilo = 0;
+	while (hilo < 20) {
 
-		cliente[i] = escuchar_conexiones(socketServerMemoria,&controlador);
-		char *log_aux= string_from_format("Nueva Conexión entrante: %d ",cliente[i]);
+		cliente[hilo] = escuchar_conexiones(socketServerMemoria,&controlador);
+		char *log_aux= string_from_format("Nueva Conexión entrante: %d ",cliente[hilo]);
 		escribir_log(log_aux);
 		free(log_aux);
 
 		// Realizar HS y enviar Tamaño MARCO.
-		char *mensaje_recibido = recibir(cliente[i], &controlador);
+		char *mensaje_recibido = recibir(cliente[hilo], &controlador);
 		char *header = get_header(mensaje_recibido);
 
 
@@ -168,16 +169,16 @@ int main(int argc, char *argv[])
 			//Cliente VALIDO
 			char *str_marcos_size = string_itoa(tamanioMarco);
 			char *HS_OK = armar_mensaje("M00",str_marcos_size); // M|00|0000000003|128|
-			enviar(cliente[i],HS_OK, &controlador);
+			enviar(cliente[hilo],HS_OK, &controlador);
 			free(str_marcos_size);
 			free(HS_OK);
 		}
 		else
 		{
-			char *aux_log = string_from_format("Se cierra la conexión con el Cliente luego del HandShake - Socket: %d ",cliente[i]);
+			char *aux_log = string_from_format("Se cierra la conexión con el Cliente luego del HandShake - Socket: %d ",cliente[hilo]);
 			escribir_log(aux_log);
 			free(aux_log);
-			cerrar_conexion(cliente[i]);
+			cerrar_conexion(cliente[hilo]);
 			goto salir_handshake;
 		}
 
@@ -185,17 +186,34 @@ int main(int argc, char *argv[])
 		free(mensaje_recibido);
 		free(header);
 
-		pthread_create(&hiloEsperarMensaje[i], NULL, (void*) esperar_mensaje,(void *) cliente[i]);
+		pthread_create(&hiloEsperarMensaje[hilo], NULL, (void*) esperar_mensaje,(void *) cliente[hilo]);
+		pthread_join(hiloEsperarMensaje[hilo],NULL);
 
-		log_aux= string_from_format("El Cliente %d tiene Hilo nro :%d ",cliente[i],i);
+		log_aux= string_from_format("El Cliente %d tiene Hilo nro :%d ",cliente[hilo],hilo);
 		escribir_log(log_aux);
 		free(log_aux);
 
 		// RECIBIR
 		salir_handshake:
-		i++;
+		hilo++;
 	}
 
+	free(colisiones);
+	free(tablaPaginas);
+	free(Memoria);
+	if(entradasCache != 0){
+		int i;
+		for(i=0;i<entradasCache;i++){
+				free(Cache[i].dataFrame);
+		}
+		free(Cache);
+		free(Cache_LRU);
+	}
+	free(data_Memoria->IP);
+	free(data_Memoria);
+
+	pthread_mutex_destroy(&mutex_cache);
+	pthread_mutex_destroy(&mutex_memoria);
 
 	return EXIT_SUCCESS;
 }
@@ -232,6 +250,7 @@ void inicializar_variables(){
 	procesos = list_create();
 	pthread_mutex_init(&mutex_memoria,NULL);
 	pthread_mutex_init(&mutex_cache,NULL);
+
 
 }
 
@@ -353,9 +372,10 @@ void esperar_mensaje(void *i) {
 				{
 
 					inicializarPrograma (procPid,pagsCodigo);
-					crear_proceso(procPid,pagsCodigo-1);
+					crear_proceso(procPid,pagsCodigo);
 					inicializarPrograma (procPid,STACK_SIZE);
 					actualizar_paginas(procPid,STACK_SIZE);
+					actualizar_maxnro_pagina(procPid,STACK_SIZE);
 
 					char* r_OK = armar_mensaje("M02","");
 					enviar(cliente,r_OK, &controlador);
@@ -466,6 +486,7 @@ void esperar_mensaje(void *i) {
 				{
 					asignarPaginasProceso (procPid,pagsHEAP);
 					actualizar_paginas(procPid,pagsHEAP);
+					actualizar_maxnro_pagina(procPid,pagsHEAP);
 					char* r_OK = armar_mensaje("M02","");
 					enviar(cliente,r_OK, &controlador);
 					free(r_OK);
@@ -557,6 +578,7 @@ void esperar_mensaje(void *i) {
 			break;
 			case 66:
 				chau =1;
+				hilo=60;
 				break;
 			}
 
@@ -582,9 +604,9 @@ void esperar_mensaje(void *i) {
 				escribir_log(logi);
 				free(logi);
 
-				pthread_mutex_lock(&mutex_cache);
+				//pthread_mutex_lock(&mutex_cache);
 				char * Buffer = solicitarBytes(pid, pag, offset, tam);
-				pthread_mutex_unlock(&mutex_cache);
+				//pthread_mutex_unlock(&mutex_cache);
 				char *buffer_aux=string_substring(Buffer,0,tam);
 
 				escribir_log_compuesto("\n BUFFER RETORNO SOLICITAR BYTES \n", buffer_aux);
@@ -619,9 +641,9 @@ void esperar_mensaje(void *i) {
 				char *logi = string_from_format("\n Almacenar Bytes \nPID:%d \nPAG:%d \nOFFSET:%d \nTAM:%d\n BUFFER:%s \n",pid, pag, offset,tam,pbuffer);
 				escribir_log(logi);
 				free(logi);
-				pthread_mutex_lock(&mutex_memoria);
+				//pthread_mutex_lock(&mutex_memoria);
 				char* r_OK = almacenarBytes(pid, pag, offset, tam, pbuffer);
-				pthread_mutex_unlock(&mutex_memoria);
+				//pthread_mutex_unlock(&mutex_memoria);
 				enviar(cliente,r_OK, &controlador);
 
 
@@ -1107,16 +1129,18 @@ void liberar_paginas_pid(int pid){
 
 int count ;
 int pag = 0;
-int maximasPaginas = ultimoNumeroPagina(pid);
-//printf("\n MAX PAGINAS %d",maximasPaginas);
+int maximasPaginas = cantidadPaginas(pid);
+printf("\n ULTIMA PAG ASIGNADA PAGINAS %d",maximasPaginas);
 
-for(count=0;count <= maximasPaginas;count ++){
+for(count=0;count < maximasPaginas;count ++){
 
  int posPag =posPaginaSolicitada(pid,pag);
-
- if (posLibreMemoria(posPag)==1)
+ printf("\n POSPAG: %d \n",posPag);
+ if (posPag == -1)
  {
-	liberar_una_pagina(pid,pag);
+	count --;
+ }else{
+	 liberar_una_pagina(pid,pag);
  }
 	pag++;
 }

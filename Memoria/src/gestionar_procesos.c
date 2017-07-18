@@ -16,6 +16,7 @@ void crear_proceso(int pid, int pag){
 	t_proceso *proceso_nuevo = malloc(sizeof(t_proceso));
 	proceso_nuevo->pid = pid;
 	proceso_nuevo->cantPaginas = pag;
+	proceso_nuevo->ultimaPagAsig = pag -1;
 	list_add(procesos,proceso_nuevo);
 }
 int buscar_proceso(int pid){
@@ -53,13 +54,29 @@ void actualizar_paginas(int pid,int asumar){
 	t_proceso *aux = list_get(procesos,pos);
 	aux->cantPaginas += asumar;
 }
+void actualizar_maxnro_pagina(int pid, int numero){
+	int pos = buscar_proceso(pid);
+	t_proceso *aux = list_get(procesos,pos);
+	aux->ultimaPagAsig += numero;
+}
 int ultimoNumeroPagina(int pid){
 
 	int pos= buscar_proceso(pid);
-	int retorno = 0;
+	int retorno = -1;
+	if(pos != -1){
+	t_proceso *aux = list_get(procesos,pos);
+	retorno = aux->ultimaPagAsig;
+	}
+	return retorno;
+}
+int cantidadPaginas(int pid){
+
+	int pos= buscar_proceso(pid);
+	int retorno = -1;
 	if(pos != -1){
 	t_proceso *aux = list_get(procesos,pos);
 	retorno = aux->cantPaginas;
 	}
 	return retorno;
 }
+

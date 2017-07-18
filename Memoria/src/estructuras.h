@@ -43,6 +43,7 @@ typedef struct{
 typedef struct{
 	int pid;
 	int cantPaginas;
+	int ultimaPagAsig;
 }t_proceso;
 
 #endif /* ESTRUCTURAS_H_ */

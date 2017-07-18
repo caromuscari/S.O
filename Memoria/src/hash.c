@@ -67,7 +67,7 @@ int reasignar_colision(){
 		}
 	}
 	if (marco_libre == -1){
-		for(i=0; i< ultimo_frame_libre_asignado; i++){
+		for(i=0; i< ultimo_frame_libre_asignado+1; i++){
 			if(tablaPaginas[i].estado == 0){
 				marco_libre = i;
 				return marco_libre;
@@ -97,8 +97,10 @@ int buscar_marco_colision(int pid,int pagina,int marcoincorrecto){
 	char *str_pagina = string_itoa(pagina);
 	char *key = string_from_format("%s%s",str_pid,str_pagina);
 
-	marco = (int)dictionary_get(colisiones[marcoincorrecto],key);
-
+	void *aux = dictionary_get(colisiones[marcoincorrecto],key);
+	if(aux != NULL){
+		marco= (int)aux;
+	}
 	free(str_pagina);
 	free(str_pid);
 	free(key);

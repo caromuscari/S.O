@@ -537,7 +537,10 @@ void escribir (t_descriptor_archivo descriptor_archivo, void* informacion, t_val
 	int size=0;int controlador=0;
 	char *mensaje= mensaje_escribir_kernel(descriptor_archivo,informacion,tamanio,&size);
 	enviar(sockKerCPU,mensaje,&controlador,size);
+	char *aloger= string_from_format("Mensaje a Kernel Escribir:%s|",mensaje);
+	escribir_log(aloger,1);
 	free(mensaje);
+	free(aloger);
 
 	char * respuesta= malloc(17);
 	recibir(sockKerCPU,&controlador,respuesta,17);

@@ -144,7 +144,7 @@ char *recibir(int socket_receptor, int *controlador)
 {
 	int ret, seg;
 	char *buffer = malloc(13 + 1);
-	buffer[13] = '\0';
+	memset(buffer,'\0',14);
 	*controlador = 0;
 
 	if((ret = recv(socket_receptor, buffer, 13, MSG_WAITALL)) <= 0)
@@ -165,8 +165,7 @@ char *recibir(int socket_receptor, int *controlador)
 
 	//if((strncmp(cod,"P13",3)==0)||(strncmp(cod,"P12",3)==0)||(strncmp(cod,"P20",3)==0))
 	//{
-		char *str_size = malloc(10);
-		str_size = string_substring(buffer, 3, 10);
+		char *str_size = string_substring(buffer, 3, 10);
 		//memcpy(str_size,buffer+3,10);
 
 		int size = atoi(str_size);

@@ -17,6 +17,8 @@ void destructor(t_proceso *self);
 void destruir_procesos();
 void actualizar_paginas(int pid,int asumar);
 int ultimoNumeroPagina(int pid);
+void actualizar_maxnro_pagina(int pid,int nro);
+int cantidadPaginas(int pid);
 
 
 #endif /* GESTIONAR_PROCESOS_H_ */

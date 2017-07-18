@@ -176,16 +176,17 @@ char *mensaje_escribir_kernel(int fd,void *informacion,int tamanio,int *size){
 	// COD
 	if(fd == 1){
 		cod=strdup("P11");
-		str_valor = string_itoa(strlen(informacion));
-		//str_valor = string_itoa(tamanio);
+		//str_valor = string_itoa(strlen(informacion));
+		str_valor = string_itoa(tamanio);
 		tam_alloc = 13+tamanio;
 	}else{
 		cod=strdup("P05");
-		str_valor = string_itoa(strlen(informacion)+4);
-		//str_valor = string_itoa(tamanio+4);
+		//str_valor = string_itoa(strlen(informacion)+4);
+		str_valor = string_itoa(tamanio+4);
 		tam_alloc = 13+4+tamanio;
 	};
 	mensaje = malloc(tam_alloc);
+	memset(mensaje,'\0',tam_alloc);
 	memcpy(mensaje+desplazamiento,cod,3);
 	desplazamiento += 3;
 	aux_ceros = string_repeat('0',10-strlen(str_valor));

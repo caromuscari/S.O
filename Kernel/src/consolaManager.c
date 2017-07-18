@@ -36,6 +36,7 @@ void realizar_handShake_consola(int nuevo_socket)
 	char *mensaje = armar_mensaje("K00","");
 	enviar(nuevo_socket, mensaje, &controlador);
 	escribir_log("Enviado mensaje para handshake con consola");//despues borrar
+	free(mensaje);
 
 	if (controlador > 0)
 	{
@@ -79,9 +80,10 @@ void realizar_handShake_consola(int nuevo_socket)
 				cerrar_conexion(nuevo_socket);
 				FD_CLR(nuevo_socket, &master);
 			}
-			free(mensaje);
+
 			free(header);
 		}
+		free(respuesta);
 	}
 }
 
