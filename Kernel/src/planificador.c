@@ -13,7 +13,7 @@
 #include "mensaje_consola.h"
 #include "cpuManager.h"
 #include "mensaje.h"
-#include "memoria2.h"
+#include "memoria.h"
 #include "metadata.h"
 #include "socket.h"
 #include "log.h"

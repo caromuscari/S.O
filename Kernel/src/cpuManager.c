@@ -9,10 +9,10 @@
 #include "estructuras.h"
 #include "fileSystem.h"
 #include "metadata.h"
-#include "memoria2.h"
 #include "mensaje.h"
 #include "socket.h"
 #include "log.h"
+#include "memoria.h"
 
 extern t_list *list_cpus;
 extern pthread_mutex_t mutex_lista_cpus;

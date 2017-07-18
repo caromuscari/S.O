@@ -5,8 +5,8 @@
  *      Author: utnso
  */
 
-#ifndef MEMORIA2_H_
-#define MEMORIA2_H_
+#ifndef MEMORIA_H_
+#define MEMORIA_H_
 
 void handshakearMemory();
 t_bloque *find_first_fit(t_list *hs, int t_sol);
@@ -20,4 +20,4 @@ int pedir_pagina();
 void liberar_bloque(t_program *prog, char *offset);
 void liberar_pagina(t_pagina *pagina);
 
-#endif /* MEMORIA2_H_ */
+#endif /* MEMORIA_H_ */

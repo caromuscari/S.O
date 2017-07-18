@@ -17,7 +17,7 @@
 
 extern t_configuracion *config;
 extern int tam_pagina;
-extern int pag_cod;
+//extern int pag_cod;
 extern int pag_stack;
 int posicion_pagina;
 int inicio_bloque;
@@ -25,7 +25,7 @@ int inicio_bloque;
 
 void handshakearMemory();
 t_bloque *find_first_fit(t_list *hs, int t_sol);
-void reservar_memoria_din(t_program *program, int size_solicitado, int so_cpu);
+int reservar_memoria_din(t_program *program, int size_solicitado, int so_cpu);
 void inicializar_pagina_dinamica(t_program *prog, int size_sol);
 int ubicar_bloque(t_pagina *pagina, int tam_sol, t_program *program, int so_cpu);
 void compactar(t_pagina *pagina);
@@ -61,7 +61,7 @@ void inicializar_pagina_dinamica(t_program *prog, int size_sol)
 {
 	t_pagina *pagina = malloc(sizeof(t_pagina));
 	pagina->heaps = list_create();
-	pagina->n_pagina = pag_cod + pag_stack + list_size(prog->memoria_dinamica);
+	pagina->n_pagina = prog->pcb->cant_pag + pag_stack + list_size(prog->memoria_dinamica);
 	pagina->esp_libre = tam_pagina - 10;
 
 	HeapMetadata *heap = malloc(sizeof(HeapMetadata));
@@ -85,7 +85,7 @@ void inicializar_pagina_dinamica(t_program *prog, int size_sol)
 	//reservar_memoria_din(prog, size_sol);
 }
 
-void reservar_memoria_din(t_program *program, int size_solicitado, int so_cpu)
+int reservar_memoria_din(t_program *program, int size_solicitado, int so_cpu)
 {
 	int ubicado = 0;
 	program->syscall++;
@@ -140,7 +140,9 @@ void reservar_memoria_din(t_program *program, int size_solicitado, int so_cpu)
 	else
 	{
 		forzar_finalizacion(program->PID, 0, 8, 0);
+		ubicado = 0;
 	}
+	return ubicado;
 }
 
 int ubicar_bloque(t_pagina *pagina, int tam_sol, t_program *program, int so_cpu)//usa algoritmo first fit -> el resumen dice que es el mas kpo
@@ -321,7 +323,7 @@ void liberar_bloque(t_program *prog, char *offset)
 
 		if(chequear_pagina(page))
 		{
-			list_remove_and_destroy_element(prog->memoria_dinamica, (page->n_pagina - pag_cod - pag_stack -1),(void *) liberar_pagina);
+			list_remove_and_destroy_element(prog->memoria_dinamica, (page->n_pagina - prog->pcb->cant_pag - pag_stack -1),(void *) liberar_pagina);
 
 			int controlador;
 			char *mensaje = strdup("K24");
@@ -411,4 +413,59 @@ void juntar_memoria(t_list *hp, t_bloque *blo, t_bloque *blo_liberado, int num_b
 
 		list_remove_and_destroy_element(hp, num_bloque - 1, (void *)lib_bloque);
 	}
+}
+
+void almacenar_bytes(int pid, int numpag, int offset, int cant, int bool_free)
+{
+	int contr = 0;
+	char *men_env = strdup("K90");
+	char *pid_ = string_itoa(pid);
+	int len = string_length(pid_);
+	char *completar = string_repeat('0', 4 - len);
+
+	string_append(&men_env, completar);
+	string_append(&men_env, pid_);
+
+	free(completar);
+
+	char *numpag_ = string_itoa(numpag);
+	len = string_length(numpag_);
+	completar = string_repeat('0', 4 - len);
+
+	string_append(&men_env, completar);
+	string_append(&men_env, numpag_);
+
+	free(completar);
+
+	char *offset_ = string_itoa(offset);
+	len = string_length(offset_);
+	completar = string_repeat('0', 4 - len);
+
+	string_append(&men_env, completar);
+	string_append(&men_env, offset_);
+
+	free(completar);
+
+	char *cant_ = string_itoa(cant);
+	len = string_length(cant_);
+	completar = string_repeat('0', 4 - len);
+
+	string_append(&men_env, completar);
+	string_append(&men_env, cant_);
+
+	free(completar);
+
+	char *bool_free_ = string_itoa(bool_free);
+
+	string_append(&men_env, bool_free_);
+
+	enviar(config->cliente_memoria, men_env, &contr);
+	//
+
+	free(men_env);
+	free(pid_);
+	free(numpag_);
+	free(offset_);
+	free(cant_);
+	free(bool_free_);
 }

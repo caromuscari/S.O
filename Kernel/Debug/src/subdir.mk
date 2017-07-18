@@ -13,7 +13,7 @@ C_SRCS += \
 ../src/log.c \
 ../src/manejo_conexiones.c \
 ../src/manejo_errores.c \
-../src/memoria2.c \
+../src/memoria.c \
 ../src/mensaje.c \
 ../src/mensaje_consola.c \
 ../src/metadata.c \
@@ -31,7 +31,7 @@ OBJS += \
 ./src/log.o \
 ./src/manejo_conexiones.o \
 ./src/manejo_errores.o \
-./src/memoria2.o \
+./src/memoria.o \
 ./src/mensaje.o \
 ./src/mensaje_consola.o \
 ./src/metadata.o \
@@ -49,7 +49,7 @@ C_DEPS += \
 ./src/log.d \
 ./src/manejo_conexiones.d \
 ./src/manejo_errores.d \
-./src/memoria2.d \
+./src/memoria.d \
 ./src/mensaje.d \
 ./src/mensaje_consola.d \
 ./src/metadata.d \

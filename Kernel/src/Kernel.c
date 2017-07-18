@@ -20,7 +20,7 @@
 #include "planificador.h"
 #include "estructuras.h"
 #include "cpuManager.h"
-#include "memoria2.h"
+#include "memoria.h"
 #include "mensaje.h"
 #include "socket.h"
 #include "log.h"
