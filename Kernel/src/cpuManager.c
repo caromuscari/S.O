@@ -1,18 +1,18 @@
-#include <pthread.h>
+#include <commons/string.h>
 #include <commons/log.h>
+#include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
-#include <commons/string.h>
+#include "semaforos_vglobales.h"
 #include "manejo_errores.h"
-#include "fileSystem.h"
+#include "planificador.h"
 #include "estructuras.h"
+#include "fileSystem.h"
+#include "metadata.h"
+#include "memoria2.h"
 #include "mensaje.h"
 #include "socket.h"
-#include "planificador.h"
 #include "log.h"
-#include "metadata.h"
-#include "semaforos_vglobales.h"
-#include "memoria2.h"
 
 extern t_list *list_cpus;
 extern pthread_mutex_t mutex_lista_cpus;
@@ -237,16 +237,8 @@ void responder_solicitud_cpu(int socket_, char *mensaje)
 		case 17: ;//alloc
 			char *mensaje4 = get_mensaje(mensaje);
 			int size2 = atoi(mensaje4);
-			int offset_alloc = reservar_memoria_din(prog, size2, socket_);
+			reservar_memoria_din(prog, size2, socket_);
 
-			/*if (offset_alloc>0)
-			{
-				char *off_char = string_itoa(offset_alloc);
-				char *men = armar_mensaje("K99", off_char);
-				enviar(socket_, men, &cont_mem);
-				free(men);
-				free(off_char);
-			}*/
 			free(mensaje4);
 			break;
 		case 18: ;//free

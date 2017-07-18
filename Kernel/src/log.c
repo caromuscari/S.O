@@ -50,6 +50,18 @@ void escribir_log_con_numero(char *mensaje, int un_numero)
 	free(num);
 }
 
+void escribir_log_error_con_numero(char *mensaje, int un_numero)
+{
+	char *final = strdup(mensaje);
+	char *num = string_itoa(un_numero);
+	string_append(&final, num);
+	pthread_mutex_lock(&mutex_log);
+	log_error(log_, final);
+	pthread_mutex_unlock(&mutex_log);
+	free(final);
+	free(num);
+}
+
 void escribir_log_compuesto(char *mensaje, char *otro_mensaje)
 {
 	char *final = strdup("");

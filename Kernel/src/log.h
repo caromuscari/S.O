@@ -17,6 +17,9 @@ void escribir_log(char *mensaje);
 //Funcion que escribe un ERROR en archivo de log
 void escribir_error_log(char *mensaje);
 
+//Funcion que escribe un ERROR con numerico en archivo de log
+void escribir_log_error_con_numero(char *mensaje, int un_numero);
+
 //Recibe un texto y un numerico, muy util!
 void escribir_log_con_numero(char *mensaje, int un_numero);
 

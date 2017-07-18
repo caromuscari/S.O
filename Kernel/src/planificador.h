@@ -18,5 +18,6 @@ int bloquear_proceso(int);
 void desbloquear_proceso(int);
 int calcular_pag(char *mensaje);
 void finalizar_quantum(int pid);
+void actualizar_grado_multiprogramacion();
 
 #endif /* PLANIFICADOR_H_ */

@@ -29,12 +29,13 @@ extern pthread_mutex_t mutex_lista_finalizados;
 extern pthread_mutex_t mutex_lista_bloqueados;
 extern pthread_mutex_t mutex_cola_nuevos;
 extern pthread_mutex_t mutex_cola_listos;
+extern pthread_mutex_t mutex_actualizar_multip;
 extern t_configuracion *config;
 extern int flag_planificador;
 //A partir de aca son cosas de mas para monitoreo
 extern t_list *list_cpus;
 extern t_list *list_consolas;
-
+extern int diferencia_multi;
 
 void generar_listados(int lista);
 void leer_consola();
@@ -103,7 +104,11 @@ void leer_consola()
 				printf("Indique el nuevo grado de multiprogramacion: ");
 				scanf("%ms", &input2);
 				int grado = atoi(input2);
+
+				diferencia_multi = grado - config->grado_multiprog;
 				config->grado_multiprog = grado;
+				pthread_mutex_unlock(&mutex_actualizar_multip);
+
 				free(input);
 				free(input2);
 				break;

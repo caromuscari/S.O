@@ -50,11 +50,17 @@ pthread_mutex_t mutex_lista_finalizados;
 pthread_mutex_t mutex_lista_bloqueados;
 pthread_mutex_t mutex_cola_nuevos;
 pthread_mutex_t mutex_cola_listos;
+pthread_mutex_t mutex_actualizar_multip;
+sem_t sem_grad_multi;
+sem_t sem_nuevos;
+sem_t sem_listos;
+sem_t sem_cpus;
 int flag_planificador = 1;
 int ultimo_pid = 1;
 int tam_pagina = 0;
 int pag_cod = 0;
 int pag_stack = 0;
+int diferencia_multi = 0;
 
 #define PAGE_SIZE 4096
 #define STK_SIZE (10 * PAGE_SIZE)
@@ -72,6 +78,7 @@ void manejo_conexiones();
 int main(int argc, char*argv[])
 {
 	pthread_t hiloConsolaConsola;
+	pthread_t update_multiprogramacion;
 	pthread_t hiloNuevos;
 	pthread_t hiloListos;
 	pthread_t hiloConsolaKernel;
@@ -87,8 +94,8 @@ int main(int argc, char*argv[])
 
 	crear_archivo_log("/home/utnso/log_kernel");
 	inicializar_variables();
-	inicializar_semaforos();
 	leer_configuracion();
+	inicializar_semaforos();
 
 	inicializar_sems();
 	inicializar_vglobales();
@@ -98,15 +105,17 @@ int main(int argc, char*argv[])
 	handshakearFS();
 
 	pthread_create(&hiloConsolaConsola,&attr, (void*)manejo_conexiones, NULL);
-
 	pthread_create(&hiloNuevos, NULL, (void*)programas_nuevos_A_listos, NULL);
 	pthread_create(&hiloListos, NULL, (void*)programas_listos_A_ejecutar, NULL);
 	pthread_create(&hiloConsolaKernel, NULL, (void*)leer_consola, NULL);
+	pthread_create(&update_multiprogramacion, NULL, (void*)actualizar_grado_multiprogramacion, NULL);
 
 	pthread_join(hiloConsolaConsola, NULL);
 	pthread_join(hiloNuevos, NULL);
 	pthread_join(hiloListos, NULL);
 	pthread_join(hiloConsolaKernel, NULL);
+	pthread_join(update_multiprogramacion, NULL);
+
 
 	liberar_memoria();
 	return EXIT_SUCCESS;
@@ -181,4 +190,15 @@ void inicializar_semaforos()
 	pthread_mutex_init(&mutex_cola_nuevos,NULL);
 	pthread_mutex_init(&mutex_cola_listos,NULL);
 	pthread_mutex_init(&mutex_lista_fs,NULL);
+	pthread_mutex_init(&mutex_actualizar_multip,NULL);
+
+	pthread_mutex_lock(&mutex_actualizar_multip);
+
+	sem_init(&sem_nuevos,0,0);
+	sem_init(&sem_listos,0,0);
+	sem_init(&sem_cpus,0,0);
+	if(sem_init(&sem_grad_multi,0,config->grado_multiprog) != 0)
+	{
+		escribir_log_error_con_numero("Error asignando el grado de multiprogramacion: ", config->grado_multiprog);
+	}
 }

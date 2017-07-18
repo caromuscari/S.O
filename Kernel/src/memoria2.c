@@ -25,7 +25,7 @@ int inicio_bloque;
 
 void handshakearMemory();
 t_bloque *find_first_fit(t_list *hs, int t_sol);
-int reservar_memoria_din(t_program *program, int size_solicitado, int so_cpu);
+void reservar_memoria_din(t_program *program, int size_solicitado, int so_cpu);
 void inicializar_pagina_dinamica(t_program *prog, int size_sol);
 int ubicar_bloque(t_pagina *pagina, int tam_sol, t_program *program, int so_cpu);
 void compactar(t_pagina *pagina);
@@ -85,7 +85,7 @@ void inicializar_pagina_dinamica(t_program *prog, int size_sol)
 	//reservar_memoria_din(prog, size_sol);
 }
 
-int reservar_memoria_din(t_program *program, int size_solicitado, int so_cpu)
+void reservar_memoria_din(t_program *program, int size_solicitado, int so_cpu)
 {
 	int ubicado = 0;
 	program->syscall++;
@@ -140,9 +140,7 @@ int reservar_memoria_din(t_program *program, int size_solicitado, int so_cpu)
 	else
 	{
 		forzar_finalizacion(program->PID, 0, 8, 0);
-		ubicado = 0;
 	}
-	return ubicado;
 }
 
 int ubicar_bloque(t_pagina *pagina, int tam_sol, t_program *program, int so_cpu)//usa algoritmo first fit -> el resumen dice que es el mas kpo

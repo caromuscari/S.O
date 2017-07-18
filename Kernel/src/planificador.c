@@ -1,13 +1,7 @@
-/*
- * planificador.c
-
- *
- *  Created on: 7/5/2017
- *      Author: utnso
- */
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <semaphore.h>
 #include <commons/log.h>
 #include <commons/collections/list.h>
 #include <commons/collections/queue.h>
@@ -24,7 +18,6 @@
 #include "socket.h"
 #include "log.h"
 
-
 extern t_list *list_cpus;
 extern t_list *list_ejecutando;
 extern t_list *list_finalizados;
@@ -37,10 +30,14 @@ extern pthread_mutex_t mutex_lista_finalizados;
 extern pthread_mutex_t mutex_lista_bloqueados;
 extern pthread_mutex_t mutex_cola_nuevos;
 extern pthread_mutex_t mutex_cola_listos;
+extern pthread_mutex_t mutex_actualizar_multip;
+extern sem_t sem_grad_multi;
+extern sem_t sem_nuevos;
+extern sem_t sem_listos;
+extern sem_t sem_cpus;
 extern t_configuracion *config;
 extern int tam_pagina;
-extern int flag_planificador;
-extern int pag_cod;
+extern int diferencia_multi;
 int controlador;
 
 void finalizar_proceso(int pid, int codigo_finalizacion);
@@ -48,104 +45,94 @@ void desbloquear_proceso(int pid);
 void bloquear_proceso(int pid);
 void programas_nuevos_A_listos();
 void programas_listos_A_ejecutar();
-int calcular_pag(char *mensaje);
 void forzar_finalizacion(int pid, int cid, int codigo_finalizacion, int aviso);
 void agregar_nueva_prog(int id_consola, int pid, char *mensaje, int socket_con);
 void finalizar_quantum(int pid);
+int calcular_pag(char *mensaje);
 
 void programas_listos_A_ejecutar()
 {
-	int i, listos, cpus_disponibles;
-	int tam_prog = 0;
+	int tam_prog;
 
-	int _cpuLibre(t_cpu *una_cpu)
+	bool _cpuLibre(t_cpu *una_cpu)
 	{
 		return !(una_cpu->ejecutando);
 	}
 
 	while(1)
 	{
-		if(flag_planificador)
+		sem_wait(&sem_listos);
+		sem_wait(&sem_cpus);
+		tam_prog = 0;
+
+		pthread_mutex_lock(&mutex_cola_listos);
+		t_program *program = queue_pop(cola_listos);
+		pthread_mutex_unlock(&mutex_cola_listos);
+
+		pthread_mutex_lock(&mutex_lista_cpus);
+		t_cpu *cpu_disponible = list_remove_by_condition(list_cpus, (void*)_cpuLibre);
+		pthread_mutex_unlock(&mutex_lista_cpus);
+
+		char *pcb_serializado = serializarPCB_KerCPU(program->pcb,config->algoritmo,config->quantum,config->quantum_sleep,&tam_prog);
+		char *mensaje_env = armar_mensaje_pcb("K07", pcb_serializado, tam_prog);
+
+		escribir_log(mensaje_env);
+
+		enviar_pcb(cpu_disponible->socket_cpu, mensaje_env, &controlador, tam_prog+13);
+		free(pcb_serializado);
+
+		//Fallo el envio de la pcb a la cpu, se debe eliminar la cpu
+		if(controlador>0)
 		{
-			listos = queue_size(cola_listos);
+			int i;
+			escribir_log_error_con_numero("Ha fallado el envio de una PCB con la CPU: ",cpu_disponible->cpu_id);
+			free(cpu_disponible);
 
-			cpus_disponibles = list_count_satisfying(list_cpus, (void*)_cpuLibre);
+			pthread_mutex_lock(&mutex_cola_listos);
+			int size = queue_size(cola_listos);
+			queue_push(cola_listos,program);
+			pthread_mutex_unlock(&mutex_cola_listos);
 
-			if((listos>0)&&(cpus_disponibles>0))
+			for(i=0;i<size;i++)
 			{
 				pthread_mutex_lock(&mutex_cola_listos);
-				t_program *program = queue_pop(cola_listos);
+				queue_push(cola_listos,queue_pop(cola_listos));
 				pthread_mutex_unlock(&mutex_cola_listos);
-
-				pthread_mutex_lock(&mutex_lista_cpus);
-				t_cpu *cpu_disponible = list_remove_by_condition(list_cpus, (void*)_cpuLibre);
-				pthread_mutex_unlock(&mutex_lista_cpus);
-
-				char *pcb_serializado = serializarPCB_KerCPU(program->pcb,config->algoritmo,config->quantum,config->quantum_sleep,&tam_prog);
-				printf("%s\n",pcb_serializado);
-				escribir_log_compuesto("pcb_serializado",pcb_serializado);
-				char *mensaje_env = armar_mensaje_pcb("K07", pcb_serializado, tam_prog);
-				printf("%s\n",mensaje_env);
-				escribir_log_compuesto("mensaje_env",mensaje_env);
-				enviar_pcb(cpu_disponible->socket_cpu, mensaje_env, &controlador, tam_prog+13);
-				free(pcb_serializado);
-
-				if(controlador>0)
-				{
-					escribir_error_log("Ha fallado la conexion con una CPU");
-					free(cpu_disponible);
-
-					pthread_mutex_lock(&mutex_cola_listos);
-					int size = queue_size(cola_listos);
-					queue_push(cola_listos,program);
-					pthread_mutex_unlock(&mutex_cola_listos);
-
-					for(i=0;i<size;i++)
-					{
-						pthread_mutex_lock(&mutex_cola_listos);
-						queue_push(cola_listos,queue_pop(cola_listos));
-						pthread_mutex_unlock(&mutex_cola_listos);
-					}
-				}
-				else
-				{
-					pthread_mutex_lock(&mutex_lista_ejecutando);
-					list_add(list_ejecutando, program);
-					pthread_mutex_unlock(&mutex_lista_ejecutando);
-
-					cpu_disponible->ejecutando = 1;
-					cpu_disponible->program = program;
-
-					pthread_mutex_lock(&mutex_lista_cpus);
-					list_add(list_cpus, cpu_disponible);
-					pthread_mutex_unlock(&mutex_lista_cpus);
-				}
-				free(mensaje_env);
 			}
+			sem_post(&sem_listos);
 		}
+		else
+		{
+			pthread_mutex_lock(&mutex_lista_ejecutando);
+			list_add(list_ejecutando, program);
+			pthread_mutex_unlock(&mutex_lista_ejecutando);
+
+			cpu_disponible->ejecutando = true;
+			cpu_disponible->program = program;
+
+			pthread_mutex_lock(&mutex_lista_cpus);
+			list_add(list_cpus, cpu_disponible);
+			pthread_mutex_unlock(&mutex_lista_cpus);
+		}
+		free(mensaje_env);
 	}
 }
 
 void programas_nuevos_A_listos()
 {
-	int procesando, listos, nuevos, multiprogramacion_dis;
-
 	while(1)
 	{
-		nuevos = queue_size(cola_nuevos);
-		procesando = list_size(list_ejecutando);
-		listos = queue_size(cola_listos);
-		multiprogramacion_dis = config->grado_multiprog - (procesando + listos);
+		sem_wait(&sem_nuevos);
+		sem_wait(&sem_grad_multi);
 
-		if((multiprogramacion_dis>0)&&(nuevos>0))
-		{
-			escribir_log("Se ha movido un proceso de nuevos a listos");
-			pthread_mutex_lock(&mutex_cola_nuevos);
-			pthread_mutex_lock(&mutex_cola_listos);
-			queue_push(cola_listos, queue_pop(cola_nuevos));
-			pthread_mutex_unlock(&mutex_cola_nuevos);
-			pthread_mutex_unlock(&mutex_cola_listos);
-		}
+		escribir_log("Se ha movido un proceso de nuevos a listos");
+		pthread_mutex_lock(&mutex_cola_nuevos);
+		pthread_mutex_lock(&mutex_cola_listos);
+		queue_push(cola_listos, queue_pop(cola_nuevos));
+		pthread_mutex_unlock(&mutex_cola_nuevos);
+		pthread_mutex_unlock(&mutex_cola_listos);
+
+		sem_post(&sem_listos);
 	}
 }
 
@@ -179,6 +166,9 @@ void agregar_nueva_prog(int id_consola, int pid, char *mensaje, int socket_con)
 	pthread_mutex_lock(&mutex_cola_nuevos);
 	queue_push(cola_nuevos, programa);
 	pthread_mutex_unlock(&mutex_cola_nuevos);
+
+	sem_post(&sem_nuevos);
+
 	free(codigo);
 }
 
@@ -242,25 +232,10 @@ void finalizar_proceso(int pid, int codigo_finalizacion)
 	pthread_mutex_unlock(&mutex_lista_finalizados);
 }
 
-int calcular_pag(char *mensaje)
-{
-	char *tam = string_substring(mensaje, 3, 10);
-	int tamanio = atoi(tam);
-	int paginas = (int)(tamanio/tam_pagina);
-
-	if (tamanio % tam_pagina > 0)
-	{
-		paginas ++;
-	}
-	free(tam);
-	pag_cod = paginas;
-	return paginas;
-}
-
 void forzar_finalizacion(int pid, int cid, int codigo_finalizacion, int aviso)
 {
-	t_list *encontrados = list_create();
-	t_list *encontrados_ejec = list_create();
+	t_list *procesos = list_create();
+	t_list *procesos_ejecutando = list_create();
 	int i, contador = 0;
 
 	bool _buscar_program(t_program *pr)
@@ -271,13 +246,12 @@ void forzar_finalizacion(int pid, int cid, int codigo_finalizacion, int aviso)
 			return pr->CID == cid;
 	}
 
-	void _procesar_finalizacion(t_program *pr)
+	void _finalizar_proceso_ejecutando(t_program *pr)
 	{
-		//if(aviso) avisar_consola_proceso_murio(pr);
 		pedir_pcb_error(pr,codigo_finalizacion);
 	}
 
-	void _terminar_programa(t_program *pr)
+	void _finalizar_proceso(t_program *pr)
 	{
 		pr->pcb->exit_code = (-1)*codigo_finalizacion;
 		if(aviso) avisar_consola_proceso_murio(pr);
@@ -293,7 +267,7 @@ void forzar_finalizacion(int pid, int cid, int codigo_finalizacion, int aviso)
 	{
 		pthread_mutex_lock(&mutex_lista_ejecutando);
 		t_program *proo = list_remove_by_condition(list_ejecutando, (void*)_buscar_program);
-		list_add(encontrados_ejec,proo);
+		list_add(procesos_ejecutando,proo);
 		list_add(list_ejecutando,proo);
 		pthread_mutex_unlock(&mutex_lista_ejecutando);
 		contador --;
@@ -303,7 +277,7 @@ void forzar_finalizacion(int pid, int cid, int codigo_finalizacion, int aviso)
 	while(contador)
 	{
 		pthread_mutex_lock(&mutex_lista_bloqueados);
-		list_add(encontrados, list_remove_by_condition(list_bloqueados, (void*)_buscar_program));
+		list_add(procesos, list_remove_by_condition(list_bloqueados, (void*)_buscar_program));
 		pthread_mutex_unlock(&mutex_lista_bloqueados);
 		//deberia meter una funcion aca que habilite el semaforo que este estaba tomando
 		contador --;
@@ -321,7 +295,7 @@ void forzar_finalizacion(int pid, int cid, int codigo_finalizacion, int aviso)
 		if(_buscar_program(prog))
 		{
 			escribir_log("Planificador -- antes de copiar a lista de encontrados");
-			list_add(encontrados,prog);
+			list_add(procesos,prog);
 		}
 		else
 		{
@@ -342,7 +316,7 @@ void forzar_finalizacion(int pid, int cid, int codigo_finalizacion, int aviso)
 
 		if(_buscar_program(prog))
 		{
-			list_add(encontrados,prog);
+			list_add(procesos,prog);
 		}
 		else
 		{
@@ -352,10 +326,25 @@ void forzar_finalizacion(int pid, int cid, int codigo_finalizacion, int aviso)
 		}
 	}
 
-	list_iterate(encontrados_ejec, (void*)_procesar_finalizacion);
-	list_iterate(encontrados, (void*)_terminar_programa);
-	list_destroy(encontrados);
-	list_destroy(encontrados_ejec);
+	list_iterate(procesos_ejecutando, (void*)_finalizar_proceso_ejecutando);
+	list_iterate(procesos, (void*)_finalizar_proceso);
+
+	list_destroy(procesos);
+	list_destroy(procesos_ejecutando);
+}
+
+int calcular_pag(char *mensaje)
+{
+	char *tam = string_substring(mensaje, 3, 10);
+	int tamanio = atoi(tam);
+	int paginas = (int)(tamanio/tam_pagina);
+
+	if (tamanio % tam_pagina > 0)
+	{
+		paginas ++;
+	}
+	free(tam);
+	return paginas;
 }
 
 void finalizar_quantum(int pid)
@@ -372,4 +361,28 @@ void finalizar_quantum(int pid)
 	pthread_mutex_lock(&mutex_cola_listos);
 	queue_push(cola_listos, programa);
 	pthread_mutex_unlock(&mutex_cola_listos);
+}
+
+void actualizar_grado_multiprogramacion()
+{
+	while(1)
+	{
+		pthread_mutex_lock(&mutex_actualizar_multip);
+
+		while(diferencia_multi != 0)
+		{
+			if(diferencia_multi>0)
+			{
+				sem_post(&sem_grad_multi);
+				diferencia_multi--;
+			}
+			else
+			{
+				sem_wait(&sem_grad_multi);
+				diferencia_multi++;
+			}
+		}
+
+		pthread_mutex_unlock(&mutex_actualizar_multip);
+	}
 }
