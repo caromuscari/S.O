@@ -115,28 +115,44 @@ void direccionar(int socket_rec)
 	int controlador = 0;
 	//Es una conexion existente, respondo a lo que me pide
 	char *mensaje_recibido = recibir(socket_rec, &controlador);
-	char *header = get_header(mensaje_recibido);
 
 	if(controlador > 0)
 	{
 		escribir_log("Se eliminara una conexion");
 		desconectar_consola(socket_rec);
 	}
-	else if(comparar_header(header,"C"))
-	{
-		escribir_log("Se recibio un mensaje de una consola");
-		responder_solicitud_consola(socket_rec, mensaje_recibido);
-	}
-	else if(comparar_header(header,"P"))
-	{
-		escribir_log("Se recibio un mensaje de una CPU");
-		responder_solicitud_cpu(socket_rec, mensaje_recibido);
-	}
 	else
 	{
-		escribir_log("Se recibio un mensaje no reconocido");
-	}
+		char *header = get_header(mensaje_recibido);
 
+		if(comparar_header(header,"C"))
+		{
+			escribir_log("Se recibio un mensaje de una consola");
+			responder_solicitud_consola(socket_rec, mensaje_recibido);
+		}
+		else if(comparar_header(header,"P"))
+		{
+			escribir_log("Se recibio un mensaje de una CPU");
+			responder_solicitud_cpu(socket_rec, mensaje_recibido);
+		}
+		else
+		{
+			escribir_log("Se recibio un mensaje no reconocido");
+		}
+		free(header);
+	}
 	free(mensaje_recibido);
-	free(header);
+}
+
+void eliminar_conexion(int socket)
+{
+	int consola_muere = buscar_consola(socket);
+
+	if(consola_muere>0)
+		eliminar_consola(consola_muere);
+	else
+		eliminar_cpu(socket);
+
+	cerrar_conexion(socket);
+	FD_CLR(socket, &master);
 }

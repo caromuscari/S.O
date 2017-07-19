@@ -125,21 +125,50 @@ void programas_nuevos_A_listos()
 		sem_wait(&sem_nuevos);
 		sem_wait(&sem_grad_multi);
 
-		escribir_log("Se ha movido un proceso de nuevos a listos");
 		pthread_mutex_lock(&mutex_cola_nuevos);
-		pthread_mutex_lock(&mutex_cola_listos);
-		queue_push(cola_listos, queue_pop(cola_nuevos));
+		t_nuevo *nuevito = queue_pop(cola_nuevos);
 		pthread_mutex_unlock(&mutex_cola_nuevos);
-		pthread_mutex_unlock(&mutex_cola_listos);
 
-		sem_post(&sem_listos);
+		char *mensaje_envio =  armar_mensaje_memoria(nuevito->codigo);
+
+		//envio del codigo a memoria para ver si hay espacio
+		enviar(config->cliente_memoria, mensaje_envio, &controlador);
+
+		char *mensaje_recibido = recibir(config->cliente_memoria, &controlador);
+		char *cod = get_codigo(mensaje_recibido);
+		int codigo_m = atoi(cod);
+
+		if(codigo_m == 3)
+		{
+			escribir_log_error_con_numero("No se puede guardar codigo en memoria");
+			enviar(socket, "K05", &controlador);
+		}
+		else
+		{
+			escribir_log("Se puede guardar codigo en memoria");
+
+
+
+
+		char *msj_enviar = armar_mensaje("K20",nuevito->codigo);
+		char *ult_pid = string_itoa(nuevito->pid);
+		string_append(&msj_enviar, ult_pid);
+
+		enviar(config->cliente_memoria, msj_enviar, &controlador);
+
+		agregar_nueva_prog(nuevito->consola, nuevito->pid, nuevito->codigo, nuevito->new_socket);
+
+		free(ult_pid);
+		free(msj_enviar);
+
+		free(mensaje_envio);
+		free(mensaje_recibido);
+		free(cod);
 	}
 }
 
-void agregar_nueva_prog(int id_consola, int pid, char *mensaje, int socket_con)
+void agregar_nueva_prog(int id_consola, int pid, char *codigo, int socket_con)
 {
-	char *codigo = get_mensaje(mensaje);
-
 	t_program *programa = malloc(sizeof(t_program));
 	programa->PID = pid;
 	programa->socket_consola = socket_con;
@@ -156,19 +185,18 @@ void agregar_nueva_prog(int id_consola, int pid, char *mensaje, int socket_con)
 	programa->pcb->PID = pid;
 	programa->pcb->SP = 0;//ver que es esto!!!
 	programa->pcb->exit_code = 1;
-	programa->pcb->cant_pag = calcular_pag(mensaje);
+	programa->pcb->cant_pag = calcular_pag(codigo);
 	programa->pcb->in_cod = armarIndiceCodigo(codigo);
 	programa->pcb->in_et = armarIndiceEtiquetas(codigo);
 	programa->pcb->in_stack = armarIndiceStack(codigo);
 
-	escribir_log("Se ha agregado un nuevo proceso a la cola de listos");
+	escribir_log("Se ha movido un proceso de nuevos a listos");
 
-	pthread_mutex_lock(&mutex_cola_nuevos);
-	queue_push(cola_nuevos, programa);
-	pthread_mutex_unlock(&mutex_cola_nuevos);
+	pthread_mutex_lock(&mutex_cola_listos);
+	queue_push(cola_listos, programa);
+	pthread_mutex_unlock(&mutex_cola_listos);
 
-	sem_post(&sem_nuevos);
-
+	sem_post(&sem_listos);
 	free(codigo);
 }
 
@@ -246,6 +274,14 @@ void forzar_finalizacion(int pid, int cid, int codigo_finalizacion, int aviso)
 			return pr->CID == cid;
 	}
 
+	bool _buscar_nuevito(t_nuevo *pr)
+	{
+		if(pid)
+			return pr->pid == pid;
+		else
+			return pr->consola == cid;
+	}
+
 	void _finalizar_proceso_ejecutando(t_program *pr)
 	{
 		pedir_pcb_error(pr,codigo_finalizacion);
@@ -255,7 +291,9 @@ void forzar_finalizacion(int pid, int cid, int codigo_finalizacion, int aviso)
 	{
 		pr->pcb->exit_code = (-1)*codigo_finalizacion;
 		if(aviso) avisar_consola_proceso_murio(pr);
+
 		list_destroy_and_destroy_elements(pr->memoria_dinamica, (void *)liberar_pagina);
+		//falta el tema de liberar semaforos y memoria dinamica!!!
 
 		pthread_mutex_lock(&mutex_lista_finalizados);
 		list_add(list_finalizados,pr);
@@ -266,9 +304,7 @@ void forzar_finalizacion(int pid, int cid, int codigo_finalizacion, int aviso)
 	while(contador)
 	{
 		pthread_mutex_lock(&mutex_lista_ejecutando);
-		t_program *proo = list_remove_by_condition(list_ejecutando, (void*)_buscar_program);
-		list_add(procesos_ejecutando,proo);
-		list_add(list_ejecutando,proo);
+		list_add(procesos_ejecutando,list_remove_by_condition(list_ejecutando, (void*)_buscar_program));
 		pthread_mutex_unlock(&mutex_lista_ejecutando);
 		contador --;
 	}
@@ -279,27 +315,22 @@ void forzar_finalizacion(int pid, int cid, int codigo_finalizacion, int aviso)
 		pthread_mutex_lock(&mutex_lista_bloqueados);
 		list_add(procesos, list_remove_by_condition(list_bloqueados, (void*)_buscar_program));
 		pthread_mutex_unlock(&mutex_lista_bloqueados);
-		//deberia meter una funcion aca que habilite el semaforo que este estaba tomando
 		contador --;
 	}
 
 	controlador = queue_size(cola_nuevos);
-
 	for(i=0;i<controlador;i++)
 	{
-		escribir_log("Planificador -- antes de copiar lista de nuevos");
 		pthread_mutex_lock(&mutex_cola_nuevos);
-		t_program *prog = queue_pop(cola_nuevos);
+		t_nuevo *prog = queue_pop(cola_nuevos);
 		pthread_mutex_unlock(&mutex_cola_nuevos);
 
-		if(_buscar_program(prog))
+		if(_buscar_nuevito(prog))
 		{
-			escribir_log("Planificador -- antes de copiar a lista de encontrados");
 			list_add(procesos,prog);
 		}
 		else
 		{
-			escribir_log("Planificador -- antes de devolver a lista de nuevos");
 			pthread_mutex_lock(&mutex_cola_nuevos);
 			queue_push(cola_nuevos,prog);
 			pthread_mutex_unlock(&mutex_cola_nuevos);
@@ -307,7 +338,6 @@ void forzar_finalizacion(int pid, int cid, int codigo_finalizacion, int aviso)
 	}
 
 	controlador = queue_size(cola_listos);
-
 	for(i=0;i<controlador;i++)
 	{
 		pthread_mutex_lock(&mutex_cola_listos);
@@ -328,6 +358,7 @@ void forzar_finalizacion(int pid, int cid, int codigo_finalizacion, int aviso)
 
 	list_iterate(procesos_ejecutando, (void*)_finalizar_proceso_ejecutando);
 	list_iterate(procesos, (void*)_finalizar_proceso);
+	list_add_all(list_ejecutando,procesos_ejecutando);
 
 	list_destroy(procesos);
 	list_destroy(procesos_ejecutando);
@@ -335,15 +366,14 @@ void forzar_finalizacion(int pid, int cid, int codigo_finalizacion, int aviso)
 
 int calcular_pag(char *mensaje)
 {
-	char *tam = string_substring(mensaje, 3, 10);
-	int tamanio = atoi(tam);
+	int tamanio = string_length(mensaje);
 	int paginas = (int)(tamanio/tam_pagina);
 
 	if (tamanio % tam_pagina > 0)
 	{
 		paginas ++;
 	}
-	free(tam);
+
 	return paginas;
 }
 
@@ -382,7 +412,5 @@ void actualizar_grado_multiprogramacion()
 				diferencia_multi++;
 			}
 		}
-
-		pthread_mutex_unlock(&mutex_actualizar_multip);
 	}
 }

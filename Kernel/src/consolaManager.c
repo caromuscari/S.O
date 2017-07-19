@@ -1,6 +1,7 @@
 #include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
+#include <semaphore.h>
 #include <commons/log.h>
 #include <commons/string.h>
 #include <commons/collections/queue.h>
@@ -14,13 +15,16 @@
 
 extern t_configuracion *config;
 extern t_list *list_consolas;
+extern t_queue *cola_nuevos;
 extern pthread_mutex_t mutex_lista_consolas;
+extern pthread_mutex_t mutex_cola_nuevos;
+extern sem_t sem_nuevos;
+extern int ultimo_pid;
+extern int pag_stack;
 fd_set master;
 fd_set read_fds;
 int fdmax;
 int controlador = 0;
-extern int ultimo_pid;
-extern int pag_stack;
 
 int get_CID();
 void desconectar_consola(int socket);
@@ -36,7 +40,6 @@ void realizar_handShake_consola(int nuevo_socket)
 	char *mensaje = armar_mensaje("K00","");
 	enviar(nuevo_socket, mensaje, &controlador);
 	escribir_log("Enviado mensaje para handshake con consola");//despues borrar
-	free(mensaje);
 
 	if (controlador > 0)
 	{
@@ -80,10 +83,9 @@ void realizar_handShake_consola(int nuevo_socket)
 				cerrar_conexion(nuevo_socket);
 				FD_CLR(nuevo_socket, &master);
 			}
-
+			free(mensaje);
 			free(header);
 		}
-		free(respuesta);
 	}
 }
 
@@ -106,6 +108,7 @@ void responder_solicitud_consola(int socket, char *mensaje)
 {
 	char *codigo = get_codigo(mensaje);
 	int cod = atoi(codigo);
+
 	switch(cod)
 	{
 		case 1 :
@@ -160,48 +163,33 @@ void eliminar_consola(int consola_id)
 
 void responder_peticion_prog(int socket, char *mensaje)
 {
-	char *mensaje_envio =  armar_mensaje_memoria(mensaje);
+	char *codigo_new = get_mensaje(mensaje);
+	char *ult_pid = string_itoa(ultimo_pid);
 
-	//envio del codigo a memoria para ver si hay espacio
-	enviar(config->cliente_memoria, mensaje_envio, &controlador);
+	char *mensaje_conf =  armar_mensaje("K04", ult_pid);
+	enviar(socket, mensaje_conf, &controlador);
 
-	//recibo la respuesta de memoria
-	char *mensaje_recibido = recibir(config->cliente_memoria, &controlador);
-	char *cod = get_codigo(mensaje_recibido);
-	int codigo_m = atoi(cod);
-
-	if(codigo_m == 3)
-	{
-		escribir_log("No se puede guardar codigo en memoria");
-		enviar(socket, "K05", &controlador);
-	}
+	if(controlador > 0) desconectar_consola(socket);
 	else
 	{
-		escribir_log("Se puede guardar codigo en memoria");
-		char *codigo_new = get_mensaje(mensaje);
-		char *msj_enviar = armar_mensaje("K20",codigo_new);
-		char *ult_pid = string_itoa(ultimo_pid);
-		string_append(&msj_enviar, ult_pid);
+		t_nuevo *nuevo_proc = malloc(sizeof(t_nuevo));
+		nuevo_proc->pid = ultimo_pid;
+		nuevo_proc->codigo = codigo_new;
+		nuevo_proc->new_socket = socket;
+		nuevo_proc->consola = buscar_consola(socket);
 
-		enviar(config->cliente_memoria, msj_enviar, &controlador);
+		escribir_log("Se ha movido un proceso a cola de nuevos");
 
-		int consola = buscar_consola(socket);
-		agregar_nueva_prog(consola, ultimo_pid, mensaje, socket);
+		pthread_mutex_lock(&mutex_cola_nuevos);
+		queue_push(cola_nuevos, nuevo_proc);
+		pthread_mutex_unlock(&mutex_cola_nuevos);
 
-		char *mensaje_conf =  armar_mensaje("K04", ult_pid);
-		escribir_log_compuesto("este es el mensaje de un proceso recien creado: ",mensaje_conf);
-		enviar(socket, mensaje_conf, &controlador);
-		free(codigo_new);
-		free(msj_enviar);
+		sem_post(&sem_nuevos);
+
 		free(mensaje_conf);
 		free(ult_pid);
 		ultimo_pid ++;
 	}
-	if(controlador > 0) cerrar_conexion(socket);
-
-	free(mensaje_envio);
-	free(mensaje_recibido);
-	free(cod);
 }
 
 int buscar_consola(int socket)
@@ -215,7 +203,10 @@ int buscar_consola(int socket)
 	t_consola *cons = list_find(list_consolas, (void*)_buscar_consola_lst);
 	pthread_mutex_unlock(&mutex_lista_consolas);
 
-	return cons->CID;
+	if(cons == NULL)
+		return 0;
+	else
+		return cons->CID;
 }
 
 void desconectar_consola(int socket)
@@ -223,7 +214,6 @@ void desconectar_consola(int socket)
 	int consola_muere = buscar_consola(socket);
 	if(consola_muere)
 	{
-		//forzar_finalizacion(0, consola_muere, 0, 1); //dudo
 		eliminar_consola(consola_muere);
 	}
 	cerrar_conexion(socket);
@@ -269,4 +259,9 @@ int calcular_pag_stack()
 {
 	pag_stack = config->stack_size;
 	return pag_stack;
+}
+
+void crear_prog_memoria()
+{
+
 }

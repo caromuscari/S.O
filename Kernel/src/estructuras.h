@@ -150,4 +150,12 @@ typedef struct
 	int bloque;
 }t_infoheap;
 
+typedef struct
+{
+	int pid;
+	int new_socket;
+	int consola;
+	char *codigo;
+}t_nuevo;
+
 #endif /* ESTRUCTURAS_H_ */

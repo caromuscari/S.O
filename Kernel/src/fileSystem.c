@@ -166,10 +166,10 @@ void pedido_lectura(t_program *prog, int fd, int offs, int size, char *path, int
 			free(mensaje_recibido);
 			free(info);
 
-		}else forzar_finalizacion(prog->PID, 0, 7, 1);/* eliminar programa, pedido de lectura sin permiso*/;
-
-	}else forzar_finalizacion(prog->PID, 0, 7, 1);//eliminar programa por querer leer un arch no abierto
-
+		}else
+			forzar_finalizacion(prog->PID, 0, 7, 1);/* eliminar programa, pedido de lectura sin permiso*/;
+	}else
+		forzar_finalizacion(prog->PID, 0, 7, 1);//eliminar programa por querer leer un arch no abierto
 }
 
 char *info_lectura(char *path,int offs,int s)
@@ -265,7 +265,8 @@ void mover_puntero(int socket_cpu, int offset, int fd, t_program *prog)
 				if (arch == NULL)
 				{
 					forzar_finalizacion(prog->PID, 0, 7, 1);
-				}else escribir_archivo(offset, info, arch->flag, path, socket_cpu, prog);
+				}else
+					escribir_archivo(offset, info, arch->flag, path, socket_cpu, prog);
 				free(info);
 				break;
 			case 6: ;//pedido de lectura

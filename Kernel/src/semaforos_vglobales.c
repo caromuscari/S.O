@@ -138,10 +138,9 @@ void sem_wait_(t_program *proceso, char *sema, int socket_)
 			free(mensaje);
 			free(header);
 		}
-	}else
-	{
-		forzar_finalizacion(proceso->PID, 0, 11, 1);//sacar proceso, hace wait en un semaforo inexistente
 	}
+	else
+		forzar_finalizacion(proceso->PID, 0, 11, 1);//sacar proceso, hace wait en un semaforo inexistente
 }
 
 void sem_signal(t_program *prog, char *sema, int socket_, int free_all)//cuando te mando 1 es porque tenes que liberar
@@ -206,10 +205,8 @@ void sem_signal(t_program *prog, char *sema, int socket_, int free_all)//cuando 
 			int controlador;
 			enviar(socket_, "OK000000000000000", &controlador);
 		}else
-		{
 			//eliminar el proceso, signal a semaforo invalido
 			forzar_finalizacion(prog->PID, 0, 11, 1);
-		}
 	}
 }
 
@@ -266,7 +263,8 @@ void set_vglobal(char *vglobal, int num, t_program *prog, int socket_)
 
 			bloquear_proceso(prog->PID); //bloquear proceso
 		}
-	}else forzar_finalizacion(prog->PID, 0, 12, 1);
+	}else
+		forzar_finalizacion(prog->PID, 0, 12, 1);
 }
 
 void get_vglobal(char *vglobal, t_program *prog, int socket_)
@@ -297,7 +295,8 @@ void get_vglobal(char *vglobal, t_program *prog, int socket_)
 		free(mensaje);
 		free(pid_aux);
 		free(completar);
-	} else forzar_finalizacion(prog->PID, 0, 12, 1);
+	} else
+		forzar_finalizacion(prog->PID, 0, 12, 1);
 }
 
 void unlock_vglobal(t_vglobal *vg)

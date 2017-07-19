@@ -13,5 +13,6 @@ void manejo_conexion_cpu();
 char *get_variable(char *mensaje);
 char *get_numero(char *mensaje);
 void pedir_pcb_error(t_program *prg, int exit_code);
+void eliminar_cpu(int socket_);
 
 #endif /* CPUMANAGER_H_ */

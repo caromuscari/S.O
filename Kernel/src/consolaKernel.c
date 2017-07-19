@@ -1,5 +1,3 @@
-//otro hilo de Kernel
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -146,7 +144,6 @@ void leer_consola()
 				free(input);
 				break;
 		}
-
 	printf("\n\n");
 	}
 }
@@ -199,8 +196,8 @@ void mostrar_cola(t_queue *cola, char *procesos)
 
 	for(i=0;i<size;i++)
 	{
-		t_program *pr = queue_pop(cola);
-		printf("%d \n", pr->PID);
+		t_nuevo *pr = queue_pop(cola);
+		printf("%d \n", pr->pid);
 		queue_push(cola,pr);
 	}
 }
@@ -225,12 +222,23 @@ void obtener_informacion(int pid)
 	int i, size;
 	t_program *found;
 	found->PID = 0;
+	t_nuevo *found_new;
+	found_new->pid = 0;
 
 	void _buscar_program(t_program *pr)
 	{
 		if(pr->PID == pid)
 		{
 			found = pr;
+			encontrado = 1;
+		}
+	}
+
+	void _buscar_nuevo(t_nuevo *newnew)
+	{
+		if(newnew->pid == pid)
+		{
+			found_new = newnew;
 			encontrado = 1;
 		}
 	}
@@ -284,11 +292,7 @@ void obtener_informacion(int pid)
 	if(encontrado)	lista =	strdup("Cola de listos");
 	encontrado = 0;
 
-	if(found->PID == 0)
-	{
-		printf("El proceso buscado no existe\n");
-	}
-	else
+	if(found->PID != 0)
 	{
 		char *desc = devolver_descripcion_error(found->pcb->exit_code);
 		printf("Id Proceso: %i\n", found->PID);
@@ -302,6 +306,15 @@ void obtener_informacion(int pid)
 		free(lista);
 		free(desc);
 	}
+	else if(found_new->pid != 0)
+	{
+		printf("Id Proceso: %i\n", found_new->pid);
+		printf("Id Consola: %i\n", found_new->consola);
+		printf("Status de proceso: %s\n", lista);
+		free(lista);
+	}
+	else
+		printf("El proceso buscado no existe\n");
 }
 
 void imprimir_tabla_archivos()
