@@ -1,9 +1,3 @@
-/*
- * escuchar_mensaje.c
- *
- *  Created on: 28/5/2017
- *      Author: utnso
- */
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
@@ -76,7 +70,7 @@ void escuchar_mensaje()
 				hilo->hilo= hiloPrograma;
 
 				//escribir_log_con_numero("Se inicio el programa: ", atoi(pid));
-				printf("Se inicio el programa: %s \n", pid);
+				printf("Se inicio el programa: %s\n", pid);
 
 				dictionary_put(p_pid,pid,hilo);
 				dictionary_put(h_pid,string_itoa(hiloPrograma),pid);
@@ -84,7 +78,7 @@ void escuchar_mensaje()
 				break;
 			case 5:
 				//escribir_log("No se pudo iniciar el programa por falta de memoria");
-				printf("No se pudo iniciar el programa por falta de memoria \n");
+				printf("No se pudo iniciar el programa por falta de memoria\n");
 				free(sema);
 				free(cant);
 				free(smod);
@@ -151,6 +145,7 @@ void finalizar(char *pid, int socket_)
 		{
 			pid2 = dictionary_get(h_pid,var);
 			escribir_log_con_numero("Se finalizo el programa: ", atoi(pid));
+			printf("Se finalizo el programa: %d\n", atoi(pid));
 			tiempofinal_impresiones(pid2);
 
 			free(dictionary_remove(h_pid,var));
@@ -159,7 +154,11 @@ void finalizar(char *pid, int socket_)
 			free(dictionary_remove(sem,pid));
 			free(dictionary_remove(tiempo,pid));
 		}
-		else escribir_log("No se pudo finalizar el programa");
+		else
+		{
+			escribir_log("No se pudo finalizar el programa");
+			printf("No se pudo finalizar el programa");
+		}
 	}
 }
 

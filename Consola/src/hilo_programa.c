@@ -55,9 +55,9 @@ void programa(char* pid)
 		{
 			sem_wait(&semaforo);
 			escribir_log_compuesto("Mensaje a imprimir: ",aImprimir);
-			printf("%s", aImprimir);
+			printf("Mensaje a imprimir: %s\n", aImprimir);
 			impresiones2->cantidad++;
-			escribir_log_con_numero("impresiones: ", impresiones2->cantidad);
+			escribir_log_con_numero("Cantidad impresiones: ", impresiones2->cantidad);
 			free(aImprimir);
 			semp->valor = 0;
 			sem_post(&semaforo);
