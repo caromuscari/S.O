@@ -179,13 +179,13 @@ char *recibir(int socket_receptor, int *controlador)
 
 		free(resto_mensaje);
 		escribir_log_compuesto("MENSAJE_RECIBIDO: ", buffer_aux);
-	/*}
-	else
-	{
-		buffer_aux[ret] = '\0';
-		buffer_aux = strdup(buffer);
-		escribir_log_compuesto("recibido: ", buffer);
-	}*/
+	//}
+	//else
+	//{
+	//	buffer_aux[ret] = '\0';
+	//	buffer_aux = strdup(buffer);
+	//	escribir_log_compuesto("recibido: ", buffer);
+	//}
 	free(buffer);
 	return buffer_aux;
 }

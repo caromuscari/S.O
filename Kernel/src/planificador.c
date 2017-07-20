@@ -1,20 +1,21 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <string.h>
 #include <semaphore.h>
 #include <commons/log.h>
-#include <commons/collections/list.h>
-#include <commons/collections/queue.h>
-#include <commons/string.h>
 #include <commons/collections/dictionary.h>
+#include <commons/collections/queue.h>
+#include <commons/collections/list.h>
+#include <commons/string.h>
 #include <pthread.h>
-#include "estructuras.h"
 #include "semaforos_vglobales.h"
 #include "mensaje_consola.h"
+#include "estructuras.h"
 #include "cpuManager.h"
+#include "metadata.h"
 #include "mensaje.h"
 #include "memoria.h"
-#include "metadata.h"
 #include "socket.h"
 #include "log.h"
 
@@ -37,6 +38,7 @@ extern sem_t sem_listos;
 extern sem_t sem_cpus;
 extern t_configuracion *config;
 extern int tam_pagina;
+extern int pag_stack;
 extern int diferencia_multi;
 int controlador;
 
@@ -48,7 +50,9 @@ void programas_listos_A_ejecutar();
 void forzar_finalizacion(int pid, int cid, int codigo_finalizacion, int aviso);
 void agregar_nueva_prog(int id_consola, int pid, char *mensaje, int socket_con);
 void finalizar_quantum(int pid);
+char *armar_mensaje_memoria(char *mensaje_recibido, int pid);
 int calcular_pag(char *mensaje);
+int calcular_pag_stack();
 
 void programas_listos_A_ejecutar()
 {
@@ -129,7 +133,7 @@ void programas_nuevos_A_listos()
 		t_nuevo *nuevito = queue_pop(cola_nuevos);
 		pthread_mutex_unlock(&mutex_cola_nuevos);
 
-		char *mensaje_envio =  armar_mensaje_memoria(nuevito->codigo);
+		char *mensaje_envio =  armar_mensaje_memoria(nuevito->codigo, nuevito->pid);
 
 		//envio del codigo a memoria para ver si hay espacio
 		enviar(config->cliente_memoria, mensaje_envio, &controlador);
@@ -140,26 +144,25 @@ void programas_nuevos_A_listos()
 
 		if(codigo_m == 3)
 		{
-			escribir_log_error_con_numero("No se puede guardar codigo en memoria");
-			enviar(socket, "K05", &controlador);
+			escribir_log_error_con_numero("No se puede guardar codigo en memoria para PID: ",nuevito->pid);
+			enviar(nuevito->new_socket, "K05", &controlador);
+			forzar_finalizacion(nuevito->pid,0,1,0);
 		}
 		else
 		{
 			escribir_log("Se puede guardar codigo en memoria");
 
+			char *msj_enviar = armar_mensaje("K20",nuevito->codigo);
+			char *ult_pid = string_itoa(nuevito->pid);
+			string_append(&msj_enviar, ult_pid);
 
+			enviar(config->cliente_memoria, msj_enviar, &controlador);
 
+			agregar_nueva_prog(nuevito->consola, nuevito->pid, nuevito->codigo, nuevito->new_socket);
 
-		char *msj_enviar = armar_mensaje("K20",nuevito->codigo);
-		char *ult_pid = string_itoa(nuevito->pid);
-		string_append(&msj_enviar, ult_pid);
-
-		enviar(config->cliente_memoria, msj_enviar, &controlador);
-
-		agregar_nueva_prog(nuevito->consola, nuevito->pid, nuevito->codigo, nuevito->new_socket);
-
-		free(ult_pid);
-		free(msj_enviar);
+			free(ult_pid);
+			free(msj_enviar);
+		}
 
 		free(mensaje_envio);
 		free(mensaje_recibido);
@@ -258,6 +261,8 @@ void finalizar_proceso(int pid, int codigo_finalizacion)
 	pthread_mutex_lock(&mutex_lista_finalizados);
 	list_add(list_finalizados, programa);
 	pthread_mutex_unlock(&mutex_lista_finalizados);
+
+	sem_post(&sem_listos);
 }
 
 void forzar_finalizacion(int pid, int cid, int codigo_finalizacion, int aviso)
@@ -298,6 +303,7 @@ void forzar_finalizacion(int pid, int cid, int codigo_finalizacion, int aviso)
 		pthread_mutex_lock(&mutex_lista_finalizados);
 		list_add(list_finalizados,pr);
 		pthread_mutex_unlock(&mutex_lista_finalizados);
+		sem_post(&sem_listos);
 	}
 
 	contador = list_count_satisfying(list_ejecutando, (void*)_buscar_program);
@@ -413,4 +419,45 @@ void actualizar_grado_multiprogramacion()
 			}
 		}
 	}
+}
+
+char *armar_mensaje_memoria(char *mensaje_recibido, int pid)
+{
+	char *resultado = strdup("K06");
+
+	char *pid_aux = string_itoa(pid);
+	int size_pid = string_length(pid_aux);
+	char *completar = string_repeat('0', 4 - size_pid);
+
+	int paginas = calcular_pag(mensaje_recibido);
+	char *pag_char = string_itoa(paginas);
+	int size_paginas = string_length(pag_char);
+	char *completar2 = string_repeat('0', 4 - size_paginas);
+
+	int paginas_stack = calcular_pag_stack();
+	char *pag_st = string_itoa(paginas_stack);
+	int size_pag_st = string_length(pag_st);
+	char *completar3 = string_repeat('0', 4 - size_pag_st);
+
+	string_append(&resultado, completar);
+	string_append(&resultado, pid_aux);
+	string_append(&resultado, completar2);
+	string_append(&resultado, pag_char);
+	string_append(&resultado, completar3);
+	string_append(&resultado, pag_st);
+
+	free(pid_aux);
+	free(completar);
+	free(completar2);
+	free(pag_char);
+	free(pag_st);
+	free(completar3);
+
+	return resultado;
+}
+
+int calcular_pag_stack()
+{
+	pag_stack = config->stack_size;
+	return pag_stack;
 }

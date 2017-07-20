@@ -13,14 +13,12 @@
 #include "socket.h"
 #include "log.h"
 
-extern t_configuracion *config;
 extern t_list *list_consolas;
 extern t_queue *cola_nuevos;
 extern pthread_mutex_t mutex_lista_consolas;
 extern pthread_mutex_t mutex_cola_nuevos;
 extern sem_t sem_nuevos;
 extern int ultimo_pid;
-extern int pag_stack;
 fd_set master;
 fd_set read_fds;
 int fdmax;
@@ -31,8 +29,6 @@ void desconectar_consola(int socket);
 void responder_solicitud_consola(int socket, char *mensaje);
 void responder_peticion_prog(int socket, char *mensaje);
 int buscar_consola(int socket);
-int calcular_pag_stack();
-char *armar_mensaje_memoria(char *mensaje_recibido);
 
 void realizar_handShake_consola(int nuevo_socket)
 {
@@ -184,11 +180,10 @@ void responder_peticion_prog(int socket, char *mensaje)
 		queue_push(cola_nuevos, nuevo_proc);
 		pthread_mutex_unlock(&mutex_cola_nuevos);
 
-		sem_post(&sem_nuevos);
-
 		free(mensaje_conf);
 		free(ult_pid);
 		ultimo_pid ++;
+		sem_post(&sem_nuevos);
 	}
 }
 
@@ -218,50 +213,4 @@ void desconectar_consola(int socket)
 	}
 	cerrar_conexion(socket);
 	FD_CLR(socket, &master);
-}
-
-char *armar_mensaje_memoria(char *mensaje_recibido)
-{
-	char *resultado = strdup("K06");
-
-	char *pid_aux = string_itoa(ultimo_pid);
-	int size_pid = string_length(pid_aux);
-	char *completar = string_repeat('0', 4 - size_pid);
-
-	int paginas = calcular_pag(mensaje_recibido);
-	char *pag_char = string_itoa(paginas);
-	int size_paginas = string_length(pag_char);
-	char *completar2 = string_repeat('0', 4 - size_paginas);
-
-	int paginas_stack = calcular_pag_stack();
-	char *pag_st = string_itoa(paginas_stack);
-	int size_pag_st = string_length(pag_st);
-	char *completar3 = string_repeat('0', 4 - size_pag_st);
-
-	string_append(&resultado, completar);
-	string_append(&resultado, pid_aux);
-	string_append(&resultado, completar2);
-	string_append(&resultado, pag_char);
-	string_append(&resultado, completar3);
-	string_append(&resultado, pag_st);
-
-	free(pid_aux);
-	free(completar);
-	free(completar2);
-	free(pag_char);
-	free(pag_st);
-	free(completar3);
-
-	return resultado;
-}
-
-int calcular_pag_stack()
-{
-	pag_stack = config->stack_size;
-	return pag_stack;
-}
-
-void crear_prog_memoria()
-{
-
 }
