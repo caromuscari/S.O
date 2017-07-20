@@ -63,6 +63,7 @@ M00: Respuesta a la solicitud de datos (Kernel) de tamaño de página. Va en el 
 M01: Respuesta de la memoria a cualquier Cliente (K o P), indica que NO PUEDE responder el pedido.
 M02: Respuesta de la memoria a K, indica que PUDO guardar el codigo.
 M03: Respuesta de la memoria a K, indica que NO PUDO guardar el codigo.
+M08: Respuesta de la memoria a K y C luego de un SOLICITAR BYTES, M|08|CANT|BUFFER
 
 CONSOLA - C
 C00: Identificarse como consola
