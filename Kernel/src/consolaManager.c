@@ -29,6 +29,7 @@ void desconectar_consola(int socket);
 void responder_solicitud_consola(int socket, char *mensaje);
 void responder_peticion_prog(int socket, char *mensaje);
 int buscar_consola(int socket);
+void eliminar_consola(int consola_id);
 
 void realizar_handShake_consola(int nuevo_socket)
 {

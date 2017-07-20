@@ -1,5 +1,6 @@
 #include <commons/string.h>
 #include <commons/log.h>
+#include <semaphore.h>
 #include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
@@ -16,6 +17,7 @@
 
 extern t_list *list_cpus;
 extern t_queue *cola_listos;
+extern sem_t sem_cpus;
 extern pthread_mutex_t mutex_lista_cpus;
 fd_set master;
 fd_set read_fds;
@@ -103,6 +105,8 @@ void agregar_lista_cpu(int nuevo_socket)
 	pthread_mutex_lock(&mutex_lista_cpus);
 	list_add(list_cpus, nueva_cpu);
 	pthread_mutex_unlock(&mutex_lista_cpus);
+
+	sem_post(&sem_cpus);
 }
 
 int get_cpuId()

@@ -15,5 +15,6 @@ void responder_peticion_prog(int socket, char *mensaje);
 int buscar_consola(int socket);
 void realizar_handShake_consola(int nuevo_socket);
 char *armar_mensaje_memoria(char *mensaje_recibido);
+void eliminar_consola(int consola_id);
 
 #endif /* CONSOLAMANAGER_H_ */

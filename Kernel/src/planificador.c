@@ -152,6 +152,27 @@ void programas_nuevos_A_listos()
 		{
 			escribir_log("Se puede guardar codigo en memoria");
 
+			int paginas = calcular_pag(nuevito->codigo);
+			int len = string_length(nuevito->codigo);
+			int resto = tam_pagina;
+			int n_pag = 0;
+
+			while(paginas > n_pag && len > 0)
+			{
+				char *pedazo = string_substring(nuevito->codigo,n_pag*tam_pagina,resto);
+
+				almacenar_bytes(nuevito->pid,n_pag,0,resto, pedazo);
+				len =- tam_pagina;
+
+				if(len > tam_pagina )
+					resto = tam_pagina;
+				else
+					resto = len;
+
+				n_pag ++;
+				free(pedazo);
+			}
+
 			char *msj_enviar = armar_mensaje("K20",nuevito->codigo);
 			char *ult_pid = string_itoa(nuevito->pid);
 			string_append(&msj_enviar, ult_pid);
@@ -262,7 +283,7 @@ void finalizar_proceso(int pid, int codigo_finalizacion)
 	list_add(list_finalizados, programa);
 	pthread_mutex_unlock(&mutex_lista_finalizados);
 
-	sem_post(&sem_listos);
+	sem_post(&sem_cpus);
 }
 
 void forzar_finalizacion(int pid, int cid, int codigo_finalizacion, int aviso)
@@ -303,7 +324,6 @@ void forzar_finalizacion(int pid, int cid, int codigo_finalizacion, int aviso)
 		pthread_mutex_lock(&mutex_lista_finalizados);
 		list_add(list_finalizados,pr);
 		pthread_mutex_unlock(&mutex_lista_finalizados);
-		sem_post(&sem_listos);
 	}
 
 	contador = list_count_satisfying(list_ejecutando, (void*)_buscar_program);
