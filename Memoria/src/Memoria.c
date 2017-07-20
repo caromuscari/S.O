@@ -187,7 +187,7 @@ int main(int argc, char *argv[])
 		free(header);
 
 		pthread_create(&hiloEsperarMensaje[hilo], NULL, (void*) esperar_mensaje,(void *) cliente[hilo]);
-		pthread_join(hiloEsperarMensaje[hilo],NULL);
+		//pthread_join(hiloEsperarMensaje[hilo],NULL);
 
 		log_aux= string_from_format("El Cliente %d tiene Hilo nro :%d ",cliente[hilo],hilo);
 		escribir_log(log_aux);
@@ -580,6 +580,91 @@ void esperar_mensaje(void *i) {
 
 			}
 			break;
+			case 94: //Solicitar Bytes de Memoria
+			{
+				char *log_aux8 = string_from_format("K94 KERNEL Solicita Bytes: %d",cliente);
+				escribir_log(log_aux8);
+				free(log_aux8);
+				char *ppid = string_substring(mensRec, 3, 4);
+				int pid = atoi(ppid);
+				char *ppag = string_substring(mensRec, 7, 4);
+				int pag = atoi(ppag);
+				char *poffset = string_substring(mensRec, 11, 4);
+				int offset= atoi(poffset);
+				char *ptam = string_substring(mensRec, 15, 4);
+				int tam = atoi(ptam);
+
+				char *logi=string_from_format("\n Solicitar Bytes \nPID:%d \nPAG:%d \nOFFSET:%d \nTAM:%d\n",pid, pag, offset,tam);
+				escribir_log(logi);
+				free(logi);
+
+				pthread_mutex_lock(&mutex_cache);
+				char * Buffer = solicitarBytes(pid, pag, offset, tam);
+				pthread_mutex_unlock(&mutex_cache);
+
+
+				char *buffer_aux=string_substring(Buffer,0,tam);
+
+				char * error = get_codigo(Buffer);
+				if ( strcmp(error,"03") == 0)
+				{
+					char *RTA_OK = armar_mensaje("M03",""); // M|03|0000000000
+					escribir_log_compuesto("\n Solicitar Bytes - ERROR: PID|PAG invalida \n", RTA_OK);
+					enviar(cliente,RTA_OK, &controlador);
+					free(RTA_OK);
+				} else
+				{
+					char *RTA_OK = armar_mensaje("M08",buffer_aux);
+					escribir_log_compuesto("\n BUFFER RETORNO SOLICITAR BYTES \n", RTA_OK);
+					enviar(cliente,RTA_OK, &controlador);
+					free(RTA_OK);
+				}
+				free(ppid);
+				free(ppag);
+				free(ptam);
+				free(poffset);
+				free(Buffer);
+				free(buffer_aux);
+				free(error);
+			}
+			break;
+			case 90: //K90
+				{
+				char *log_aux9 = string_from_format("P08-Almacenar Bytes: %d",cliente);
+				escribir_log(log_aux9);
+				free(log_aux9);
+
+
+				char *ppid = string_substring(mensRec, 3, 4);
+				int pid = atoi(ppid);
+				char *ppag = string_substring(mensRec, 7, 4);
+				int pag = atoi(ppag);
+				char *poffset = string_substring(mensRec, 11, 4);
+				int offset= atoi(poffset);
+				char *ptam = string_substring(mensRec, 15, 4);
+				int tam = atoi(ptam);
+				char *pbuffer = string_substring(mensRec, 19, tam);
+
+				char *logi = string_from_format("\n Almacenar Bytes \nPID:%d \nPAG:%d \nOFFSET:%d \nTAM:%d\n BUFFER:%s \n",pid, pag, offset,tam,pbuffer);
+				escribir_log(logi);
+				free(logi);
+
+				pthread_mutex_lock(&mutex_memoria);
+				char* r_OK = almacenarBytes(pid, pag, offset, tam, pbuffer);
+				pthread_mutex_unlock(&mutex_memoria);
+
+				enviar(cliente,r_OK, &controlador);
+
+
+				free(ppid);
+				free(ppag);
+				free(ptam);
+				free(pbuffer);
+				free(poffset);
+				free(r_OK);
+			}
+			break;
+
 			case 99: //Muestra MP
 			{
 				mostrar_memoria();
@@ -602,7 +687,7 @@ void esperar_mensaje(void *i) {
 			{
 			case 01: //Solicitar Bytes de Memoria
 			{
-				char *log_aux1 = string_from_format("P01-Solicitar Bytes: %d",cliente);
+				char *log_aux1 = string_from_format("P01 - CPU Solicita Bytes: %d",cliente);
 				escribir_log(log_aux1);
 				free(log_aux1);
 				char *ppid = string_substring(mensRec, 3, 4);
@@ -621,17 +706,30 @@ void esperar_mensaje(void *i) {
 				pthread_mutex_lock(&mutex_cache);
 				char * Buffer = solicitarBytes(pid, pag, offset, tam);
 				pthread_mutex_unlock(&mutex_cache);
+
 				char *buffer_aux=string_substring(Buffer,0,tam);
 
-				escribir_log_compuesto("\n BUFFER RETORNO SOLICITAR BYTES \n", buffer_aux);
-				enviar(cliente,buffer_aux, &controlador);
-
+				char * error = get_codigo(Buffer);
+				if ( strcmp(error,"03") == 0)
+				{
+					char *RTA_OK = armar_mensaje("M03",""); // M|03|0000000000
+					escribir_log_compuesto("\n Solicitar Bytes - ERROR: PID|PAG invalida \n", RTA_OK);
+					enviar(cliente,RTA_OK, &controlador);
+					free(RTA_OK);
+				} else
+				{
+					char *RTA_OK = armar_mensaje("M08",buffer_aux);
+					escribir_log_compuesto("\n BUFFER RETORNO SOLICITAR BYTES \n", RTA_OK);
+					enviar(cliente,RTA_OK, &controlador);
+					free(RTA_OK);
+				}
 				free(ppid);
 				free(ppag);
 				free(ptam);
 				free(poffset);
 				free(Buffer);
 				free(buffer_aux);
+				free(error);
 			}
 
 			break;
@@ -887,7 +985,7 @@ char * solicitarBytes(int pid, int pag, int offset, int tam)
 	escribir_log_con_numero("\n frame_pos: ",frame_pos);
 
 	if (frame_pos <= 0 ) { //No encontro la pagina.
-		char* rta = strdup("-1");
+		char* rta = strdup("M030000000000");
 		return rta;
 	}
 

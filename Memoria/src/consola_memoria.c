@@ -209,7 +209,7 @@ char *dump_estructuras(){
 		log_info(logi,aux);
 		free(aux);
 
-		linea = string_from_format("\n PID: %d \n PAG:%d \n ESTADO:%d \n",tablaPaginas[a].pid,tablaPaginas[a].pag,tablaPaginas[a].estado);
+		linea = string_from_format("(POS:%d)ESTADO: %d | PID: %d | PAG: %d ",a, tablaPaginas[a].estado,tablaPaginas[a].pid,tablaPaginas[a].pag);
 		log_info(logi,linea);
 		free(linea);
 	}
@@ -279,8 +279,6 @@ int calcular_paginas_de_proceso(int pid){
 }
 
 char *info_marco_proceso(int pid){
-
-
 	int cant_pagina = ultimoNumeroPagina(pid)+1;
 	char *datos = malloc(cant_pagina * tamanioMarco);
 	int i;
