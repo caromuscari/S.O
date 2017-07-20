@@ -1343,5 +1343,4 @@ if (tablaPaginas[pos].estado== -1 )
 	return 0;
 }
 	return 1;
-
 }
