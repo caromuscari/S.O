@@ -3,6 +3,7 @@
 #include <pthread.h>
 #include <string.h>
 #include <commons/collections/dictionary.h>
+#include <commons/collections/list.h>
 #include "socket_client.h"
 #include "mensaje.h"
 #include <commons/string.h>
@@ -18,10 +19,15 @@ extern pthread_t hiloMensaje;
 extern t_dictionary * sem;
 extern t_dictionary * impresiones;
 extern t_dictionary * tiempo;
+extern t_list * no_iniciados;
 extern int flag;
 
 char* leer_archivo(FILE* archivo);
+void mostrar(void *algo);
+void cerrar (void * pid);
 void iniciar_programa(char *ruta, int socket_);
+void verificar_finalizar(char * identi, int socket_);
+void finalizar_noiniciados(char * pid, int socket_);
 void finalizar_programa(char *pid, int socket_);
 void desconectar_consola();
 void cerrar_programas(char *key, void *data);
@@ -51,18 +57,21 @@ void hilousuario()
 			free(identi);
 			break;
 		case 2:
-			if(dictionary_is_empty(p_pid)){
+			if(dictionary_is_empty(p_pid) && list_is_empty(no_iniciados)){
 				printf("No hay programas ejecutando\n");
 			}
 			else
 			{
 				printf("Los programas son los siguientes:\n");
 				dictionary_iterator(p_pid,(void *)mostrar_pids);
+				if(!list_is_empty(no_iniciados)){
+					list_iterate(no_iniciados, mostrar);
+				}
 
 				printf("\nIngresar el pid del hilo a finalizar: ");
 				scanf("%ms",&identi);
 
-				finalizar_programa(identi,socket_);
+				verificar_finalizar(identi, socket_);
 
 				free(identi);
 			}
@@ -87,6 +96,10 @@ void hilousuario()
 		free(ingreso);
 	}
 	pthread_exit(NULL);
+}
+
+void mostrar(void *algo){
+	printf("PID: %s\n",(char *)algo);
 }
 
 void iniciar_programa(char *ruta, int socket_)
@@ -125,6 +138,42 @@ char *leer_archivo(FILE* archivo)
 	return r;
 }
 
+void verificar_finalizar(char * identi, int socket_){
+	bool encontrar(void *pid_)
+	{
+		return !strcmp(identi,pid_);
+	}
+
+	if (list_find(no_iniciados,encontrar) != NULL){
+		finalizar_noiniciados(identi,socket_);
+	}
+	else finalizar_programa(identi,socket_);
+}
+
+void finalizar_noiniciados(char * pid, int socket_){
+	char * elemento;
+
+	char * mensaje = armar_mensaje("C02",pid);
+	enviar(socket_, mensaje, string_length(mensaje));
+	escribir_log_con_numero("Se finalizo el programa: ", atoi(pid));
+
+	bool remover(void *pid_)
+	{
+		return !strcmp(pid,pid_);
+	}
+
+	elemento = list_remove_by_condition(no_iniciados, remover);
+
+
+	printf("\nInicio de ejecucion: 0\n");
+	printf("Fin de ejecucion: 0\n");
+	printf("Cantidad de impresiones: 0\n");
+	printf("Tiempo total de ejecucion en segundos: 0\n\n");
+
+	free(elemento);
+	free(mensaje);
+}
+
 void finalizar_programa(char *pid, int socket_)
 {
 	char *mensaje;
@@ -157,11 +206,7 @@ void finalizar_programa(char *pid, int socket_)
 
 void mostrar_pids(char *key, void *data)
 {
-	t_hilo *hilo = data;
-	char *var = string_itoa(hilo->hilo);
-
 	printf("PID: %s\n", key);
-	free(var);
 }
 
 void tiempofinal_impresiones(char* pid)
@@ -198,12 +243,19 @@ void desconectar_consola()
 {
 	char *mensaje;
 	dictionary_iterator(p_pid,(void*)cerrar_programas);
+	if(!list_is_empty(no_iniciados)){
+		list_iterate(no_iniciados, cerrar);
+	}
 	mensaje = armar_mensaje("C03", "");
 	enviar(socket_, mensaje, string_length(mensaje));
 	printf("Se desconecta la consola\n");
 	free(mensaje);
 	pthread_kill(hiloMensaje,SIGKILL);
 	pthread_exit(NULL);
+}
+
+void cerrar (void * pid){
+	finalizar_noiniciados(pid,socket_);
 }
 
 void cerrar_programas(char *key, void *data)

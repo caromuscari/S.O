@@ -3,6 +3,7 @@
 #include <pthread.h>
 #include <string.h>
 #include <commons/collections/dictionary.h>
+#include <commons/collections/list.h>
 #include <commons/log.h>
 #include <semaphore.h>
 #include <commons/string.h>
@@ -19,6 +20,7 @@ extern t_dictionary * h_pid;
 extern t_dictionary * sem;
 extern t_dictionary * impresiones;
 extern t_dictionary * tiempo;
+extern t_list *no_iniciados;
 extern sem_t semaforo;
 extern sem_t x;
 extern int flag;
@@ -27,7 +29,9 @@ pthread_t hiloPrograma;
 extern char *aImprimir;
 
 void escuchar_mensaje();
+void verificacion_finalizar(char * pid);
 void finalizar(char *pid, int socket_);
+void finalizar_no_iniciados(char * pid, int socket_);
 void senial();
 
 void escuchar_mensaje()
@@ -55,6 +59,7 @@ void escuchar_mensaje()
 		{
 			case 4: ;
 				char *pid;
+				char * elemento2;
 
 				sema->valor=0;
 				cant->cantidad=0;
@@ -73,21 +78,48 @@ void escuchar_mensaje()
 				dictionary_put(p_pid,pid,hilo);
 				dictionary_put(h_pid,string_itoa(hiloPrograma),pid);
 
+				bool encontrar(void *pid_)
+				{
+					return !strcmp(pid,pid_);
+				}
+
+				elemento2 = list_remove_by_condition(no_iniciados, encontrar);
+
+				free(elemento2);
+
 				break;
 			case 5: ;
 				char *pid3;
+				char * elemento;
 				escribir_log("No se pudo iniciar el programa por falta de memoria");
 				printf("No se pudo iniciar el programa por falta de memoria\n");
 
 				pid3 = recibir(socket_,1);
-				finalizar(pid3, socket_);
+				finalizar_no_iniciados(pid3, socket_);
 
-				//deberia terminar con el proceso
+				bool remover(void *pid_)
+				{
+					return !strcmp(pid3,pid_);
+				}
+
+				elemento = list_remove_by_condition(no_iniciados, remover);
+
 				free(sema);
+				free(elemento);
 				free(pid3);
 				free(cant);
 				free(smod);
 				free(hilo);
+				break;
+			case 26:;
+				char *pid7 = recibir(socket_,1);
+
+				escribir_log_compuesto("Se le asigno el pid ", pid7);
+				printf("Se le asigno el pid %s\n ", pid7);
+
+				list_add(no_iniciados,pid7);
+
+				free(pid7);
 				break;
 			case 9: ;
 				char *pid2 = recibir(socket_,1);
@@ -112,7 +144,8 @@ void escuchar_mensaje()
 				char *pid33;
 
 				pid33 = recibir(socket_,1);
-				finalizar(pid33, socket_);
+
+				verificacion_finalizar(pid33);
 
 				free(sema);
 				free(cant);
@@ -138,6 +171,21 @@ void escuchar_mensaje()
 	desconectar_consola();
 	pthread_exit(NULL);
 }
+
+void verificacion_finalizar(char * pid)
+{
+	bool encontrar(void *pid_)
+	{
+		return !strcmp(pid,pid_);
+	}
+
+	if (list_find(no_iniciados,encontrar) != NULL){
+		finalizar_no_iniciados(pid,socket_);
+	}
+	else finalizar(pid,socket_);
+}
+
+
 
 void finalizar(char *pid, int socket_)
 {
@@ -166,6 +214,26 @@ void finalizar(char *pid, int socket_)
 			printf("No se pudo finalizar el programa");
 		}
 	}
+}
+
+void finalizar_no_iniciados(char * pid,int socket_)
+{
+	char * elemento;
+
+	bool remover(void *pid_)
+	{
+		return !strcmp(pid,pid_);
+	}
+
+	elemento = list_remove_by_condition(no_iniciados, remover);
+
+
+	printf("\nInicio de ejecucion: 0\n");
+	printf("Fin de ejecucion: 0\n");
+	printf("Cantidad de impresiones: 0\n");
+	printf("Tiempo total de ejecucion en segundos: 0\n\n");
+
+	free(elemento);
 }
 
 void senial()

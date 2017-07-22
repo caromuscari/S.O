@@ -4,6 +4,7 @@
 #include <pthread.h>
 #include <commons/config.h>
 #include <commons/collections/dictionary.h>
+#include <commons/collections/list.h>
 #include <commons/log.h>
 #include <commons/string.h>
 #include "estructuras.h"
@@ -27,6 +28,7 @@ t_dictionary *sem;
 t_dictionary *tiempo;
 t_dictionary *impresiones;
 t_dictionary *procesos;
+t_list *no_iniciados;
 sem_t semaforo;
 int tamAimprimir;
 int flag;

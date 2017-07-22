@@ -12,5 +12,4 @@ void inicializar_parametros();
 
 void liberar_memoria();
 
-
 #endif /* PARAMETROS_H_ */
