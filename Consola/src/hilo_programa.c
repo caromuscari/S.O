@@ -23,7 +23,7 @@ extern sem_t x;
 time_t *tiempoInicial;
 extern t_dictionary * tiempo;
 extern t_dictionary * impresiones;
-extern char * aImprimir;
+extern char *aImprimir;
 
 void programa(char* pid);
 
@@ -54,8 +54,10 @@ void programa(char* pid)
 		if(semp->valor==1)
 		{
 			sem_wait(&semaforo);
-			escribir_log_compuesto("Mensaje a imprimir: ",aImprimir);
-			printf("Mensaje a imprimir: %s\n", aImprimir);
+
+			escribir_log(aImprimir);
+			printf("%s\n", aImprimir);
+
 			impresiones2->cantidad++;
 			escribir_log_con_numero("Cantidad impresiones: ", impresiones2->cantidad);
 			free(aImprimir);

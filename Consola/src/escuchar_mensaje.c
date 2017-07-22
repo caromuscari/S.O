@@ -24,7 +24,7 @@ extern sem_t x;
 extern int flag;
 extern int socket_;
 pthread_t hiloPrograma;
-extern char * aImprimir;
+extern char *aImprimir;
 
 void escuchar_mensaje();
 void finalizar(char *pid, int socket_);
@@ -49,9 +49,7 @@ void escuchar_mensaje()
 		t_impresiones *cant = malloc(sizeof(t_impresiones));
 		t_hilo *hilo = malloc(sizeof(t_hilo));
 		mensaje = recibir(socket_,13);
-		//escribir_log(mensaje);
 		mensaje2 = get_codigo(mensaje);
-		//escribir_log(mensaje2);
 
 		switch(atoi(mensaje2))
 		{
@@ -69,17 +67,24 @@ void escuchar_mensaje()
 				pthread_create(&hiloPrograma,NULL,(void*)programa,pid);
 				hilo->hilo= hiloPrograma;
 
-				//escribir_log_con_numero("Se inicio el programa: ", atoi(pid));
+				escribir_log_con_numero("Se inicio el programa: ", atoi(pid));
 				printf("Se inicio el programa: %s\n", pid);
 
 				dictionary_put(p_pid,pid,hilo);
 				dictionary_put(h_pid,string_itoa(hiloPrograma),pid);
 
 				break;
-			case 5:
-				//escribir_log("No se pudo iniciar el programa por falta de memoria");
+			case 5: ;
+				char *pid3;
+				escribir_log("No se pudo iniciar el programa por falta de memoria");
 				printf("No se pudo iniciar el programa por falta de memoria\n");
+
+				pid3 = recibir(socket_,1);
+				finalizar(pid3, socket_);
+
+				//deberia terminar con el proceso
 				free(sema);
+				free(pid3);
 				free(cant);
 				free(smod);
 				free(hilo);
@@ -87,10 +92,12 @@ void escuchar_mensaje()
 			case 9: ;
 				char *pid2 = recibir(socket_,1);
 				char *size = get_payload(mensaje);
-				escribir_log(pid2);
+				char *msj = recibir(socket_, atoi(size)-1);
 
-				aImprimir = recibir(socket_, atoi(size)-1);
-				//escribir_log_compuesto("A imprimir: ", aImprimir);
+				aImprimir = strdup("Mensaje de PID ");
+				string_append(&aImprimir,pid2);
+				string_append(&aImprimir," a imprimir: ");
+				string_append(&aImprimir,msj);
 
 				smod=dictionary_get(sem,pid2);
 				smod->valor=1;
@@ -102,17 +109,16 @@ void escuchar_mensaje()
 				free(pid2);
 				break;
 			case 10: ;
-				char *pid3;
+				char *pid33;
 
-				pid3 = recibir(socket_,1);
-				finalizar(pid3, socket_);
+				pid33 = recibir(socket_,1);
+				finalizar(pid33, socket_);
 
 				free(sema);
 				free(cant);
 				free(smod);
 				free(hilo);
-				free(pid3);
-
+				free(pid33);
 				break;
 			default:
 				escribir_log("Mensaje incorrecto del Kernel");

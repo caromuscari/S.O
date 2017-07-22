@@ -31,7 +31,7 @@ sem_t semaforo;
 int tamAimprimir;
 int flag;
 int socket_;
-char * aImprimir;
+char *aImprimir;
 sem_t x;
 
 void leer_archivo_configuracion(char *ruta);

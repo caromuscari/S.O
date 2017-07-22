@@ -186,7 +186,7 @@ void tiempofinal_impresiones(char* pid)
 
 	diferencia= difftime(*tiempoFinal, *tiempoI);
 
-	printf("Inicio de ejecucion: %s\n", (char*)tiempoinicial->buffer);
+	printf("\nInicio de ejecucion: %s\n", (char*)tiempoinicial->buffer);
 	printf("Fin de ejecucion: %s\n", (char*)buffer1);
 	printf("Cantidad de impresiones: %d\n", cant->cantidad);
 	printf("Tiempo total de ejecucion en segundos: %d\n\n", (int)diferencia);
