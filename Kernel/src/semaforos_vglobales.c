@@ -110,7 +110,8 @@ void sem_wait_(t_program *proceso, char *sema, int socket_)
 			escribir_log_compuesto("Se realiza un wait al semaforo: ",sema);
 			enviar(socket_, "OK000000000000000", &controlador);
 			sem->value --;
-		}else
+		}
+		else
 		{
 			enviar(socket_, "K2300000000000000", &controlador);
 
@@ -120,7 +121,7 @@ void sem_wait_(t_program *proceso, char *sema, int socket_)
 			{
 				char *codi = get_codigo(mensaje);
 				int codigo = atoi(codi);
-				if(codigo == 23)
+				if(codigo == 16)
 				{
 					char *mensaje_r2 = get_mensaje(mensaje);
 					t_PCB *pcb_actualizado2 =deserializarPCB_CPUKer(mensaje_r2);

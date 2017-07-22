@@ -163,7 +163,7 @@ void responder_peticion_prog(int socket, char *mensaje)
 	char *codigo_new = get_mensaje(mensaje);
 	char *ult_pid = string_itoa(ultimo_pid);
 
-	char *mensaje_conf =  armar_mensaje("K04", ult_pid);
+	char *mensaje_conf =  armar_mensaje("K26", ult_pid);
 	enviar(socket, mensaje_conf, &controlador);
 
 	if(controlador > 0) desconectar_consola(socket);

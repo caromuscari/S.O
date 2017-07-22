@@ -11,7 +11,6 @@
 #include "cosas.h"
 #include "funcionesCPU.h"
 #include <string.h>
-
 t_sentencia* armarIndiceCodigo (char *codigoPrograma){
 	t_metadata_program *metadata = metadata_desde_literal(codigoPrograma);
 	t_sentencia* sentencias = malloc( sizeof(t_sentencia) * (metadata->instrucciones_size+1));

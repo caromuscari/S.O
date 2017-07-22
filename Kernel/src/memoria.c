@@ -66,7 +66,7 @@ void inicializar_pagina_dinamica(t_program *prog, int size_sol)
 	t_pagina *pagina = malloc(sizeof(t_pagina));
 	pagina->heaps = list_create();
 	pagina->n_pagina = prog->pcb->cant_pag + pag_stack + list_size(prog->memoria_dinamica);
-	pagina->esp_libre = tam_pagina - 10;
+	pagina->esp_libre = tam_pagina - 5;
 
 	HeapMetadata *heap = malloc(sizeof(HeapMetadata));
 	heap->size = tam_pagina - 5;
@@ -175,7 +175,7 @@ int ubicar_bloque(t_pagina *pagina, int tam_sol, t_program *program, int so_cpu)
 		//int pid, int numpag, int offset, int cant, int bool_free
 
 		char *buffer = buffer_bloque(bloque->metadata->size, 0);
-		int respuesta = almacenar_bytes(program->PID, pagina->n_pagina, offset-5, 5, buffer);
+		int respuesta = almacenar_bytes(program->PID, pagina->n_pagina, inicio_bloque, 5, buffer);
 		free(buffer);
 
 		if(respuesta==3)
@@ -195,7 +195,7 @@ int ubicar_bloque(t_pagina *pagina, int tam_sol, t_program *program, int so_cpu)
 			bl->metadata->size = sz - tam_sol;
 
 			char *buffer = buffer_bloque(bl->metadata->size, 1);
-			almacenar_bytes(program->PID, pagina->n_pagina, offset-5, 5, buffer);
+			almacenar_bytes(program->PID, pagina->n_pagina, (inicio_bloque + tam_sol + 5), 5, buffer);
 			free(buffer);
 
 			list_add_in_index(pagina->heaps, posicion_pagina, bl);
@@ -536,13 +536,16 @@ char *pedir_bytes_memoria(int pid, int numpag, int offset)
 
 	free(completar);
 
+	char *tam = strdup("0005");
+	string_append(&men_env, tam);
+
 	enviar(config->cliente_memoria, men_env, &contr);
 
 	free(men_env);
 	free(pid_);
 	free(numpag_);
 	free(offset_);
-
+	free(tam);
 	return recibir(config->cliente_memoria, &contr);
 }
 
@@ -605,10 +608,10 @@ void *pedir_bloque_libre(t_pagina *pagina, int pid, int tam_sol)
 HeapMetadata *armar_metadata(char *metadata)
 {
 	HeapMetadata *metadaHeap = malloc(sizeof(HeapMetadata));
-	char *cantidad = string_substring(metadata, 13, 4);
+	char *cantidad = string_substring(metadata, 0, 4);
 	int cant = atoi(cantidad);
 	free(cantidad);
-	char *free_ = string_substring(metadata, 17, 1);
+	char *free_ = string_substring(metadata, 4, 1);
 	bool is_free;
 
 	if (atoi(free_))

@@ -140,7 +140,7 @@ int main(int argc, char *argv[])
 	int controlador = 0;
 	while(chau!=1){
 		char* buff = malloc (13);
-		char* idmensaje = malloc(2);
+		//char* idmensaje = malloc(2);
 		char* sizemensaje= malloc (10);
 		int largomensaje  = 0;
 		escribir_log("Esperando mensajes del Kernel para ponerme a trabajar...",1);
@@ -152,7 +152,8 @@ int main(int argc, char *argv[])
 			chau = 1;
 			goto fin2;
 		}
-		memcpy(idmensaje,buff+1,2);
+		//memcpy(idmensaje,buff+1,2);
+		char *idmensaje = string_substring(buff,1,2);
 
 		char * aux = string_from_format("mensaje recibido %s",buff);
 		escribir_log(aux,1);
@@ -433,10 +434,10 @@ char* pedir_linea_memoria(){
 		char *mensaje = mensaje_leer_memoria(pcb->PID,offset,0,largo,&size);
 		enviar(sockMemCPU,mensaje,&controlador,size);
 
-		char *respuesta = malloc(largo+1); memset(respuesta,'\0',largo+1);
-		recibir(sockMemCPU,&controlador,respuesta,largo);
+		char *respuesta = malloc(largo+13+1); memset(respuesta,'\0',largo+13+1);
+		recibir(sockMemCPU,&controlador,respuesta,largo+13);
 
-		linea = strdup(respuesta);
+		linea = string_substring(respuesta,13,largo);
 
 		free(mensaje);
 		free(respuesta);

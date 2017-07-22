@@ -142,7 +142,7 @@ int enviar(int socket_emisor, char *mensaje_a_enviar, int *controlador)
 
 char *recibir(int socket_receptor, int *controlador)
 {
-	int ret, seg;
+	int ret;
 	char *buffer = malloc(13 + 1);
 	memset(buffer,'\0',14);
 	*controlador = 0;
@@ -171,7 +171,7 @@ char *recibir(int socket_receptor, int *controlador)
 		int size = atoi(str_size);
 		free(str_size);
 		char *resto_mensaje = malloc(size);
-		if(size>0) seg = recv(socket_receptor, resto_mensaje, size, 0);
+		if(size>0) recv(socket_receptor, resto_mensaje, size, 0);
 
 		char *buffer_aux= malloc(size+13);
 		memcpy(buffer_aux,buffer,13);
