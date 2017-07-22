@@ -38,7 +38,9 @@ int chequear_pagina(t_pagina *page);
 void juntar_memoria(t_list *hp, t_bloque *blo, t_bloque *blo_liberado, int num_bloque, bool anterior);
 int almacenar_bytes(int pid, int numpag, int offset, int tam, char *buffer);
 char *buffer_bloque(int size, int booleano);
-
+void *pedir_bloque_libre(t_pagina *pagina, int pid, int tam_sol);
+char *pedir_bytes_memoria(int pid, int numpag, int offset);
+HeapMetadata *armar_metadata(char *metadata);
 
 void handshakearMemory()
 {
@@ -150,7 +152,8 @@ void reservar_memoria_din(t_program *program, int size_solicitado, int so_cpu)
 int ubicar_bloque(t_pagina *pagina, int tam_sol, t_program *program, int so_cpu)//usa algoritmo first fit -> el resumen dice que es el mas kpo
 {
 	t_bloque *bloque;// = malloc (sizeof(t_bloque));
-	bloque = find_first_fit(pagina->heaps, tam_sol);
+	//bloque = find_first_fit(pagina->heaps, tam_sol);
+	bloque = pedir_bloque_libre(pagina, program->PID, tam_sol);
 
 	if (bloque != NULL)
 	{
@@ -172,7 +175,7 @@ int ubicar_bloque(t_pagina *pagina, int tam_sol, t_program *program, int so_cpu)
 		//int pid, int numpag, int offset, int cant, int bool_free
 
 		char *buffer = buffer_bloque(bloque->metadata->size, 0);
-		int respuesta = almacenar_bytes(program->PID, pagina->n_pagina, offset, 5, buffer);
+		int respuesta = almacenar_bytes(program->PID, pagina->n_pagina, offset-5, 5, buffer);
 		free(buffer);
 
 		if(respuesta==3)
@@ -192,7 +195,7 @@ int ubicar_bloque(t_pagina *pagina, int tam_sol, t_program *program, int so_cpu)
 			bl->metadata->size = sz - tam_sol;
 
 			char *buffer = buffer_bloque(bl->metadata->size, 1);
-			almacenar_bytes(program->PID, pagina->n_pagina, offset, 5, buffer);
+			almacenar_bytes(program->PID, pagina->n_pagina, offset-5, 5, buffer);
 			free(buffer);
 
 			list_add_in_index(pagina->heaps, posicion_pagina, bl);
@@ -312,7 +315,10 @@ void liberar_bloque(t_program *prog, char *offset)
 	if(page != NULL)
 	{
 		prog->frees++;
-		t_bloque *bloque = list_get(page->heaps, heap->bloque);
+		char *bytes = pedir_bytes_memoria(prog->PID, page->n_pagina, (atoi(offset)/tam_pagina)-5);
+		HeapMetadata *meta = armar_metadata(bytes);
+		t_bloque *bloque = malloc(sizeof(t_bloque));//list_get(page->heaps, heap->bloque);
+		bloque->metadata = meta;
 		free(bloque->data);
 		bloque->metadata->isFree = true;
 		if((list_size(page->heaps) - 1) > heap->bloque && heap->bloque != 0)
@@ -557,4 +563,62 @@ char *buffer_bloque(int size, int booleano)
 	free(char_meta);
 
 	return buffer;
+}
+
+void *pedir_bloque_libre(t_pagina *pagina, int pid, int tam_sol)
+{
+	int encontrado = 0;
+	int fin = 0;
+	int offset = 0;
+	t_bloque *bloque;
+	//char *pedir_bytes_memoria(int pid, int numpag, int offset)
+	while(encontrado == 0 && fin == 0)
+	{
+		char *info_bloque = pedir_bytes_memoria(pid, pagina->n_pagina, offset);
+		char *metadata = get_mensaje(info_bloque);
+		HeapMetadata *heapMeta = armar_metadata(metadata);
+
+		if(heapMeta->isFree && heapMeta->size >= tam_sol)
+		{
+			encontrado = 1;
+			bloque = malloc(sizeof(t_bloque));
+			bloque->metadata = heapMeta;
+		}
+		else
+		{
+			offset =+ (5 + heapMeta->size);
+			if(offset > tam_pagina)
+				fin = 1;
+			free(heapMeta);
+		}
+
+		free(info_bloque);
+		free(metadata);
+	}
+
+	if (fin)
+		bloque = NULL;
+
+	return bloque;
+}
+
+HeapMetadata *armar_metadata(char *metadata)
+{
+	HeapMetadata *metadaHeap = malloc(sizeof(HeapMetadata));
+	char *cantidad = string_substring(metadata, 13, 4);
+	int cant = atoi(cantidad);
+	free(cantidad);
+	char *free_ = string_substring(metadata, 17, 1);
+	bool is_free;
+
+	if (atoi(free_))
+		is_free = true;
+	else
+		is_free = false;
+	free(free_);
+
+	metadaHeap->isFree = is_free;
+	metadaHeap->size = cant;
+
+	return metadaHeap;
 }

@@ -101,7 +101,7 @@ typedef struct
 typedef struct
 {
 	int size;
-	int isFree;//1:true  0:false
+	bool isFree;//1:true  0:false
 }HeapMetadata;
 
 typedef struct
