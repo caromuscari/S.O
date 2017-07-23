@@ -68,60 +68,59 @@ void programas_listos_A_ejecutar()
 		sem_wait(&sem_listos);
 		sem_wait(&sem_cpus);
 
+		tam_prog = 0;
 
-			tam_prog = 0;
+		pthread_mutex_lock(&mutex_cola_listos);
+		t_program *program = queue_pop(cola_listos);
+		pthread_mutex_unlock(&mutex_cola_listos);
 
-			pthread_mutex_lock(&mutex_cola_listos);
-			t_program *program = queue_pop(cola_listos);
-			pthread_mutex_unlock(&mutex_cola_listos);
+		pthread_mutex_lock(&mutex_lista_cpus);
+		t_cpu *cpu_disponible = list_find(list_cpus, (void*)_cpuLibre);
+		pthread_mutex_unlock(&mutex_lista_cpus);
+
+		char *pcb_serializado = serializarPCB_KerCPU(program->pcb,config->algoritmo,config->quantum,config->quantum_sleep,&tam_prog);
+		char *mensaje_env = armar_mensaje_pcb("K07", pcb_serializado, tam_prog);
+
+		escribir_log(mensaje_env);
+
+		enviar_pcb(cpu_disponible->socket_cpu, mensaje_env, &controlador, tam_prog+13);
+		free(pcb_serializado);
+
+		//Fallo el envio de la pcb a la cpu, se debe eliminar la cpu
+		if(controlador>0)
+		{
+			int i;
+			escribir_log_error_con_numero("Ha fallado el envio de una PCB con la CPU: ",cpu_disponible->cpu_id);
 
 			pthread_mutex_lock(&mutex_lista_cpus);
-			t_cpu *cpu_disponible = list_remove_by_condition(list_cpus, (void*)_cpuLibre);
+			t_cpu *cpu_disponible_a_borrar = list_remove_by_condition(list_cpus, (void*)_cpuLibre);
 			pthread_mutex_unlock(&mutex_lista_cpus);
 
-			char *pcb_serializado = serializarPCB_KerCPU(program->pcb,config->algoritmo,config->quantum,config->quantum_sleep,&tam_prog);
-			char *mensaje_env = armar_mensaje_pcb("K07", pcb_serializado, tam_prog);
+			free(cpu_disponible_a_borrar);
 
-			escribir_log(mensaje_env);
+			pthread_mutex_lock(&mutex_cola_listos);
+			int size = queue_size(cola_listos);
+			queue_push(cola_listos,program);
+			pthread_mutex_unlock(&mutex_cola_listos);
 
-			enviar_pcb(cpu_disponible->socket_cpu, mensaje_env, &controlador, tam_prog+13);
-			free(pcb_serializado);
-
-			//Fallo el envio de la pcb a la cpu, se debe eliminar la cpu
-			if(controlador>0)
+			for(i=0;i<size;i++)
 			{
-				int i;
-				escribir_log_error_con_numero("Ha fallado el envio de una PCB con la CPU: ",cpu_disponible->cpu_id);
-				free(cpu_disponible);
-
 				pthread_mutex_lock(&mutex_cola_listos);
-				int size = queue_size(cola_listos);
-				queue_push(cola_listos,program);
+				queue_push(cola_listos,queue_pop(cola_listos));
 				pthread_mutex_unlock(&mutex_cola_listos);
-
-				for(i=0;i<size;i++)
-				{
-					pthread_mutex_lock(&mutex_cola_listos);
-					queue_push(cola_listos,queue_pop(cola_listos));
-					pthread_mutex_unlock(&mutex_cola_listos);
-				}
-				sem_post(&sem_listos);
 			}
-			else
-			{
-				pthread_mutex_lock(&mutex_lista_ejecutando);
-				list_add(list_ejecutando, program);
-				pthread_mutex_unlock(&mutex_lista_ejecutando);
+			sem_post(&sem_listos);
+		}
+		else
+		{
+			pthread_mutex_lock(&mutex_lista_ejecutando);
+			list_add(list_ejecutando, program);
+			pthread_mutex_unlock(&mutex_lista_ejecutando);
 
-				cpu_disponible->ejecutando = true;
-				cpu_disponible->program = program;
-
-				pthread_mutex_lock(&mutex_lista_cpus);
-				list_add(list_cpus, cpu_disponible);
-				pthread_mutex_unlock(&mutex_lista_cpus);
-			}
-			free(mensaje_env);
-
+			cpu_disponible->ejecutando = 1; //true
+			cpu_disponible->program = program;
+		}
+		free(mensaje_env);
 	}
 }
 
@@ -432,6 +431,9 @@ void finalizar_quantum(int pid)
 	pthread_mutex_lock(&mutex_cola_listos);
 	queue_push(cola_listos, programa);
 	pthread_mutex_unlock(&mutex_cola_listos);
+
+	sem_post(&sem_listos);
+	sem_post(&sem_cpus);
 }
 
 void actualizar_grado_multiprogramacion()

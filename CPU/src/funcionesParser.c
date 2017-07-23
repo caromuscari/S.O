@@ -115,9 +115,9 @@ t_valor_variable dereferenciar(t_puntero direccion_variable) {
 	char * mensaje = mensaje_leer_memoria(pcb->PID,direccion_variable,pcb->cant_pag,4,&size);
 	enviar(sockMemCPU,mensaje,&controlador,size);
 
-	char* mensaje_aux= malloc(5);
+	char* mensaje_aux= malloc(13 + 1);
 	//recibir(sockMemCPU,&controlador,mensaje_aux,13);
-	recv(sockMemCPU,mensaje_aux,4,MSG_WAITALL);
+	recv(sockMemCPU,mensaje_aux,13,MSG_WAITALL);
 	/*char *tam_rest = malloc(10);
 	memcpy(tam_rest,mensaje_aux+3,10);
 	int tam_resto = atoi(tam_rest);
@@ -130,14 +130,11 @@ t_valor_variable dereferenciar(t_puntero direccion_variable) {
 	int valor = atoi(valor_str);
 
 	free(valor_str); ; free(tam_rest);*/
-	char *str_valor = string_substring(mensaje_aux,0,4);
+	char *str_valor = string_substring(mensaje_aux,3,10);
 	int valor = atoi(str_valor);
 	free(mensaje_aux);
 	free(mensaje);
 	free(str_valor);
-
-
-
 
 	if(valor >= 0){
 	char * str_aux= string_from_format("Se ejecuto DEREFERENCIAR en posicion %d y retorno %d",direccion_variable,valor);

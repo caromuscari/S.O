@@ -55,8 +55,6 @@ void realizar_handShake_cpu(int nuevo_socket)
 	{
 		char *respuesta = recibir(nuevo_socket, &controlador_cpu);
 
-		escribir_log(respuesta);
-
 		if (controlador_cpu > 0)
 		{
 			cerrar_conexion(nuevo_socket);
@@ -98,7 +96,7 @@ void agregar_lista_cpu(int nuevo_socket)
 {
 	t_cpu *nueva_cpu = malloc(sizeof(t_cpu));
 	nueva_cpu->socket_cpu = nuevo_socket;
-	nueva_cpu->program = malloc(sizeof(t_program));
+	//nueva_cpu->program = malloc(sizeof(t_program));
 	nueva_cpu->ejecutando = 0;
 	nueva_cpu->cpu_id = get_cpuId();
 
@@ -240,7 +238,7 @@ void responder_solicitud_cpu(int socket_, char *mensaje)
 	case 17: ;//alloc
 		char *mensaje4 = get_mensaje(mensaje);
 		int size2 = atoi(mensaje4);
-		reservar_memoria_din(prog, size2, socket_);
+		if(size2>0)	reservar_memoria_din(prog, size2, socket_);
 
 		free(mensaje4);
 		break;

@@ -570,6 +570,7 @@ char *buffer_bloque(int size, int booleano)
 
 void *pedir_bloque_libre(t_pagina *pagina, int pid, int tam_sol)
 {
+	inicio_bloque = 0;
 	int encontrado = 0;
 	int fin = 0;
 	int offset = 0;
@@ -589,7 +590,8 @@ void *pedir_bloque_libre(t_pagina *pagina, int pid, int tam_sol)
 		}
 		else
 		{
-			offset =+ (5 + heapMeta->size);
+			offset = offset + (5 + heapMeta->size);
+			inicio_bloque = offset;
 			if(offset > tam_pagina)
 				fin = 1;
 			free(heapMeta);

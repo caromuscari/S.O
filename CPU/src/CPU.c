@@ -434,7 +434,7 @@ char* pedir_linea_memoria(){
 		char *mensaje = mensaje_leer_memoria(pcb->PID,offset,0,largo,&size);
 		enviar(sockMemCPU,mensaje,&controlador,size);
 
-		char *respuesta = malloc(largo+13+1); memset(respuesta,'\0',largo+13+1);
+		char *respuesta = malloc(largo+13/*+1*/); memset(respuesta,'\0',largo+13/*+1*/);
 		recibir(sockMemCPU,&controlador,respuesta,largo+13);
 
 		linea = string_substring(respuesta,13,largo);
