@@ -79,8 +79,6 @@ char* serializarPCB_CPUKer (t_PCB_CPU* pcb1,int * devolveme){
 	int desplazamiento = 0;
 
 	// 4 BYTES C/U PARA: SIZE_TOTAL_MENSAJE,PID,PC,CANT_PAGINAS,SP,EXIT_CODE,QUANTUM,QUANTUM_SLEEP
-	/*memcpy(retorno+desplazamiento,&size_retorno,sizeof(int));
-	desplazamiento += sizeof(int);*/
 	memcpy(retorno+desplazamiento,&pcb1->PID,sizeof(int));
 	desplazamiento += sizeof(int);
 	memcpy(retorno+desplazamiento,&pcb1->PC,sizeof(int));
@@ -212,6 +210,7 @@ t_PCB_CPU* deserializarPCB_KerCPU (char * pcbserializado){
 		pcb2->in_cod[n]= aux;
 		n++;
 	}
+
 	memcpy(&size_in_et,pcbserializado+desplazamiento,sizeof(int));
 	pcb2->in_et = malloc(size_in_et);
 	memcpy(pcb2->in_et,pcbserializado+desplazamiento,size_in_et);
@@ -395,11 +394,12 @@ int calcular_pagina(int offset,int paginas){
 	return pagina+paginas;
 }
 void stack_destroy(t_stack_element *self) {
-	list_clean_and_destroy_elements(self->args,(void *) t_memoria_destroy);
-	list_destroy(self->args);
-	list_clean_and_destroy_elements(self->vars,(void *) t_memoria_destroy);
-	list_destroy(self->vars);
+	list_destroy_and_destroy_elements(self->args,(void *) t_memoria_destroy);
+
+	list_destroy_and_destroy_elements(self->vars,(void *) t_memoria_destroy);
+
 	free(self);
+
 }
 
 void t_memoria_destroy(t_memoria *self){

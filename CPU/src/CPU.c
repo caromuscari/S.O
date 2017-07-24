@@ -30,6 +30,7 @@ char* programa;
 int fifo;
 int salto_linea;
 int ABORTAR;
+int con_PCB;
 
 static const char* prueba_ansisop =
 		"#!/usr/bin/ansisop\n"
@@ -105,6 +106,7 @@ int conexion_Memoria(int puertoM,char* ipM);
 char * pedir_linea_memoria();
 void finalizar_por_senial(int);
 void liberar_pcb();
+char *pedir_linea_memoria2();
 
 int main(int argc, char *argv[])
 {
@@ -113,10 +115,11 @@ int main(int argc, char *argv[])
 	//char *programa =strdup(otro_ansisop);
 	//programa =strdup(con_funcion_ansisop);
 	programa = strdup(prueba_ansisop);
-	crear_archivo_log("/home/utnso/CPUlog");
+	char *ruta_log = strdup("/home/utnso/CPUlog");
+	crear_archivo_log(ruta_log);
 	leerArchivoConfiguracion(argv[1]);
 	signal(SIGUSR1,finalizar_por_senial);
-
+	con_PCB = 0;
 	int res;int chau = 0;
 	salto_linea = 0;
 	accion_siguiente = CONTINUAR;
@@ -138,10 +141,14 @@ int main(int argc, char *argv[])
 	}
 
 	int controlador = 0;
+	char *buff = malloc(13);
+	char *idmensaje;
+	char *sizemensaje;
+
 	while(chau!=1){
-		char* buff = malloc (13);
-		//char* idmensaje = malloc(2);
-		char* sizemensaje= malloc (10);
+
+		memset(buff,'\0',13);
+
 		int largomensaje  = 0;
 		escribir_log("Esperando mensajes del Kernel para ponerme a trabajar...",1);
 
@@ -152,40 +159,45 @@ int main(int argc, char *argv[])
 			chau = 1;
 			goto fin2;
 		}
-		//memcpy(idmensaje,buff+1,2);
-		char *idmensaje = string_substring(buff,1,2);
 
-		char * aux = string_from_format("mensaje recibido %s",buff);
-		escribir_log(aux,1);
-		free(aux);
+		idmensaje = string_substring(buff,1,2);
+
+		char *logeo = string_from_format("mensaje recibido %s",buff);
+		escribir_log(logeo,1);
+		free(logeo);
 
 		switch (atoi(idmensaje)){
 		case 07:
+			con_PCB = 1;
 			escribir_log("CASE N° 7: iniciar procesamiento de PCB",1);
-			memcpy(sizemensaje,buff+3,10);
+			sizemensaje = string_substring(buff,3,10);
 			largomensaje = atoi(sizemensaje);
-			char *loh = string_from_format("size del resto del mensaje%d",largomensaje);
-			escribir_log(loh,1);
-			free(loh);
+
+			char *logeo1 = string_from_format("size del resto del mensaje%d",largomensaje);
+			escribir_log(logeo1,1);
+			free(logeo1);
+
 			char *mensajeEntero = malloc(largomensaje);
 			recibir(sockKerCPU,&controlador,mensajeEntero,largomensaje);
 			pcb = deserializarPCB_KerCPU(mensajeEntero);
 			procesar();
+
 			free(mensajeEntero);
-			free(buff);
-			free(idmensaje);
 			free(sizemensaje);
+
 			break;
 		case 21:
+
 			escribir_log("CASE N°21: devolver cpu por error",1);
 			accion_siguiente = FINALIZAR_POR_ERROR;
+
 			char *cod_error= string_substring(buff,13,4);
 			int codigo_error= (-1)*(atoi(cod_error));
+
 			pcb->exit_code = codigo_error;
+
 			free(cod_error);
-			free(buff);
-			free(idmensaje);
-			free(sizemensaje);
+
 			break;
 
 		default:
@@ -194,18 +206,22 @@ int main(int argc, char *argv[])
 
 		}
 
+		free(idmensaje);
 
 		switch(accion_siguiente){
 		int size =0;
 		int controlador=0;
 		char *pcb_serializado;
 		char *mensaje;
+
 		case FINALIZAR_PROGRAMA:
 			escribir_log("FINALIZO CORRECTAMENTE EL PROGRAMA... devolviendo pcb...",1);
 
 			pcb_serializado  = serializarPCB_CPUKer(pcb,&size);
 			mensaje = mensaje_pcb("P13",pcb_serializado,size);
+
 			enviar(sockKerCPU,mensaje,&controlador,size);
+
 			free(pcb_serializado);
 			free(mensaje);
 			accion_siguiente = CONTINUAR;
@@ -216,7 +232,9 @@ int main(int argc, char *argv[])
 
 			pcb_serializado  = serializarPCB_CPUKer(pcb,&size);
 			mensaje = mensaje_pcb("P12",pcb_serializado,size);
+
 			enviar(sockKerCPU,mensaje,&controlador,size);
+
 			free(pcb_serializado);
 			free(mensaje);
 			accion_siguiente = CONTINUAR;
@@ -227,7 +245,9 @@ int main(int argc, char *argv[])
 
 			pcb_serializado  = serializarPCB_CPUKer(pcb,&size);
 			mensaje = mensaje_pcb("P13",pcb_serializado,size);
+
 			enviar(sockKerCPU,mensaje,&controlador,size);
+
 			free(pcb_serializado);
 			free(mensaje);
 			accion_siguiente = CONTINUAR;
@@ -236,7 +256,9 @@ int main(int argc, char *argv[])
 		case BLOQUEAR_PROCESO:
 			pcb_serializado  = serializarPCB_CPUKer(pcb,&size);
 			mensaje = mensaje_pcb("P16",pcb_serializado,size);
+
 			enviar(sockKerCPU,mensaje,&controlador,size);
+
 			free(pcb_serializado);
 			free(mensaje);
 			accion_siguiente = CONTINUAR;
@@ -246,13 +268,14 @@ int main(int argc, char *argv[])
 			escribir_log("CONTINUAR CON MI TRABAJO DE CPU",1);
 			accion_siguiente = CONTINUAR;
 		}
+
 		if(ABORTAR == 1){
 
 			escribir_log("FINALICE EL PROGRAMA ACTUAL PORQUE ME MANDARON A DESCONECTARME/MORIR... devolviendo pcb",1);
 			chau = 1;
 
-			char *mensaje = strdup("P19");
-			enviar(sockKerCPU,mensaje,&controlador,3);
+			char *mensaje = strdup("P190000000000");
+			enviar(sockKerCPU,mensaje,&controlador,13);
 			free(mensaje);
 
 		}
@@ -260,13 +283,18 @@ int main(int argc, char *argv[])
 		fin2: printf("\nfin\n");
 
 
-		liberar_pcb();
+		if(con_PCB==1) {
+			liberar_pcb();
+		}
 
 	}
-	//printf("Me fui\n");
+	free(buff);
+
 	fin:
 	free(programa);
-	free(ipK);free(ipM);
+	free(ipK);
+	free(ipM);
+	liberar_log();
 
 	return EXIT_SUCCESS;
 }
@@ -357,24 +385,23 @@ void procesar(){
 				pcb->PC++;
 			}
 			int controlador = 0;
+
 		char *mensaje = malloc(17); memset(mensaje,'0',17);
-					recibir_no_bloqueante(sockKerCPU,&controlador,mensaje,17);
-					if(controlador == 1){
-						char *cod = string_substring(mensaje,0,3);
-						if(strncmp(cod,"K21",3) == 0){
-
-							char *str_cod = string_substring(mensaje,13,4);
-						int cod_error = (-1)* (atoi(str_cod));
-						pcb->exit_code = cod_error;
-						escribir_log("LOGEO CASO 21,DEVUELVO POR ERROR",1);
-						fifo=FINALIZAR_POR_ERROR;
-						accion_siguiente = FINALIZAR_POR_ERROR;
-
-						free(cod);
-						free(str_cod);
-						}
-					}
-			free(mensaje);
+		recibir_no_bloqueante(sockKerCPU,&controlador,mensaje,17);
+		if(controlador == 1){
+			char *cod = string_substring(mensaje,0,3);
+			if(strncmp(cod,"K21",3) == 0){
+				char *str_cod = string_substring(mensaje,13,4);
+				int cod_error = (-1)* (atoi(str_cod));
+				pcb->exit_code = cod_error;
+				escribir_log("LOGEO CASO 21,DEVUELVO POR ERROR",1);
+				fifo=FINALIZAR_POR_ERROR;
+				accion_siguiente = FINALIZAR_POR_ERROR;
+				free(str_cod);
+			}
+			free(cod);
+		}
+		free(mensaje);
 
 		}
 	}
@@ -434,19 +461,28 @@ char* pedir_linea_memoria(){
 		char *mensaje = mensaje_leer_memoria(pcb->PID,offset,0,largo,&size);
 		enviar(sockMemCPU,mensaje,&controlador,size);
 
-		char *respuesta = malloc(largo+13/*+1*/); memset(respuesta,'\0',largo+13/*+1*/);
-		recibir(sockMemCPU,&controlador,respuesta,largo+13);
 
-		linea = string_substring(respuesta,13,largo);
+		char *primerosbytes = malloc(13); memset(primerosbytes,'\0',13);
+		recibir(sockMemCPU,&controlador,primerosbytes,13);
+
+		char *cantidad = string_substring(primerosbytes,3,10);
+		int largo_linea = atoi(cantidad);
+
+		char *respuesta = malloc(largo_linea +1); memset(respuesta,'\0',largo_linea+ 1);
+		recibir(sockMemCPU,&controlador,respuesta,largo_linea);
+
+
+		linea = strdup(respuesta);
 
 		free(mensaje);
+		free(primerosbytes);
+		free(cantidad);
 		free(respuesta);
 	}
+
 	char * aux = string_from_format("offset inicio:%d-offset fin:%d",pcb->in_cod[pcb->PC].offset_inicio,pcb->in_cod[pcb->PC].offset_fin);
 	escribir_log(aux,1);
 	free(aux);
-
-	//char *linea = string_substring(programa,pcb->in_cod[pcb->PC].offset_inicio,pcb->in_cod[pcb->PC].offset_fin);
 
 	return linea;
 }
@@ -468,6 +504,12 @@ void liberar_pcb(){
 	dictionary_destroy(pcb->dicc_et);
 
 	free(pcb);
+
+	 con_PCB = 0;
+}
+char *pedir_linea_memoria2(){
+	char *linea = string_substring(programa,pcb->in_cod[pcb->PC].offset_inicio,pcb->in_cod[pcb->PC].offset_fin);
+	return linea;
 }
 /*
 void iniciar_pcb_falsa(){

@@ -97,9 +97,9 @@ char *mensaje_semaforo(char * cod,char * semaforo,int *size){
 }
 char *mensaje_leer_memoria(int fpid,t_puntero direccion_variable, int cant_pag,int size_lectura,int *size){
 
-	char * mensaje = malloc(19);
-	char * pid;
-	char * pagina;
+	char *mensaje = malloc(19);
+	char *pid;
+	char *pagina;
 	char *offset;
 	char *str_size_lectura = string_itoa(size_lectura);
 	char * aux_ceros;

@@ -23,6 +23,7 @@ void crear_archivo_log(char *file)
 	char *info = string_from_format("se crea archivo de log en ruta: %s",file);
 	log_info(logi, info);
 	free(info);
+	free(file);
 }
 
 void escribir_log(char *mensaje,int cod)

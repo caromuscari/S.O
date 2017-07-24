@@ -108,52 +108,52 @@ t_puntero obtenerPosicionVariable(t_nombre_variable identificador_variable) {
 
 t_valor_variable dereferenciar(t_puntero direccion_variable) {
 
-
 	int size=0;
 	int controlador=0;
 
-	char * mensaje = mensaje_leer_memoria(pcb->PID,direccion_variable,pcb->cant_pag,4,&size);
+	char *mensaje = mensaje_leer_memoria(pcb->PID,direccion_variable,pcb->cant_pag,4,&size);
 	enviar(sockMemCPU,mensaje,&controlador,size);
-
-	char* mensaje_aux= malloc(13 + 1);
-	//recibir(sockMemCPU,&controlador,mensaje_aux,13);
-	recv(sockMemCPU,mensaje_aux,13,MSG_WAITALL);
-	/*char *tam_rest = malloc(10);
-	memcpy(tam_rest,mensaje_aux+3,10);
-	int tam_resto = atoi(tam_rest);
-
-	if(tam_resto != 2){
-		tam_resto = 2;
-	}
-	char *valor_str = malloc(tam_resto);
-	recibir(sockMemCPU,&controlador,valor_str,tam_resto);
-	int valor = atoi(valor_str);
-
-	free(valor_str); ; free(tam_rest);*/
-	char *str_valor = string_substring(mensaje_aux,3,10);
-	int valor = atoi(str_valor);
-	free(mensaje_aux);
 	free(mensaje);
-	free(str_valor);
 
-	if(valor >= 0){
-	char * str_aux= string_from_format("Se ejecuto DEREFERENCIAR en posicion %d y retorno %d",direccion_variable,valor);
-	escribir_log(str_aux,1);
-	free(str_aux);
+	char *respuesta = malloc(14);
+	recibir(sockMemCPU,&controlador,respuesta,13);
+	respuesta[13]='\0';
+
+	int valor;
+
+	if(strncmp(respuesta,"M08",3)==0){
+
+		char *tam_resto = string_substring(respuesta,3,10);
+		int tamint_resto = atoi(tam_resto);
+		free(tam_resto);
+
+		char *resto = malloc(tamint_resto);
+		recibir(sockMemCPU,&controlador,resto,tamint_resto);
+
+		char *resto_subs = string_substring(resto,0,tamint_resto);
+		valor = atoi(resto_subs);
+
+		free(resto);
+		free(resto_subs);
+
+		char * str_aux= string_from_format("Se ejecuto DEREFERENCIAR en posicion %d y retorno %d",direccion_variable,valor);
+		escribir_log(str_aux,1);
+		free(str_aux);
+
 	}else{
+
 		fifo = FINALIZAR_POR_ERROR;
 		accion_siguiente = FINALIZAR_POR_ERROR;
 
 		pcb->exit_code = -5;
+		valor =0;
 
 		char * str_aux= string_from_format("ERROR DEREFERENCIANDO en posicion %d y error %d",direccion_variable,valor);
 		escribir_log(str_aux,2);
 		free(str_aux);
-
-		valor =0;
 	}
 
-
+	free(respuesta);
 	return valor;
 }
 
@@ -550,7 +550,7 @@ void escribir (t_descriptor_archivo descriptor_archivo, void* informacion, t_val
 		int codigo_error = (-1)*(atoi(cod_error));
 		pcb->exit_code = codigo_error;
 
-		char * logi = string_from_format("ERROR:%d ESCRIBIENDO con file descriptor %d",cod_error,descriptor_archivo);
+		char * logi = string_from_format("ERROR:%d ESCRIBIENDO con file descriptor %d",codigo_error,descriptor_archivo);
 		escribir_log(logi,2);
 		free(logi);
 		free(cod_error);
