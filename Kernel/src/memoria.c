@@ -114,6 +114,33 @@ void reservar_memoria_din(t_program *program, int size_solicitado, int so_cpu)
 				}
 				else n++;
 			}
+			if (ubicado == 0)
+			{
+				int pedido = pedir_pagina(program);
+
+				if(pedido)
+				{
+					inicializar_pagina_dinamica(program, size_solicitado);
+					int size_disponible;
+					int n = 0;
+					int size_lpages = list_size(program->memoria_dinamica);
+
+					while(n < size_lpages && ubicado == 0)
+					{
+						t_pagina *page = list_get(program->memoria_dinamica, n);
+						size_disponible = page->esp_libre;
+
+						if (size_disponible-5 >= size_solicitado)
+						{
+							ubicado = ubicar_bloque(page, size_solicitado, program, so_cpu);
+						}
+						else n++;
+					}
+				}
+				else
+					forzar_finalizacion(program->PID, 0, 5, 0);
+				
+			}
 		}
 		else
 		{
@@ -201,7 +228,7 @@ int ubicar_bloque(t_pagina *pagina, int tam_sol, t_program *program, int so_cpu)
 			list_add_in_index(pagina->heaps, posicion_pagina, bl);
 			pagina->esp_libre = pagina->esp_libre - (tam_sol+5);
 		}
-		return offset;
+		return 1; //offset;
 	}
 	else
 	{
