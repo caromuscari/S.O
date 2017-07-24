@@ -20,7 +20,7 @@ extern t_dictionary * h_pid;
 extern t_dictionary * sem;
 extern t_dictionary * impresiones;
 extern t_dictionary * tiempo;
-extern t_list *no_iniciados;
+extern t_dictionary *no_iniciados;
 extern sem_t semaforo;
 extern sem_t x;
 extern int flag;
@@ -59,7 +59,7 @@ void escuchar_mensaje()
 		{
 			case 4: ;
 				char *pid;
-				char * elemento2;
+				//char * elemento2;
 
 				sema->valor=0;
 				cant->cantidad=0;
@@ -78,34 +78,27 @@ void escuchar_mensaje()
 				dictionary_put(p_pid,pid,hilo);
 				dictionary_put(h_pid,string_itoa(hiloPrograma),pid);
 
-				bool encontrar(void *pid_)
+				/*bool encontrar(void *pid_)
 				{
 					return !strcmp(pid,pid_);
 				}
 
-				elemento2 = list_remove_by_condition(no_iniciados, encontrar);
+				elemento2 = list_remove_by_condition(no_iniciados, encontrar);*/
+				dictionary_remove(no_iniciados,pid);
 
-				free(elemento2);
+				//free(elemento2);
 
 				break;
 			case 5: ;
 				char *pid3;
-				char * elemento;
 				escribir_log("No se pudo iniciar el programa por falta de memoria");
 				printf("No se pudo iniciar el programa por falta de memoria\n");
 
 				pid3 = recibir(socket_,1);
 				finalizar_no_iniciados(pid3, socket_);
 
-				bool remover(void *pid_)
-				{
-					return !strcmp(pid3,pid_);
-				}
-
-				elemento = list_remove_by_condition(no_iniciados, remover);
 
 				free(sema);
-				free(elemento);
 				free(pid3);
 				free(cant);
 				free(smod);
@@ -117,9 +110,10 @@ void escuchar_mensaje()
 				escribir_log_compuesto("Se le asigno el pid ", pid7);
 				printf("Se le asigno el pid %s\n ", pid7);
 
-				list_add(no_iniciados,pid7);
+				//list_add(no_iniciados,pid7);
+				dictionary_put(no_iniciados, pid7,"");
 
-				free(pid7);
+				//free(pid7);
 				break;
 			case 9: ;
 				char *pid2 = recibir(socket_,1);
@@ -174,12 +168,12 @@ void escuchar_mensaje()
 
 void verificacion_finalizar(char * pid)
 {
-	bool encontrar(void *pid_)
+	/*bool encontrar(void *pid_)
 	{
 		return !strcmp(pid,pid_);
-	}
+	}*/
 
-	if (list_find(no_iniciados,encontrar) != NULL){
+	if (dictionary_has_key(no_iniciados,pid)){
 		finalizar_no_iniciados(pid,socket_);
 	}
 	else finalizar(pid,socket_);
@@ -218,22 +212,23 @@ void finalizar(char *pid, int socket_)
 
 void finalizar_no_iniciados(char * pid,int socket_)
 {
-	char * elemento;
+	/*char * elemento;
 
 	bool remover(void *pid_)
 	{
 		return !strcmp(pid,pid_);
 	}
 
-	elemento = list_remove_by_condition(no_iniciados, remover);
+	elemento = list_remove_by_condition(no_iniciados, remover);*/
 
+	dictionary_remove(no_iniciados, pid);
 
 	printf("\nInicio de ejecucion: 0\n");
 	printf("Fin de ejecucion: 0\n");
 	printf("Cantidad de impresiones: 0\n");
 	printf("Tiempo total de ejecucion en segundos: 0\n\n");
 
-	free(elemento);
+	//free(elemento);
 }
 
 void senial()

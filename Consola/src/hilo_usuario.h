@@ -10,7 +10,7 @@
 
 void hilousuario ();
 char *leer_archivo(char*);
-void mostrar(void *algo);
+//void mostrar(void *algo);
 void cerrar (void * pid);
 void iniciar_programa(char * ruta, int socket_);
 void verificar_finalizar(char * identi, int socket_);

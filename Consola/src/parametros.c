@@ -19,7 +19,7 @@ extern t_dictionary * sem;
 extern t_dictionary * tiempo;
 extern t_dictionary * impresiones;
 extern t_dictionary * procesos;
-extern t_list *no_iniciados;
+extern t_dictionary *no_iniciados;
 extern t_consola * arch_config;
 
 
@@ -33,7 +33,7 @@ void inicializar_parametros()
 	sem = dictionary_create();
 	impresiones = dictionary_create();
 	tiempo = dictionary_create();
-	no_iniciados = list_create();
+	no_iniciados = dictionary_create();
 }
 
 void liberar_memoria()
@@ -51,7 +51,8 @@ void liberar_memoria()
 	dictionary_destroy(impresiones);
 	dictionary_clean(procesos);
 	dictionary_destroy(procesos);
-	list_destroy(no_iniciados);
+	dictionary_clean(no_iniciados);
+	dictionary_destroy(no_iniciados);
 	free(arch_config);
 	liberar_log();
 }

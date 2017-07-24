@@ -88,7 +88,10 @@ char * armar_path(char *mensaje)
 {
 	char *mensaje2 = strdup("");
 	string_append(&mensaje2,montaje);
-	string_append(&mensaje2,"/Archivos");
+	if(strstr(mensaje,"/Archivos") == NULL)
+	{
+		string_append(&mensaje2,"/Archivos");
+	}
 	string_append(&mensaje2,mensaje);
 	escribir_log(mensaje2);
 	return mensaje2;

@@ -28,7 +28,7 @@ t_dictionary *sem;
 t_dictionary *tiempo;
 t_dictionary *impresiones;
 t_dictionary *procesos;
-t_list *no_iniciados;
+t_dictionary *no_iniciados;
 sem_t semaforo;
 int tamAimprimir;
 int flag;
