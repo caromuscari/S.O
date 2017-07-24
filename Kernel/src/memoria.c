@@ -41,6 +41,7 @@ char *buffer_bloque(int size, int booleano);
 void *pedir_bloque_libre(t_pagina *pagina, int pid, int tam_sol);
 char *pedir_bytes_memoria(int pid, int numpag, int offset);
 HeapMetadata *armar_metadata(char *metadata);
+void liberar_proceso_pagina(int pid);
 
 void handshakearMemory()
 {
@@ -407,9 +408,29 @@ void liberar_bloque(t_program *prog, char *offset)
 
 void liberar_pagina(t_pagina *pagina)
 {
-	//comeme el k26 usar este para enviar liberar pagina a Memoria
+	//comeme el k25 usar este para enviar liberar pagina a Memoria
 	list_destroy_and_destroy_elements(pagina->heaps, (void *)destruir_heap);
 	free(pagina);
+}
+
+void liberar_proceso_pagina(int pid)
+{
+	int contr = 0;
+	char *men_env = strdup("K25");
+
+	char *pid_ = string_itoa(pid);
+	int len = string_length(pid_);
+	char *completar = string_repeat('0', 4 - len);
+
+	string_append(&men_env, completar);
+	string_append(&men_env, pid_);
+
+	enviar(config->cliente_memoria, men_env, &contr);
+
+	free(men_env);
+	free(pid_);
+	free(completar);
+
 }
 
 void destruir_heap(t_bloque *bl)

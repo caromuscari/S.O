@@ -296,8 +296,9 @@ void finalizar_proceso(int pid, int codigo_finalizacion)
 	escribir_log_con_numero("Se ha finalizado el proceso: ", programa->PID);
 	avisar_consola_proceso_murio(programa);
 
-	sem_signal(programa, "", programa->socket_consola, 1);
 	list_destroy_and_destroy_elements(programa->memoria_dinamica, (void *)liberar_pagina);
+	sem_signal(programa, "", programa->socket_consola, 1);
+	liberar_proceso_pagina(programa->PID);
 
 	pthread_mutex_lock(&mutex_lista_finalizados);
 	list_add(list_finalizados, programa);
@@ -340,7 +341,8 @@ void forzar_finalizacion(int pid, int cid, int codigo_finalizacion, int aviso)
 		if(aviso) avisar_consola_proceso_murio(pr);
 
 		list_destroy_and_destroy_elements(pr->memoria_dinamica, (void *)liberar_pagina);
-		//falta el tema de liberar semaforos y memoria dinamica!!!
+		sem_signal(pr, "", pr->socket_consola, 1);
+		liberar_proceso_pagina(pr->PID);
 
 		pthread_mutex_lock(&mutex_lista_finalizados);
 		list_add(list_finalizados,pr);

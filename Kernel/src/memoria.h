@@ -20,5 +20,6 @@ int pedir_pagina();
 void liberar_bloque(t_program *prog, char *offset);
 void liberar_pagina(t_pagina *pagina);
 int almacenar_bytes(int pid, int numpag, int offset, int tam, char *buffer);
+void liberar_proceso_pagina(int pid);
 
 #endif /* MEMORIA_H_ */
