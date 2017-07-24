@@ -51,6 +51,7 @@ pthread_mutex_t mutex_lista_bloqueados;
 pthread_mutex_t mutex_cola_nuevos;
 pthread_mutex_t mutex_cola_listos;
 pthread_mutex_t mutex_actualizar_multip;
+pthread_mutex_t mutex_planificar;
 sem_t sem_grad_multi;
 sem_t sem_nuevos;
 sem_t sem_listos;
@@ -191,8 +192,7 @@ void inicializar_semaforos()
 	pthread_mutex_init(&mutex_cola_listos,NULL);
 	pthread_mutex_init(&mutex_lista_fs,NULL);
 	pthread_mutex_init(&mutex_actualizar_multip,NULL);
-
-	pthread_mutex_lock(&mutex_actualizar_multip);
+	pthread_mutex_init(&mutex_planificar,NULL);
 
 	sem_init(&sem_nuevos,0,0);
 	sem_init(&sem_listos,0,0);

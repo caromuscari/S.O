@@ -28,6 +28,7 @@ extern pthread_mutex_t mutex_lista_bloqueados;
 extern pthread_mutex_t mutex_cola_nuevos;
 extern pthread_mutex_t mutex_cola_listos;
 extern pthread_mutex_t mutex_actualizar_multip;
+extern pthread_mutex_t mutex_planificar;
 extern t_configuracion *config;
 extern int flag_planificador;
 //A partir de aca son cosas de mas para monitoreo
@@ -127,13 +128,25 @@ void leer_consola()
 				free(input2);
 				break;
 			case 6 : ;
-				flag_planificador = 0;
-				printf("La planificacion se ha detenido\n");
+				if(flag_planificador==0)
+				{
+					flag_planificador = 1;
+					pthread_mutex_lock(&mutex_planificar);
+					printf("La planificacion se ha detenido\n");
+				}
+				else
+					printf("La planificacion YA se encuentra detenida\n");
 				free(input);
 				break;
 			case 7 : ;
-				flag_planificador = 1;
-				printf("La planificacion se ha reanudado\n");
+				if(flag_planificador==1)
+				{
+					flag_planificador = 0;
+					pthread_mutex_unlock(&mutex_planificar);
+					printf("La planificacion se ha reanudado\n");
+				}
+				else
+					printf("La planificacion YA se encuentra activa\n");
 				free(input);
 				break;
 			case 8 : ;

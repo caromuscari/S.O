@@ -32,6 +32,7 @@ extern pthread_mutex_t mutex_lista_bloqueados;
 extern pthread_mutex_t mutex_cola_nuevos;
 extern pthread_mutex_t mutex_cola_listos;
 extern pthread_mutex_t mutex_actualizar_multip;
+extern pthread_mutex_t mutex_planificar;
 extern sem_t sem_grad_multi;
 extern sem_t sem_nuevos;
 extern sem_t sem_listos;
@@ -53,6 +54,7 @@ void finalizar_quantum(int pid);
 char *armar_mensaje_memoria(char *mensaje_recibido, int pid);
 int calcular_pag(char *mensaje);
 int calcular_pag_stack();
+void continuar();
 
 void programas_listos_A_ejecutar()
 {
@@ -67,6 +69,7 @@ void programas_listos_A_ejecutar()
 	{
 		sem_wait(&sem_listos);
 		sem_wait(&sem_cpus);
+		continuar();
 
 		tam_prog = 0;
 
@@ -130,6 +133,7 @@ void programas_nuevos_A_listos()
 	{
 		sem_wait(&sem_nuevos);
 		sem_wait(&sem_grad_multi);
+		continuar();
 
 		pthread_mutex_lock(&mutex_cola_nuevos);
 		t_nuevo *nuevito = queue_pop(cola_nuevos);
@@ -230,6 +234,8 @@ void agregar_nueva_prog(int id_consola, int pid, char *codigo, int socket_con)
 
 	escribir_log("Se ha movido un proceso de nuevos a listos");
 
+	continuar();
+
 	pthread_mutex_lock(&mutex_cola_listos);
 	queue_push(cola_listos, programa);
 	pthread_mutex_unlock(&mutex_cola_listos);
@@ -298,6 +304,7 @@ void finalizar_proceso(int pid, int codigo_finalizacion)
 	pthread_mutex_unlock(&mutex_lista_finalizados);
 
 	sem_post(&sem_cpus);
+	sem_post(&sem_grad_multi);
 }
 
 void forzar_finalizacion(int pid, int cid, int codigo_finalizacion, int aviso)
@@ -338,6 +345,8 @@ void forzar_finalizacion(int pid, int cid, int codigo_finalizacion, int aviso)
 		pthread_mutex_lock(&mutex_lista_finalizados);
 		list_add(list_finalizados,pr);
 		pthread_mutex_unlock(&mutex_lista_finalizados);
+
+		sem_post(&sem_grad_multi);
 	}
 
 	contador = list_count_satisfying(list_ejecutando, (void*)_buscar_program);
@@ -497,4 +506,11 @@ int calcular_pag_stack()
 {
 	pag_stack = config->stack_size;
 	return pag_stack;
+}
+
+//Esta funcion se utiliza para chequear si la planificacion debe continuar
+void continuar()
+{
+	pthread_mutex_lock(&mutex_planificar);
+	pthread_mutex_unlock(&mutex_planificar);
 }
