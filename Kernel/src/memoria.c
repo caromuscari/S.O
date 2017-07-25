@@ -28,7 +28,6 @@ t_bloque *find_first_fit(t_list *hs, int t_sol);
 void reservar_memoria_din(t_program *program, int size_solicitado, int so_cpu);
 void inicializar_pagina_dinamica(t_program *prog, int size_sol);
 int ubicar_bloque(t_pagina *pagina, int tam_sol, t_program *program, int so_cpu);
-void compactar(t_pagina *pagina);
 void _free_bloque(t_bloque *bloque);
 int pedir_pagina();
 void liberar_bloque(t_program *prog, char *offset);
@@ -43,6 +42,7 @@ void *pedir_bloque_libre(t_pagina *pagina, int pid, int tam_sol);
 char *pedir_bytes_memoria(int pid, int numpag, int offset);
 HeapMetadata *armar_metadata(char *metadata);
 void liberar_proceso_pagina(int pid);
+void compactar_contiguos(int pid, t_pagina *pagina);
 
 void handshakearMemory()
 {
@@ -177,6 +177,11 @@ void reservar_memoria_din(t_program *program, int size_solicitado, int so_cpu)
 					if (size_disponible-5 >= size_solicitado)
 					{
 						ubicado = ubicar_bloque(page, size_solicitado, program, so_cpu);
+						if(!ubicado)
+						{
+							compactar_contiguos(program->PID, page);
+							ubicado = ubicar_bloque(page, size_solicitado, program, so_cpu);
+						}
 					}
 					else n++;
 				}
@@ -273,34 +278,6 @@ t_bloque *find_first_fit(t_list *hs, int t_sol)
 
 	//list_iterate(hs, (void *)_first_fit);
 	return list_find(hs, (void *)_first_fit);//nes;
-}
-
-void compactar(t_pagina *pagina)
-{
-	t_list * pagina_aux = list_create();
-	list_add_all(pagina_aux, pagina->heaps);
-	int n = 0;
-
-	int contador_libre = 0;
-	int cont_bl_libres = 0;
-
-	while(!list_is_empty(pagina_aux))
-	{
-		t_bloque *bloque = list_remove(pagina_aux, n);
-
-		if(bloque->metadata->isFree)
-		{
-			contador_libre =+ bloque->metadata->size;
-			list_remove_and_destroy_element(pagina->heaps, n, (void *)_free_bloque);
-			cont_bl_libres ++;
-		}
-	}
-	t_bloque *bloque_free = malloc(sizeof(t_bloque));
-	bloque_free->metadata = malloc(sizeof(HeapMetadata));
-	bloque_free->metadata->isFree = 1;
-	bloque_free->metadata->size = contador_libre + (cont_bl_libres - 1)*(5);
-
-	list_add(pagina->heaps, bloque_free);
 }
 
 void _free_bloque(t_bloque *bloque)
@@ -420,52 +397,52 @@ void liberar_bloque(t_program *prog, char *offset)
 		forzar_finalizacion(prog->PID, 0, 5, 0);//el error puede estar mal!
 	}
 }
-//char *pedir_bytes_memoria(int pid, int numpag, int offset)
-/*void compactar_contiguos(int pid, t_pagina *pagina)
+
+void compactar_contiguos(int pid, t_pagina *pagina)
 {
-	int fin = 0;
+	int fin_raiz = 1;
 	int offset = 0;
-	t_bloque *bloque;
-	HeapMetadata *h_anterior = NULL;
-	//char *pedir_bytes_memoria(int pid, int numpag, int offset)
-	while(!fin)
+	HeapMetadata *h_anterior;
+
+	while(fin_raiz)
 	{
-		char *info_bloque = pedir_bytes_memoria(pid, pagina->n_pagina, offset);
-		char *metadata = get_mensaje(info_bloque);
-		HeapMetadata *heapMeta = armar_metadata(metadata);
+		fin_raiz = 0;
+		offset = 0;
+		h_anterior = NULL;
 
-		if(heapMeta->isFree)
+		while(offset < tam_pagina)
 		{
-			offset = heapMeta->size + 5;
-			char *bloque_contiguo = pedir_bytes_memoria(pid, pagina->n_pagina, offset);
-			char *metadata_c = get_mensaje(bloque_contiguo);
-			HeapMetadata *heapMeta_c = armar_metadata(metadata_c);
-			if(heapMeta_c->isFree)
+			char *info_bloque = pedir_bytes_memoria(pid, pagina->n_pagina, offset);
+			char *metadata = get_mensaje(info_bloque);
+			HeapMetadata *heapMeta = armar_metadata(metadata);
+
+			if((heapMeta->isFree)&&((h_anterior != NULL)))
 			{
-				heapMeta->size = heapMeta->size + heapMeta_c->size + 5;
-				char *buffer = buffer_bloque(heapMeta->size, 1);
-				almacenar_bytes(pid, pagina->n_pagina, 5, buffer);
-				free(buffer);
-				h_anterior = malloc(sizeof(HeapMetadata));
-				h_anterior = heapMeta
-			}
-			offset = heapMeta_c->size + 5;	
-			free(heapMeta);
-		}
-		else
-		{
-			offset = offset + (5 + heapMeta->size);
-			inicio_bloque = offset;
-			if(offset > tam_pagina)
-				fin = 1;
-			free(heapMeta);
-		}
+				int size = heapMeta->size + h_anterior->size + 5;
+				char *buffer = buffer_bloque(size, 1);
+				almacenar_bytes(pid, pagina->n_pagina, offset, 5, buffer);
 
-		free(info_bloque);
-		free(metadata);
-	}	
+				fin_raiz = 1;
+				free(buffer);
+				break;
+			}
+			else if(heapMeta->isFree)
+			{
+				h_anterior = heapMeta;
+			}
+			else//porque es false
+			{
+				h_anterior = NULL;
+			}
+
+			offset = offset + heapMeta->size + 5;
+			free(info_bloque);
+			free(metadata);
+			free(heapMeta);
+		}
+	}
 }
-*/
+
 void liberar_pagina(t_pagina *pagina)
 {
 	//comeme el k25 usar este para enviar liberar pagina a Memoria
