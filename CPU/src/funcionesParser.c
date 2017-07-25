@@ -195,7 +195,7 @@ t_valor_variable obtenerValorCompartida(t_nombre_compartida variable) {
 	enviar(sockKerCPU,mensaje,&controlador,size);
 	free(mensaje);free(variable_compartida);
 
-	char * mensaje_r = malloc(7);
+	char * mensaje_r = malloc(13);
 	recibir(sockKerCPU,&controlador,mensaje_r,13);
 	char *cod = string_substring(mensaje_r,0,3);
 	if(strncmp(cod,"K21",3)==0){
@@ -217,9 +217,9 @@ t_valor_variable obtenerValorCompartida(t_nombre_compartida variable) {
 		return -1;
 
 	}else{
-	char * str_var = string_substring(mensaje_r,3,10);
+	char *str_var = string_substring(mensaje_r,3,10);
 	int valor_var = atoi(str_var);
-	char * aux= string_from_format("Ejecute OBTENER VALOR COMPARTIDA de %s y es %d",variable,valor_var);
+	char *aux= string_from_format("Ejecute OBTENER VALOR COMPARTIDA de %s y es %d",variable,valor_var);
 	escribir_log(aux,1);
 	free(aux);
 	free(cod);
@@ -330,10 +330,17 @@ void llamarSinRetorno (t_nombre_etiqueta etiqueta){
 
 void finalizar(void) {
 
-	fifo = FINALIZAR_PROGRAMA;
-	accion_siguiente = FINALIZAR_PROGRAMA;
+	if(pcb->SP > 0){
+		escribir_log("Ejecute Finalizar de Funcion",1);
 
-	escribir_log("Ejecute FINALIZAR",1);
+	}else{
+
+		fifo = FINALIZAR_PROGRAMA;
+		accion_siguiente = FINALIZAR_PROGRAMA;
+		escribir_log("Ejecute FINALIZAR programa",1);
+
+	}
+
 
 }
 
@@ -410,12 +417,18 @@ void ts_wait(t_nombre_semaforo identificador_semaforo) {
 void ts_signale(t_nombre_semaforo identificador_semaforo) {
 
 	int size=0; int controlador = 0;
-	char *mensaje = mensaje_semaforo("P15",identificador_semaforo,&size);
+	char *semaforo = strdup(identificador_semaforo);
+	string_trim(&semaforo);
+	char *mensaje = mensaje_semaforo("P15",semaforo,&size);
 	enviar(sockKerCPU,mensaje,&controlador,size);
+	char *logeee = string_from_format("SIGNALE: %s",mensaje);
+	escribir_log(logeee,1);
+	free(logeee);
 	free(mensaje);
+	free(semaforo);
 
 	char *respuesta = malloc(17);
-	recibir(sockMemCPU,&controlador,respuesta,17);
+	recibir(sockKerCPU,&controlador,respuesta,17);
 
 	if(strncmp(respuesta,"OK",2) == 0){
 
