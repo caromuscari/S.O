@@ -73,8 +73,9 @@ char * get_mensaje(char *mensaje)
 
 char *get_mensaje_pcb(char *mensaje)
 {
-	char *payload = malloc(10);
+	char *payload = malloc(11);
 	memcpy(payload,mensaje+3,10);
+	payload[10]='\0';
 	int payload1 = atoi(payload);
 	free(payload);
 

@@ -34,9 +34,11 @@ void eliminar_consola(int consola_id);
 void realizar_handShake_consola(int nuevo_socket)
 {
 	//Envio mensaje a consola pidiendo sus datos
-	char *mensaje = armar_mensaje("K00","");
+	char *var = strdup("");
+	char *mensaje = armar_mensaje("K00",var);
 	enviar(nuevo_socket, mensaje, &controlador);
 	escribir_log("Enviado mensaje para handshake con consola");//despues borrar
+	free(var);
 
 	if (controlador > 0)
 	{
@@ -83,6 +85,7 @@ void realizar_handShake_consola(int nuevo_socket)
 			free(mensaje);
 			free(header);
 		}
+	free(respuesta);
 	}
 }
 

@@ -81,8 +81,9 @@ void realizar_handShake_cpu(int nuevo_socket)
 			}
 			free(header);
 		}
+	free(respuesta);
 	}
-	free(mensaje);
+free(mensaje);
 }
 
 void actualizar_pcb(t_program *programa, t_PCB *pcb)
@@ -176,9 +177,9 @@ void responder_solicitud_cpu(int socket_, char *mensaje)
 		escribir_log("Se recibió una petición de CPU para obtener valor de variable compartida");
 		char *vglobal = get_mensaje(mensaje);
 		get_vglobal(vglobal,prog, socket_);
-		free(mensaje);
-		break;
 
+		free(vglobal);
+		break;
 	case 10: ;
 		escribir_log("Se recibió una petición de CPU para setear valor de variable compartida");
 		char *variable = get_variable(mensaje);
@@ -216,7 +217,7 @@ void responder_solicitud_cpu(int socket_, char *mensaje)
 		char *mensaje_r2 = get_mensaje_pcb(mensaje);
 		//char *mensaje_r2 = get_mensaje(mensaje);
 		escribir_log(mensaje_r2);
-		t_PCB *pcb_actualizado2 =deserializarPCB_CPUKer(mensaje_r2);
+		t_PCB *pcb_actualizado2 = deserializarPCB_CPUKer(mensaje_r2);
 		actualizar_pcb(prog, pcb_actualizado2);
 		finalizar_proceso(pcb_actualizado2->PID, pcb_actualizado2->exit_code);
 

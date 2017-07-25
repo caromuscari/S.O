@@ -15,9 +15,6 @@
 #include "metadata.h"
 #include "cpuManager.h"
 
-//extern char *sem_id;
-//extern char *sem_in;
-//extern char *shared;
 extern t_dictionary *sems;
 extern t_dictionary *vglobales;
 extern t_configuracion *config;
@@ -103,6 +100,7 @@ void sem_wait_(t_program *proceso, char *sema, int socket_)
 
 	t_sem *sem = (t_sem *)dictionary_get(sems, sema);
 	int controlador;
+
 	if(sem != NULL)
 	{
 		if (sem->value  > 0)
@@ -117,23 +115,24 @@ void sem_wait_(t_program *proceso, char *sema, int socket_)
 
 			char *mensaje = recibir(socket_, &controlador);
 			char *header = get_header(mensaje);
+
 			if(comparar_header(header, "P"))
 			{
 				char *codi = get_codigo(mensaje);
 				int codigo = atoi(codi);
 				if(codigo == 16)
 				{
-					char *mensaje_r2 = get_mensaje(mensaje);
-					t_PCB *pcb_actualizado2 =deserializarPCB_CPUKer(mensaje_r2);
+					char *mensaje_r2 = get_mensaje_pcb(mensaje);
+					t_PCB *pcb_actualizado2 = deserializarPCB_CPUKer(mensaje_r2);
 					actualizar_pcb(proceso, pcb_actualizado2);
 					free(mensaje_r2);
 				}
 				free(codi);
 			}
 
-			bloquear_proceso(proceso->PID);
+			bloquear_proceso(proceso->PID, socket_);
 
-			queue_push(sem->procesos, (void *)proceso);
+			queue_push(sem->procesos, (void *)proceso->PID);
 			sem->value --;
 
 			free(mensaje);
@@ -262,7 +261,7 @@ void set_vglobal(char *vglobal, int num, t_program *prog, int socket_)
 				free(codi);
 			}
 
-			bloquear_proceso(prog->PID); //bloquear proceso
+			bloquear_proceso(prog->PID, socket_); //bloquear proceso
 		}
 	}else
 		forzar_finalizacion(prog->PID, 0, 12, 1);

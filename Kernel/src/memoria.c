@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/socket.h>
 #include <commons/config.h>
 #include <commons/string.h>
 #include <commons/log.h>
@@ -46,11 +47,22 @@ void liberar_proceso_pagina(int pid);
 void handshakearMemory()
 {
 	int controlador = 0;
-	char *mensaje = armar_mensaje("K00","");
-	char *respuesta;
+	char res[13];
 
-	enviar(config->cliente_memoria, mensaje, &controlador);
-	respuesta = recibir(config->cliente_memoria, &controlador);
+	enviar(config->cliente_memoria, "K00", &controlador);
+	recv(config->cliente_memoria, res, 13, 0);
+	//respuesta = recibir(config->cliente_memoria, &controlador);
+	char *prim = strdup(res);
+	char *str_size = string_substring(prim, 3, 10);
+	int size = atoi(str_size);
+
+	char res2[size];
+
+	recv(config->cliente_memoria, res2, size, 0);
+
+	char *respuesta = strdup(prim);
+	string_append(&respuesta,res2);
+
 	char *codigo = get_codigo(respuesta);
 	int cod = atoi(codigo);
 	char *mensaje33 = get_mensaje(respuesta);
@@ -58,8 +70,11 @@ void handshakearMemory()
 	if(cod == 0)
 		tam_pagina = atoi(mensaje33);
 
-	free(mensaje);
+	free(codigo);
 	free(mensaje33);
+	free(respuesta);
+	free(prim);
+	free(str_size);
 }
 
 void inicializar_pagina_dinamica(t_program *prog, int size_sol)
@@ -527,6 +542,7 @@ int almacenar_bytes(int pid, int numpag, int offset, int tam, char *buffer)
 	string_append(&men_env, completar);
 	string_append(&men_env, tam_);
 
+	free(completar);
 	string_append(&men_env, buffer);
 
 	enviar(config->cliente_memoria, men_env, &contr);

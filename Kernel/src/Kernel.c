@@ -56,7 +56,7 @@ sem_t sem_grad_multi;
 sem_t sem_nuevos;
 sem_t sem_listos;
 sem_t sem_cpus;
-int flag_planificador = 1;
+int flag_planificador = 0;
 int ultimo_pid = 1;
 int tam_pagina = 0;
 int pag_cod = 0;
@@ -69,7 +69,6 @@ int diferencia_multi = 0;
 void inicializar_variables();
 void liberar_memoria();
 void handshakearFS();
-void handshakearMemory();
 void crear_conexiones();
 void inicializar_semaforos();
 void programas_listos_A_ejecutar();
@@ -84,16 +83,16 @@ int main(int argc, char*argv[])
 	pthread_t hiloListos;
 	pthread_t hiloConsolaKernel;
 
+
 	//Nuevo intento de que funque tod bien
 	pthread_attr_t attr;
 
 	pthread_attr_init(&attr);
 	pthread_attr_setstacksize(&attr,STK_SIZE);
 
-
 	ruta_config = strdup(argv[1]);
 
-	crear_archivo_log("/home/utnso/log_kernel");
+	crear_archivo_log("/home/utnso/log_kernel.txt");
 	inicializar_variables();
 	leer_configuracion();
 	inicializar_semaforos();
@@ -105,7 +104,7 @@ int main(int argc, char*argv[])
 	handshakearMemory();
 	handshakearFS();
 
-	pthread_create(&hiloConsolaConsola,&attr, (void*)manejo_conexiones, NULL);
+	pthread_create(&hiloConsolaConsola, &attr, (void*)manejo_conexiones, NULL);
 	pthread_create(&hiloNuevos, NULL, (void*)programas_nuevos_A_listos, NULL);
 	pthread_create(&hiloListos, NULL, (void*)programas_listos_A_ejecutar, NULL);
 	pthread_create(&hiloConsolaKernel, NULL, (void*)leer_consola, NULL);

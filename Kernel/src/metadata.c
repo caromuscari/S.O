@@ -93,7 +93,6 @@ t_list* armarIndiceStack (char *codigoPrograma){
 	return lista;
 }
 
-
 char* serializarPCB_KerCPU(t_PCB* pcb,char * algoritmo,int quantum,int quantum_sleep,int *devolveme){
 	char *retorno;
 		//int sizeretorno = tamaño_PCB(pcb);

@@ -45,7 +45,7 @@ int controlador;
 
 void finalizar_proceso(int pid, int codigo_finalizacion);
 void desbloquear_proceso(int pid);
-void bloquear_proceso(int pid);
+void bloquear_proceso(int pid, int socket_);
 void programas_nuevos_A_listos();
 void programas_listos_A_ejecutar();
 void forzar_finalizacion(int pid, int cid, int codigo_finalizacion, int aviso);
@@ -162,7 +162,6 @@ void programas_nuevos_A_listos()
 			char *mensaje_consola = armar_mensaje("K04", char_pid);
 			enviar(nuevito->new_socket, mensaje_consola, &controlador);
 
-
 			int paginas = calcular_pag(nuevito->codigo);
 			int len = string_length(nuevito->codigo);
 			int resto;
@@ -189,16 +188,8 @@ void programas_nuevos_A_listos()
 				free(pedazo);
 			}
 
-			//char *msj_enviar = armar_mensaje("K20",nuevito->codigo);
-			//char *ult_pid = string_itoa(nuevito->pid);
-			//string_append(&msj_enviar, ult_pid);
-
-			//enviar(config->cliente_memoria, msj_enviar, &controlador);
-
 			agregar_nueva_prog(nuevito->consola, nuevito->pid, nuevito->codigo, nuevito->new_socket);
 
-			//free(ult_pid);
-			//free(msj_enviar);
 			free(char_pid);
 			free(mensaje_consola);
 		}
@@ -244,15 +235,15 @@ void agregar_nueva_prog(int id_consola, int pid, char *codigo, int socket_con)
 	free(codigo);
 }
 
-void bloquear_proceso(int pid)
+void bloquear_proceso(int pid, int socket_)
 {
-	int _buscar_proceso(t_PCB *un_proceso)
+	bool _buscar_proceso(t_program *un_proceso)
 	{
-		return !(pid == un_proceso->PID);
+		return (pid == un_proceso->PID);
 	}
 
 	pthread_mutex_lock(&mutex_lista_ejecutando);
-	t_PCB *proc = list_remove_by_condition(list_ejecutando, (void*)_buscar_proceso);
+	t_program *proc = list_remove_by_condition(list_ejecutando, (void*)_buscar_proceso);
 	pthread_mutex_unlock(&mutex_lista_ejecutando);
 
 	escribir_log_con_numero("Se ha bloqueado el proceso: ", proc->PID);
@@ -260,17 +251,21 @@ void bloquear_proceso(int pid)
 	pthread_mutex_lock(&mutex_lista_bloqueados);
 	list_add(list_bloqueados, proc);
 	pthread_mutex_unlock(&mutex_lista_bloqueados);
+
+	t_cpu *cpu_activa = buscar_cpu(socket_);
+	cpu_activa->ejecutando = false;
+	sem_post(&sem_cpus);
 }
 
 void desbloquear_proceso(int pid)
 {
-	int _buscar_proceso(t_PCB *un_proceso)
+	bool _buscar_proceso(t_program *un_proceso)
 	{
 		return (pid == un_proceso->PID);
 	}
 
 	pthread_mutex_lock(&mutex_lista_bloqueados);
-	t_PCB *proc = list_remove_by_condition(list_bloqueados, (void*)_buscar_proceso);
+	t_program *proc = list_remove_by_condition(list_bloqueados, (void*)_buscar_proceso);
 	pthread_mutex_unlock(&mutex_lista_bloqueados);
 
 	escribir_log_con_numero("Se ha desbloqueado el proceso: ", proc->PID);
@@ -278,11 +273,13 @@ void desbloquear_proceso(int pid)
 	pthread_mutex_lock(&mutex_cola_listos);
 	queue_push(cola_listos, proc);
 	pthread_mutex_unlock(&mutex_cola_listos);
+
+	sem_post(&sem_listos);
 }
 
 void finalizar_proceso(int pid, int codigo_finalizacion)
 {
-	bool _buscar_proceso(t_PCB *un_proceso)
+	bool _buscar_proceso(t_program *un_proceso)
 	{
 		return (pid == un_proceso->PID);
 	}
