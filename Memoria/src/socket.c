@@ -24,7 +24,7 @@ int iniciar_socket_cliente(char *ip, int puerto_conexion, int *control)
 		*control = 1;
 		error_sockets(control, "");
 	}
-	else escribir_log("Kernel - Socket creado");
+	else escribir_log("Memoria - Socket creado");
 
 	dest.sin_family = AF_INET;
 	dest.sin_port = htons( puerto_conexion );
@@ -105,7 +105,7 @@ int escuchar_conexiones(int socketServidor, int *controlador)
 		error_sockets(controlador, "");
 	}
 	else
-	escribir_log_con_numero("Kernel - Nueva conexion aceptada para socket: ", client_sock_accepted);
+	escribir_log_con_numero("Memoria - Nueva conexion aceptada para socket: ", client_sock_accepted);
 
 	return client_sock_accepted;
 }
@@ -122,7 +122,7 @@ int aceptar_conexion(int socketServidor, int *controlador)
 		error_sockets(controlador, "");
 	}
 	else
-	escribir_log_con_numero("Kernel - Nueva conexion aceptada para socket: ", client_sock_accepted);
+	escribir_log_con_numero("Memoria - Nueva conexion aceptada para socket: ", client_sock_accepted);
 
 	return client_sock_accepted;
 }

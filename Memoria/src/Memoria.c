@@ -62,16 +62,16 @@ char *Memoria;
 void leerArchivoConfig(char* rutaArchivoConfig);
 void inicializar_variables();
 void esperar_mensaje(void *i);
-void cargarCodigoEnMemoria(char * datos, char * Memoria ,t_list * frames_pedidos, int cantPaginasAgrabar);
 void inicializarPrograma (int pid, int paginasRequeridas);
 void mostrar_memoria (void);
-void liberar_valor(char *val);
 void MostrarCache(void);
 void incrementarLRU(int posInicializar);
 void asignarPaginasProceso (int pid,int cantPaginasAgrabar);
 void cargarTablaPaginasEnMemoria();
 int liberar_paginas_pid(int pid);
 int liberar_una_pagina(int pid,int pag);
+//void cargarCodigoEnMemoria(char * datos, char * Memoria ,t_list * frames_pedidos, int cantPaginasAgrabar);
+//void liberar_valor(char *val);
 
 int cantidadDePaginas(int tamanioBytes);
 int posFrameEnMemoria(int nroFrame);
@@ -112,7 +112,7 @@ int main(int argc, char *argv[])
 
 
 	Memoria = malloc(cantMarcos * tamanioMarco);
-	memset(Memoria,'\0',cantMarcos * tamanioMarco);
+	memset(Memoria,' ',cantMarcos * tamanioMarco);
 
 	if(entradasCache != 0){
 		Cache = crearMemoCache();
@@ -415,7 +415,7 @@ void esperar_mensaje(void *i) {
 			}
 			break;
 
-			case 20: //K|18|CANTIDADBYTES|CODIGO|PID
+			/*case 200: //K|18|CANTIDADBYTES|CODIGO|PID
 			{
 				char *escribir =string_from_format("K20 - Guardando codigo: %d ",cliente);
 				escribir_log(escribir);
@@ -461,13 +461,13 @@ void esperar_mensaje(void *i) {
 
 			}
 			break;
-
+			 */
 			case 19:// K1900000001
 			{
 				//K|19|PPPP|XXXX.
 				//PPPP: PID.
 				//XXXX: CantidadPaginas.
-				char *log_aux4 = string_from_format("K19-Solicitar Paginas HEAP: %d",cliente);
+				char *log_aux4 = string_from_format("K19 - Solicitar Paginas HEAP: %d",cliente);
 				escribir_log(log_aux4);
 				free(log_aux4);
 
@@ -770,6 +770,8 @@ void esperar_mensaje(void *i) {
 			case 66:
 				chau =1;
 				break;
+			default:
+				close(cliente);
 
 			}
 		}
@@ -964,7 +966,7 @@ int maxPaginaPid(int p_pid)
 	for (z=cantMarcosTablaPag; z<cantMarcos; z++ )
 	{
 		if ( tablaPaginas[z].estado == 1 && tablaPaginas[z].pid == p_pid) {
-			list_add(lt_pagsXpid,tablaPaginas[z].pag);
+			list_add(lt_pagsXpid,(void *)tablaPaginas[z].pag);
 		}
 	}
 	list_sort(lt_pagsXpid,(void*) f_mayor);
@@ -993,7 +995,7 @@ char * solicitarBytes(int pid, int pag, int offset, int tam)
 		int pEnCache = buscarPosCache(pid, pag);
 		if (pEnCache == -1) //La pagina no se encuentra en CACHE
 		{
-			escribir_log("LA PAGINA NO SE ENCUENTRA EN CACHE");
+			escribir_log("Cache Miss - LA PAGINA SOLICITADA NO SE ENCUENTRA EN CACHE");
 			escribir_log("\n Accediendo a Memoria Principal ... \n");
 			sleep(retardo/1000);
 			int pos = posFrameEnMemoria(frame_pos);
@@ -1100,6 +1102,7 @@ for(it=0;it<entradasCache;it++)
 		Cache_LRU[it].LRU=0;
 		return it;
 		}
+
 }
 
 int reemplazoLRU = posMaxLRU();
@@ -1160,7 +1163,7 @@ int maxLRUproc(int pid)
 	{
 		if (Cache_LRU[z].pid == pid)
 		{
-			list_add(lt_pagsXpid,Cache_LRU[z].LRU);
+			list_add(lt_pagsXpid,(void *)Cache_LRU[z].LRU);
 		}
 	}
 	list_sort(lt_pagsXpid,(void*) f_mayor);
@@ -1184,6 +1187,7 @@ char * almacenarBytes(int pid, int pag, int offset, int tam, char * buf)
 
 			if (pEnCache == -1) //La pagina no se encuentra en CACHE
 			{
+				escribir_log("Cache Miss - LA PAGINA SOLICITADA NO SE ENCUENTRA EN CACHE");
 				escribir_log("\n Accediendo a Memoria Principal ... \n");
 				sleep(retardo/1000);
 				int pos = posFrameEnMemoria(frame_pos);
@@ -1227,7 +1231,7 @@ int z;
 int max=-1;
 for (z=0; z<entradasCache; z++ )
 	 {
-	 	list_add(lt_pagsXpid,Cache_LRU[z].LRU);
+	 	list_add(lt_pagsXpid,(void *)Cache_LRU[z].LRU);
 	 }
 		list_sort(lt_pagsXpid,(void*) f_mayor);
 
@@ -1343,4 +1347,5 @@ if (tablaPaginas[pos].estado== -1 )
 	return 0;
 }
 	return 1;
+
 }
