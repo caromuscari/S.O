@@ -119,7 +119,7 @@ void direccionar(int socket_rec)
 	if(controlador > 0)
 	{
 		escribir_log("Se eliminara una conexion");
-		desconectar_consola(socket_rec);
+		eliminar_conexion(socket_rec);
 	}
 	else
 	{

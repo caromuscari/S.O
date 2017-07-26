@@ -45,6 +45,7 @@ void obtener_informacion(int pid);
 void imprimir_tabla_archivos();
 char *devolver_descripcion_error(int codigo);
 int existe_pid(int pid);
+void mostrar_cola_listos(t_queue *cola, char *procesos);
 
 void imprimir_info();
 
@@ -173,7 +174,7 @@ void generar_listados(int lista)
 	if((lista == 1)	|| (lista == 3))
 	{
 		pthread_mutex_lock(&mutex_cola_listos);
-		mostrar_cola(cola_listos, "Los siguientes son los procesos en la cola de Listos:\n");
+		mostrar_cola_listos(cola_listos, "Los siguientes son los procesos en la cola de Listos:\n");
 		pthread_mutex_unlock(&mutex_cola_listos);
 	}
 
@@ -211,6 +212,22 @@ void mostrar_cola(t_queue *cola, char *procesos)
 	{
 		t_nuevo *pr = queue_pop(cola);
 		printf("%d \n", pr->pid);
+		queue_push(cola,pr);
+	}
+}
+
+void mostrar_cola_listos(t_queue *cola, char *procesos)
+{
+	printf("###########################################\n");
+	printf("%s", procesos);
+
+	int i;
+	int size = queue_size(cola);
+
+	for(i=0;i<size;i++)
+	{
+		t_program *pr = queue_pop(cola);
+		printf("%d \n", pr->PID);
 		queue_push(cola,pr);
 	}
 }

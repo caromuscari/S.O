@@ -284,6 +284,13 @@ void finalizar_proceso(int pid, int codigo_finalizacion)
 		return (pid == un_proceso->PID);
 	}
 
+	bool _encontrame_cpu(t_cpu *cpu)
+	{
+		return cpu->program->PID == pid;
+	}
+
+	t_cpu *cpu = list_find(list_cpus, (void*)_encontrame_cpu);
+
 	pthread_mutex_lock(&mutex_lista_ejecutando);
 	t_program *programa = list_remove_by_condition(list_ejecutando, (void*)_buscar_proceso);
 	pthread_mutex_unlock(&mutex_lista_ejecutando);
@@ -294,7 +301,7 @@ void finalizar_proceso(int pid, int codigo_finalizacion)
 	avisar_consola_proceso_murio(programa);
 
 	list_destroy_and_destroy_elements(programa->memoria_dinamica, (void *)liberar_pagina);
-	sem_signal(programa, "", programa->socket_consola, 1);
+	sem_signal(programa, "", cpu->socket_cpu, 1);
 	liberar_proceso_pagina(programa->PID);
 
 	pthread_mutex_lock(&mutex_lista_finalizados);
@@ -334,11 +341,19 @@ void forzar_finalizacion(int pid, int cid, int codigo_finalizacion, int aviso)
 
 	void _finalizar_proceso(t_program *pr)
 	{
+		bool _encontrame_cpu(t_cpu *cpu)
+		{
+			return cpu->program->PID == pr->PID;
+		}
+
+		t_cpu *cpu = list_find(list_cpus, (void*)_encontrame_cpu);
+
 		pr->pcb->exit_code = (-1)*codigo_finalizacion;
 		if(aviso) avisar_consola_proceso_murio(pr);
 
 		list_destroy_and_destroy_elements(pr->memoria_dinamica, (void *)liberar_pagina);
-		sem_signal(pr, "", pr->socket_consola, 1);
+
+		sem_signal(pr, "", cpu->socket_cpu, 1);
 		liberar_proceso_pagina(pr->PID);
 
 		pthread_mutex_lock(&mutex_lista_finalizados);

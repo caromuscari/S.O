@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <pthread.h>
 #include <arpa/inet.h>
 #include <commons/string.h>
 #include <commons/log.h>
@@ -9,6 +10,8 @@
 #include <signal.h>
 #include "log.h"
 #include "manejo_errores.h"
+
+extern pthread_mutex_t mutex_socket;
 
 int iniciar_socket_cliente(char *ip, int puerto_conexion, int *control) {
 	int connected_socket;
@@ -142,6 +145,8 @@ int enviar(int socket_emisor, char *mensaje_a_enviar, int *controlador)
 
 char *recibir(int socket_receptor, int *controlador)
 {
+	pthread_mutex_lock(&mutex_socket);
+
 	int ret;
 	char *buffer = malloc(13 + 1);
 	memset(buffer,'\0',14);
@@ -194,6 +199,9 @@ char *recibir(int socket_receptor, int *controlador)
 	//	escribir_log_compuesto("recibido: ", buffer);
 	//}
 	free(buffer);
+
+	pthread_mutex_unlock(&mutex_socket);
+
 	return buffer_aux;
 }
 

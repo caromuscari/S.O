@@ -16,9 +16,11 @@
 #include "log.h"
 
 extern t_list *list_cpus;
+extern t_list *list_ejecutando;
 extern t_queue *cola_listos;
 extern sem_t sem_cpus;
 extern pthread_mutex_t mutex_lista_cpus;
+
 fd_set master;
 fd_set read_fds;
 int fdmax;
@@ -263,19 +265,7 @@ void responder_solicitud_cpu(int socket_, char *mensaje)
 		free(offset_bloque);
 		break;
 	case 19:;
-		char *mensaje_pcb = recibir(socket_,&controlador);
-		char *cod_pcb = get_codigo(mensaje_pcb);
-		if(atoi(cod_pcb)==20)
-		{
-			char *pcb_serializado = get_mensaje_pcb(mensaje_pcb);
-			t_PCB* pcba = deserializarPCB_CPUKer(pcb_serializado);
-			actualizar_pcb(prog, pcba);
-			finalizar_quantum(prog->PID);
-			free(pcb_serializado);
-		}
-		free(cod_pcb);
-		// Agregar PCB a cola correspondiente
-		// Desconectar CPU;
+		eliminar_cpu(socket_);
 		break;
 	default: ;
 		//No se comprende el mensaje recibido por cpu
@@ -383,8 +373,17 @@ void eliminar_cpu(int socket_)
 
 	if(cpu != NULL)
 	{
+		bool _removeme(t_program *prg)
+		{
+			return cpu->program->CID == prg->PID;
+		}
+
 		if(cpu->program != NULL)
-			queue_push(cola_listos,cpu->program);
+			queue_push(cola_listos,list_remove_by_condition(list_ejecutando, (void*)_removeme));
+
+		if(!cpu->ejecutando)
+			sem_wait(&sem_cpus);
+
 		free(cpu);
 	}
 }

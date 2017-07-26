@@ -35,7 +35,7 @@ t_pagina *_buscar_pagina(t_list *mem, int num_pag);
 void destruir_heap(t_bloque *bl);
 void liberar_pagina(t_pagina *pagina);
 int chequear_pagina(t_pagina *page);
-void juntar_memoria(t_list *hp, t_bloque *blo, t_bloque *blo_liberado, int num_bloque, bool anterior);
+//void juntar_memoria(t_list *hp, t_bloque *blo, t_bloque *blo_liberado, int num_bloque, bool anterior);
 int almacenar_bytes(int pid, int numpag, int offset, int tam, char *buffer);
 char *buffer_bloque(int size, int booleano);
 void *pedir_bloque_libre(t_pagina *pagina, int pid, int tam_sol);
@@ -208,8 +208,8 @@ int ubicar_bloque(t_pagina *pagina, int tam_sol, t_program *program, int so_cpu)
 		program->allocs++;
 		int sz = bloque->metadata->size;
 		bloque->metadata->isFree = 0;
-		free(bloque->data);
-		bloque->data = malloc(tam_sol);
+		//free(bloque->data);
+		//bloque->data = malloc(tam_sol);
 		bloque->metadata->size = tam_sol;
 
 		t_infoheap *infheap = malloc(sizeof(t_infoheap));
@@ -330,7 +330,7 @@ void liberar_bloque(t_program *prog, char *offset)
 	prog->syscall++;
 
 	t_infoheap *heap = dictionary_get(prog->posiciones, offset);
-	t_pagina *page = _buscar_pagina(prog->memoria_dinamica, heap->pagina);
+    t_pagina *page = _buscar_pagina(prog->memoria_dinamica, heap->pagina);
 
 	if(page != NULL)
 	{
@@ -339,8 +339,9 @@ void liberar_bloque(t_program *prog, char *offset)
 		HeapMetadata *meta = armar_metadata(bytes);
 		t_bloque *bloque = malloc(sizeof(t_bloque));//list_get(page->heaps, heap->bloque);
 		bloque->metadata = meta;
-		free(bloque->data);
+		//free(bloque->data);
 		bloque->metadata->isFree = true;
+		/*
 		if((list_size(page->heaps) - 1) > heap->bloque && heap->bloque != 0)
 		{
 			t_bloque *bloque2 = list_get(page->heaps, (heap->bloque - 1));
@@ -365,7 +366,7 @@ void liberar_bloque(t_program *prog, char *offset)
 			t_bloque *bloque5 = list_get(page->heaps, (heap->bloque - 1));
 			juntar_memoria(page->heaps, bloque5, bloque, heap->bloque, true);
 		}
-
+		*/
 		if(chequear_pagina(page))
 		{
 			list_remove_and_destroy_element(prog->memoria_dinamica, (page->n_pagina - prog->pcb->cant_pag - pag_stack -1),(void *) liberar_pagina);
@@ -475,6 +476,7 @@ void destruir_heap(t_bloque *bl)
 	free(bl->metadata);
 	free(bl);
 }
+
 t_pagina *_buscar_pagina(t_list *mem, int num_pag)
 {
 	bool _pagina(t_pagina *pag)
@@ -506,7 +508,7 @@ void lib_bloque(t_bloque *bl)
 	free(bl);
 }
 
-void juntar_memoria(t_list *hp, t_bloque *blo, t_bloque *blo_liberado, int num_bloque, bool anterior)
+/*void juntar_memoria(t_list *hp, t_bloque *blo, t_bloque *blo_liberado, int num_bloque, bool anterior)
 {
 	if(anterior)
 	{
@@ -523,7 +525,7 @@ void juntar_memoria(t_list *hp, t_bloque *blo, t_bloque *blo_liberado, int num_b
 
 		list_remove_and_destroy_element(hp, num_bloque - 1, (void *)lib_bloque);
 	}
-}
+}*/
 
 int almacenar_bytes(int pid, int numpag, int offset, int tam, char *buffer)
 {
