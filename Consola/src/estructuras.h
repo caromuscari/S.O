@@ -7,6 +7,8 @@
 
 #ifndef ESTRUCTURAS_H_
 #define ESTRUCTURAS_H_
+#include <time.h>
+#include <pthread.h>
 
 typedef struct {
 	char * ip;
