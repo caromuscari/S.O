@@ -9,6 +9,7 @@
 #define ESTRUCTURAS_H_
 #include <time.h>
 #include <pthread.h>
+#include <semaphore.h>
 
 typedef struct {
 	char * ip;
@@ -17,6 +18,7 @@ typedef struct {
 
 typedef struct{
 	int valor;
+	sem_t val;
 }t_chequeo;
 
 typedef struct{

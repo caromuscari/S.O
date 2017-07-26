@@ -62,6 +62,8 @@ void escuchar_mensaje()
 				//char * elemento2;
 
 				sema->valor=0;
+				sem_init(&sema->val,0,0);
+				//sem_wait(&sema->val);
 				cant->cantidad=0;
 
 				pid = recibir(socket_,1);
@@ -127,6 +129,7 @@ void escuchar_mensaje()
 
 				smod=dictionary_get(sem,pid2);
 				smod->valor=1;
+				sem_post(&smod->val);
 				sem_wait(&x);
 
 				free(sema);
@@ -191,10 +194,10 @@ void finalizar(char *pid, int socket_)
 
 		if(pthread_cancel(hilo->hilo)==0)
 		{
-			pid2 = dictionary_get(h_pid,var);
+			//pid2 = dictionary_get(h_pid,var);
 			escribir_log_con_numero("Se finalizo el programa: ", atoi(pid));
 			printf("Se finalizo el programa: %d\n", atoi(pid));
-			tiempofinal_impresiones(pid2);
+			tiempofinal_impresiones(pid);
 
 			free(dictionary_remove(h_pid,var));
 			free(dictionary_remove(p_pid,pid));
@@ -220,6 +223,8 @@ void finalizar_no_iniciados(char * pid,int socket_)
 	}
 
 	elemento = list_remove_by_condition(no_iniciados, remover);*/
+
+	escribir_log_con_numero("Se finalizo el programa: ", atoi(pid));
 
 	dictionary_remove(no_iniciados, pid);
 

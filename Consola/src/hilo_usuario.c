@@ -14,9 +14,9 @@
 
 extern int socket_;
 extern t_dictionary * p_pid;
-extern t_dictionary * h_pid;
+//extern t_dictionary * h_pid;
 extern pthread_t hiloMensaje;
-extern t_dictionary * sem;
+//extern t_dictionary * sem;
 extern t_dictionary * impresiones;
 extern t_dictionary * tiempo;
 extern t_dictionary * no_iniciados;
@@ -158,8 +158,10 @@ void finalizar_noiniciados(char * pid, int socket_){
 	//char * elemento;
 
 	char * mensaje = armar_mensaje("C02",pid);
+	//char * reci;
 	enviar(socket_, mensaje, string_length(mensaje));
-	escribir_log_con_numero("Se finalizo el programa: ", atoi(pid));
+	//reci = recibir(socket_, 13);
+
 
 	/*bool remover(void *pid_)
 	{
@@ -168,32 +170,37 @@ void finalizar_noiniciados(char * pid, int socket_){
 
 	elemento = list_remove_by_condition(no_iniciados, remover);*/
 
-	dictionary_remove(no_iniciados,pid);
+	//dictionary_remove(no_iniciados,pid);
 
-	printf("\nInicio de ejecucion: 0\n");
+	/*printf("\nInicio de ejecucion: 0\n");
 	printf("Fin de ejecucion: 0\n");
 	printf("Cantidad de impresiones: 0\n");
 	printf("Tiempo total de ejecucion en segundos: 0\n\n");
 
 	//free(elemento);
+
+	free(reci);*/
 	free(mensaje);
 }
 
 void finalizar_programa(char *pid, int socket_)
 {
 	char *mensaje;
-	char *pid2;
+	//char *pid2;
+	//char * reci;
 
 	if(dictionary_has_key(p_pid,pid))
 	{
-		t_hilo *hilo = dictionary_get(p_pid,pid);
-		char *var = string_itoa(hilo->hilo);
+		//t_hilo *hilo = dictionary_get(p_pid,pid);
+		//char *var = string_itoa(hilo->hilo);
 
-		if(pthread_cancel(hilo->hilo)==0)
+		//pid2 = dictionary_get(h_pid,var);
+		mensaje = armar_mensaje("C02",pid);
+		enviar(socket_, mensaje, string_length(mensaje));
+		//reci = recibir(socket_,13);
+
+		/*if(pthread_cancel(hilo->hilo)==0)
 		{
-			pid2 = dictionary_get(h_pid,var);
-			mensaje = armar_mensaje("C02",pid2);
-			enviar(socket_, mensaje, string_length(mensaje));
 			escribir_log_con_numero("Se finalizo el programa: ", atoi(pid));
 			tiempofinal_impresiones(pid2);
 
@@ -202,9 +209,11 @@ void finalizar_programa(char *pid, int socket_)
 			free(dictionary_remove(impresiones,pid));
 			free(dictionary_remove(sem,pid));
 			free(dictionary_remove(tiempo,pid));
-			free(mensaje);
 		}
-		else escribir_log("No se pudo finalizar el programa\n");
+		else escribir_log("No se pudo finalizar el programa\n");*/
+
+		free(mensaje);
+		//free(reci);
 	}
 	else printf("El programa no existe\n");
 }

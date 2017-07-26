@@ -51,20 +51,22 @@ void programa(char* pid)
 
 	while(1)
 	{
-		if(semp->valor==1)
-		{
-			sem_wait(&semaforo);
+		//if(semp->valor==1)
+		//{
+		sem_wait(&semp->val);
+		sem_wait(&semaforo);
 
-			escribir_log(aImprimir);
-			printf("%s\n", aImprimir);
+		escribir_log(aImprimir);
+		printf("%s\n", aImprimir);
 
-			impresiones2->cantidad++;
-			escribir_log_con_numero("Cantidad impresiones: ", impresiones2->cantidad);
-			free(aImprimir);
-			semp->valor = 0;
-			sem_post(&semaforo);
-			sem_post(&x);
-		}
+		impresiones2->cantidad++;
+		escribir_log_con_numero("Cantidad impresiones: ", impresiones2->cantidad);
+		free(aImprimir);
+		semp->valor = 0;
+		sem_post(&semaforo);
+		sem_post(&x);
+		//sem_post(&semp->val);
+		//}
 	}
 	free(tiempoInicial);
 	free(tiempo2);
