@@ -7,6 +7,8 @@
 
 #ifndef FSECUNDARIAS_H_
 #define FSECUNDARIAS_H_
+#include <stdio.h>
+#include "estructuras.h"
 
 void armar_archivo(FILE * archivo);
 char * armar_pathBloque(char *path,int bloqueSig,t_arch *archivo);

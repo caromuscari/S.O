@@ -628,7 +628,7 @@ t_descriptor_archivo abrir (t_direccion_archivo direccion, t_banderas flags){
 	free(respuesta);
 	free(str_tam);
 	free(str_fd);
-
+	free(str2_fd);
 	return fd;
 }
 
