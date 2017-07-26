@@ -602,9 +602,10 @@ t_descriptor_archivo abrir (t_direccion_archivo direccion, t_banderas flags){
 	recibir(sockKerCPU,&controlador,respuesta,13);
 	str_tam = string_substring(respuesta,3,10);
 	tam = atoi(str_tam);
-	char *str_fd = malloc(tam);
+	char *str_fd = malloc(tam+1);
 	recibir(sockKerCPU,&controlador,str_fd,tam);
-	fd = atoi(str_fd);
+	char *str2_fd = string_substring(str_fd,0,tam);
+	fd = atoi(str2_fd);
 
 	if(fd >= 0){
 

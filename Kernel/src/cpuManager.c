@@ -177,10 +177,10 @@ void responder_solicitud_cpu(int socket_, char *mensaje)
 
 		free(info);
 		free(header);
-		free(path);
+		//free(path);// todo: no estas liberando el puntero de la estructura t_TAP
 		free(fd_fi);
 		break;
-	case 6: ;//pedido de lectura
+	case 4: ;//pedido de lectura
 		char *info2 = get_mensaje_escritura_info(mensaje);
 		int size4 = atoi(info2);
 		char *fd_fi2 = get_mensaje_escritura_fd(mensaje);
@@ -188,6 +188,12 @@ void responder_solicitud_cpu(int socket_, char *mensaje)
 		char *path2 = get_path(fd_file2);
 
 		pedido_lectura(prog, fd_file2, 0, size4, path2, socket_);
+		break;
+	case 6:;
+		char *str_fd = get_mensaje(mensaje);
+		int fd2= atoi(str_fd);
+		cerrar_file(prog->TAP,fd2);
+		free(str_fd);
 		break;
 	case 9:	;
 		escribir_log("Se recibió una petición de CPU para obtener valor de variable compartida");

@@ -52,25 +52,30 @@ void abrir_crear(char *mensaje, t_program *prog, int socket_cpu)
 	free(payload_path);
 	free(payload_flag);
 
-	int existe;
+	int no_existe;
 
 	char *men = armar_mensaje("K11", path);
 	int controlador;
 	enviar(config->cliente_fs, men, &controlador);
 	free(men);
 
-	existe = chequear_respuesta(socket_cpu, path, flag, prog);
+	no_existe = chequear_respuesta(socket_cpu, path, flag, prog);
 
-	if(string_contains(flag,"c") && existe == 1)
+	if(string_contains(flag,"c") && no_existe == 1)
 	{
 		crear_archivo(socket_cpu, path, flag, prog);
 		abrir_archivo(path, flag, prog);
 	}
-	else if (existe == 0)
+	else if (no_existe == 0)
 	{
-		abrir_archivo(path, flag, prog);
+		int fd = abrir_archivo(path, flag, prog);
+		char *fd_char = string_itoa(fd);
+		char *mensaje = armar_mensaje("K16", fd_char);
+		enviar(socket_cpu, mensaje, &controlador);
+		free(mensaje);
+		free(fd_char);
 	}
-	else if(existe == 1)
+	else if(no_existe == 1)
 	{
 		char *fd_char = string_itoa(-2);
 		char *me = armar_mensaje("K16", fd_char);
@@ -101,7 +106,8 @@ int abrir_archivo(char *path, char* flag, t_program *prog)
 	t_TAP *ar_p = malloc(sizeof(t_TAP)); //armar para la función para los free :)
 	ar_p->flag = strdup(flag);
 	ar_p->GFD = ag->FD;
-	ar_p->FD = list_size(prog->TAP) + 3;
+	//ar_p->FD = list_size(prog->TAP) + 3;
+	ar_p->FD = ag->FD;
 
 	list_add(prog->TAP, ar_p);
 	return ar_p->FD;
@@ -217,9 +223,9 @@ char *info_lectura(char *path,int offs,int s)
 
 t_TAP *buscar_archivo_TAP(t_list *tap, int fd)
 {
-	bool _archivo_TAP(t_TAP ap)
+	bool _archivo_TAP(t_TAP *ap)
 	{
-		return (ap.FD == fd);
+		return (ap->FD == fd);
 	}
 
 	t_TAP *ap_b = list_find(tap, (void *)_archivo_TAP);
@@ -293,16 +299,16 @@ void escribir_archivo(int offset, char *info, char *flags, char *path, int socke
 		enviar(config->cliente_fs, mensaje_enviar, &controlador);
 		free(o);
 		char *mensaje_recibido = recibir(config->cliente_fs, &controlador);
-		char *header = get_header(mensaje);
+		char *header = get_header(mensaje_recibido);
 
 		if(comparar_header(header,"F"))
 		{
-			char *cod = get_codigo(mensaje);
-			int codigo = atoi(mensaje);
+			char *cod = get_codigo(mensaje_recibido);
+			int codigo = atoi(cod);
 			if(codigo== 5)
 			{
 				//char *mensaje_leido = get_mensaje(mensaje_recibido);
-				enviar(socket_cpu, "OK00000", &controlador);
+				enviar(socket_cpu, "OK000000000000000", &controlador);
 				//enviar ok 5 ceros
 			}else
 			{
@@ -319,11 +325,11 @@ void escribir_archivo(int offset, char *info, char *flags, char *path, int socke
 
 bool existe_archivo(t_list *tap, int fd)
 {
-	bool _archivo_TAP(t_TAP ap)
+	bool _archivo_TAP(t_TAP *ap)
 	{
-		return (ap.FD == fd);
+		return (ap->FD == fd);
 	}
-	return list_any_satisfy(tap,(void *) existe_archivo);
+	return list_any_satisfy(tap,(void *) _archivo_TAP);
 }
 
 void destruir_file(t_TAP *ap)
@@ -397,12 +403,12 @@ int chequear_respuesta(int socket_cpu, char *path, char *flag, t_program *prog)
 		char *info = get_mensaje(mensaje_recibido);
 		if(!strcmp(info,"ok"))
 		{
-			int fd = abrir_archivo(path, flag, prog);
+			/*int fd = abrir_archivo(path, flag, prog);
 			char *fd_char = string_itoa(fd);
 			char *mensaje = armar_mensaje("K16", fd_char);
 			enviar(socket_cpu, mensaje, &controlador);
 			free(mensaje);
-			free(fd_char);
+			free(fd_char);*/
 		}
 		else if(!(strcmp(info,"no")))
 		{
