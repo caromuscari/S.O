@@ -18,13 +18,11 @@
 
 extern t_configuracion *config;
 extern int tam_pagina;
-//extern int pag_cod;
 extern int pag_stack;
 int posicion_pagina;
 int inicio_bloque;
 
 void handshakearMemory();
-t_bloque *find_first_fit(t_list *hs, int t_sol);
 void reservar_memoria_din(t_program *program, int size_solicitado, int so_cpu);
 void inicializar_pagina_dinamica(t_program *prog, int size_sol);
 int ubicar_bloque(t_pagina *pagina, int tam_sol, t_program *program, int so_cpu);
@@ -35,7 +33,6 @@ t_pagina *_buscar_pagina(t_list *mem, int num_pag);
 void destruir_heap(t_bloque *bl);
 void liberar_pagina(t_pagina *pagina);
 int chequear_pagina(t_pagina *page);
-//void juntar_memoria(t_list *hp, t_bloque *blo, t_bloque *blo_liberado, int num_bloque, bool anterior);
 int almacenar_bytes(int pid, int numpag, int offset, int tam, char *buffer);
 char *buffer_bloque(int size, int booleano);
 void *pedir_bloque_libre(t_pagina *pagina, int pid, int tam_sol);
@@ -124,67 +121,27 @@ void reservar_memoria_din(t_program *program, int size_solicitado, int so_cpu)
 				t_pagina *page = list_get(program->memoria_dinamica, n);
 				size_disponible = page->esp_libre;
 
-				if (size_disponible-5 >= size_solicitado)
+				if((size_disponible - 5) >= size_solicitado)
 				{
 					ubicado = ubicar_bloque(page, size_solicitado, program, so_cpu);
-				}
-				else n++;
-			}
-			if (ubicado == 0)
-			{
-				int pedido = pedir_pagina(program);
 
-				if(pedido)
-				{
-					inicializar_pagina_dinamica(program, size_solicitado);
-					int size_disponible;
-					int n = 0;
-					int size_lpages = list_size(program->memoria_dinamica);
-
-					while(n < size_lpages && ubicado == 0)
+					if(ubicado == 0)
 					{
-						t_pagina *page = list_get(program->memoria_dinamica, n);
-						size_disponible = page->esp_libre;
-
-						if (size_disponible-5 >= size_solicitado)
-						{
-							ubicado = ubicar_bloque(page, size_solicitado, program, so_cpu);
-						}
-						else n++;
+						compactar_contiguos(program->PID, page);
+						ubicado = ubicar_bloque(page, size_solicitado, program, so_cpu);
 					}
 				}
-				else
-					forzar_finalizacion(program->PID, 0, 5, 0);
-				
+				else n++;
 			}
 		}
 		else
 		{
 			int pedido = pedir_pagina(program);
 
-			if(pedido)
+			if(pedido == 1)
 			{
 				inicializar_pagina_dinamica(program, size_solicitado);
-				int size_disponible;
-				int n = 0;
-				int size_lpages = list_size(program->memoria_dinamica);
-
-				while(n < size_lpages && ubicado == 0)
-				{
-					t_pagina *page = list_get(program->memoria_dinamica, n);
-					size_disponible = page->esp_libre;
-
-					if (size_disponible-5 >= size_solicitado)
-					{
-						ubicado = ubicar_bloque(page, size_solicitado, program, so_cpu);
-						if(!ubicado)
-						{
-							compactar_contiguos(program->PID, page);
-							ubicado = ubicar_bloque(page, size_solicitado, program, so_cpu);
-						}
-					}
-					else n++;
-				}
+				reservar_memoria_din(program,size_solicitado,so_cpu);
 			}
 			else
 				forzar_finalizacion(program->PID, 0, 5, 0);
@@ -197,10 +154,10 @@ void reservar_memoria_din(t_program *program, int size_solicitado, int so_cpu)
 	}
 }
 
-int ubicar_bloque(t_pagina *pagina, int tam_sol, t_program *program, int so_cpu)//usa algoritmo first fit -> el resumen dice que es el mas kpo
+int ubicar_bloque(t_pagina *pagina, int tam_sol, t_program *program, int so_cpu)
 {
-	t_bloque *bloque;// = malloc (sizeof(t_bloque));
-	//bloque = find_first_fit(pagina->heaps, tam_sol);
+	t_bloque *bloque;
+
 	bloque = pedir_bloque_libre(pagina, program->PID, tam_sol);
 
 	if (bloque != NULL)
@@ -208,8 +165,6 @@ int ubicar_bloque(t_pagina *pagina, int tam_sol, t_program *program, int so_cpu)
 		program->allocs++;
 		int sz = bloque->metadata->size;
 		bloque->metadata->isFree = 0;
-		//free(bloque->data);
-		//bloque->data = malloc(tam_sol);
 		bloque->metadata->size = tam_sol;
 
 		t_infoheap *infheap = malloc(sizeof(t_infoheap));
@@ -220,7 +175,6 @@ int ubicar_bloque(t_pagina *pagina, int tam_sol, t_program *program, int so_cpu)
 		dictionary_put(program->posiciones, offs_ ,infheap);
 		char *mens = armar_mensaje("K99", offs_);
 		int contr = 0;
-		//int pid, int numpag, int offset, int cant, int bool_free
 
 		char *buffer = buffer_bloque(bloque->metadata->size, 0);
 		int respuesta = almacenar_bytes(program->PID, pagina->n_pagina, inicio_bloque, 5, buffer);
@@ -258,28 +212,6 @@ int ubicar_bloque(t_pagina *pagina, int tam_sol, t_program *program, int so_cpu)
 	}
 }
 
-t_bloque *find_first_fit(t_list *hs, int t_sol)
-{
-//	t_bloque *nes;
-//	int encontrado = 1;
-	posicion_pagina = 0;
-	inicio_bloque  = 0;
-
-	bool _first_fit(t_bloque *h)
-	{
-		//bool libre = h->metadata->isFree;
-		//bool entra = (t_sol <= h->metadata->size);
-		posicion_pagina++;
-		if(!(h->metadata->isFree==1) || (!(t_sol <= h->metadata->size)))
-			inicio_bloque =+ h->metadata->size;
-
-		return ((h->metadata->isFree==1) && ((t_sol <= h->metadata->size)));
-	}
-
-	//list_iterate(hs, (void *)_first_fit);
-	return list_find(hs, (void *)_first_fit);//nes;
-}
-
 void _free_bloque(t_bloque *bloque)
 {
 	free(bloque->data);
@@ -289,7 +221,8 @@ void _free_bloque(t_bloque *bloque)
 
 int pedir_pagina(t_program *program)
 {
-	int res, controlador = 0;
+	int res = 0;
+	int controlador = 0;
 	char *mensaje = strdup("K19");
 
 	char *pid_aux = string_itoa(program->PID);
@@ -306,18 +239,16 @@ int pedir_pagina(t_program *program)
 		return 0;
 	else
 	{
-		controlador = 0;
 		char *respuesta = recibir(config->cliente_memoria, &controlador);
 		char *codigo = get_codigo(respuesta);
 		int cod = atoi(codigo);
-		if(cod == 2)
-			res = 1;
-		else
-			res = 0;
+
+		if(cod == 2) res = 1;
 
 		free(respuesta);
 		free(codigo);
 	}
+
 	free(mensaje);
 	free(completar);
 	free(pid_aux);
