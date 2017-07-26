@@ -272,33 +272,9 @@ void liberar_bloque(t_program *prog, char *offset)
 		bloque->metadata = meta;
 		//free(bloque->data);
 		bloque->metadata->isFree = true;
-		/*
-		if((list_size(page->heaps) - 1) > heap->bloque && heap->bloque != 0)
-		{
-			t_bloque *bloque2 = list_get(page->heaps, (heap->bloque - 1));
-			t_bloque *bloque3 = list_get(page->heaps, (heap->bloque + 1));
+		page->esp_libre = page->esp_libre + bloque->metadata->size;
 
-			if(bloque2->metadata->isFree)
-			{
-				juntar_memoria(page->heaps, bloque2, bloque, heap->bloque, true);
-			}
-			if(bloque3->metadata->isFree)
-			{
-				juntar_memoria(page->heaps, bloque3, bloque, heap->bloque, false);
-			}
-		}
-		if(heap->bloque == 0)
-		{
-			t_bloque *bloque4 = list_get(page->heaps, (heap->bloque + 1));
-			juntar_memoria(page->heaps, bloque4, bloque, heap->bloque, false);
-		}
-		if(heap->bloque == (list_size(page->heaps) -1))
-		{
-			t_bloque *bloque5 = list_get(page->heaps, (heap->bloque - 1));
-			juntar_memoria(page->heaps, bloque5, bloque, heap->bloque, true);
-		}
-		*/
-		if(chequear_pagina(page))
+		if(page->esp_libre == tam_pagina)
 		{
 			list_remove_and_destroy_element(prog->memoria_dinamica, (page->n_pagina - prog->pcb->cant_pag - pag_stack -1),(void *) liberar_pagina);
 
@@ -322,6 +298,7 @@ void liberar_bloque(t_program *prog, char *offset)
 			free(completar);
 			free(pagina);
 			free(mensaje);
+
 		}
 	}
 	else
@@ -420,9 +397,9 @@ t_pagina *_buscar_pagina(t_list *mem, int num_pag)
 
 int chequear_pagina(t_pagina *page)
 {
-	bool _esta_libre(t_bloque bloque)
+	bool _esta_libre(t_bloque *bloque)
 	{
-		return bloque.metadata->isFree;
+		return bloque->metadata->isFree;
 	}
 
 	if(list_all_satisfy(page->heaps, (void *)_esta_libre))
