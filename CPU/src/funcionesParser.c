@@ -403,10 +403,12 @@ void ts_wait(t_nombre_semaforo identificador_semaforo) {
 	}else if(strncmp(respuesta,"K21",3)==0){
 		fifo = FINALIZAR_POR_ERROR;
 		accion_siguiente = FINALIZAR_POR_ERROR;
+
 		char *cod_error= string_substring(respuesta,13,4);
 		int codigo_error= (-1)*(atoi(cod_error));
 		pcb->exit_code = codigo_error;
-		char * logi = string_from_format("ERROR ejecutando WAIT sobre semaforo %s",identificador_semaforo);
+
+		char * logi = string_from_format("ERROR ejecutando WAIT sobre semaforo %s, exit code :%d ",identificador_semaforo,pcb->exit_code);
 		escribir_log(logi,2);
 		free(logi);free(cod_error);
 	}
@@ -505,8 +507,11 @@ t_puntero reservar (t_valor_variable espacio){
 void liberar (t_puntero puntero){
 
 	int size;int controlador;
-	char *mensaje = mensaje_heap("P18",puntero,&size);
+	int puntero2 = puntero + pcb->cant_pag*tam_pagina_memoria;
+	char *mensaje = mensaje_heap("P18",puntero2,&size);
 	enviar(sockKerCPU,mensaje,&controlador,size);
+
+
 	free(mensaje);
 
 	char *respuesta= malloc(13);
