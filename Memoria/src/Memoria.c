@@ -771,7 +771,10 @@ void esperar_mensaje(void *i) {
 				chau =1;
 				break;
 			default:
+				chau=1;
+				escribir_log_con_numero("\n ELIMINANDO CPU - Por error : \n",chau);
 				close(cliente);
+
 
 			}
 		}

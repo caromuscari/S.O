@@ -139,7 +139,9 @@ int enviar(int socket_emisor, char *mensaje_a_enviar, int *controlador)
 	if ((ret = send(socket_emisor, buffer, sbuffer, MSG_NOSIGNAL)) < 0)
 	{
 		*controlador = 7;
-		error_sockets(controlador, atoi(socket_emisor));
+		char *error= string_itoa(socket_emisor);
+		error_sockets(controlador, error);
+		free(error);
 	}
 
 	free(buffer);
@@ -160,7 +162,9 @@ char *recibir(int socket_receptor, int *controlador)
 		if (ret == 0)
 		{
 			*controlador = 8;
-			error_sockets(controlador, atoi(socket_receptor));
+			char *error = string_itoa(socket_receptor);
+			error_sockets(controlador,error);
+			free(error);
 		}
 		*controlador = 1;
 		error_sockets(controlador, "");
