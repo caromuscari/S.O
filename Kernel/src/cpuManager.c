@@ -86,18 +86,32 @@ void realizar_handShake_cpu(int nuevo_socket)
 free(mensaje);
 }
 
-void actualizar_pcb(t_program *programa, t_PCB *pcb)
+void actualizar_pcb(t_program *programa, t_PCB *pcb1)
 {
+	void t_memoria_destroy(t_memoria *self){
+		free(self);
+	}
+	void stack_destroy(t_stack_element *self) {
+		list_destroy_and_destroy_elements(self->args,(void *) t_memoria_destroy);
+
+		list_destroy_and_destroy_elements(self->vars,(void *) t_memoria_destroy);
+
+		free(self);
+
+	}
+	free(programa->pcb->in_et);
+	free(programa->pcb->in_cod);
+	list_destroy_and_destroy_elements(programa->pcb->in_stack,(void *)stack_destroy);
 	free(programa->pcb);
-	programa->pcb = malloc(sizeof(t_PCB));
-	programa->pcb = pcb;
+	//programa->pcb = malloc(sizeof(t_PCB));
+	programa->pcb = pcb1;
 }
 
 void agregar_lista_cpu(int nuevo_socket)
 {
 	t_cpu *nueva_cpu = malloc(sizeof(t_cpu));
 	nueva_cpu->socket_cpu = nuevo_socket;
-	//nueva_cpu->program = malloc(sizeof(t_program));
+	nueva_cpu->program = NULL;
 	nueva_cpu->ejecutando = 0;
 	nueva_cpu->cpu_id = get_cpuId();
 

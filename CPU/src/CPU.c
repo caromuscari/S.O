@@ -223,7 +223,7 @@ int main(int argc, char *argv[])
 			pcb_serializado  = serializarPCB_CPUKer(pcb,&size);
 			mensaje = mensaje_pcb("P13",pcb_serializado,size);
 
-			enviar(sockKerCPU,mensaje,&controlador,size);
+			enviar(sockKerCPU,mensaje,&controlador,size+13);
 
 			free(pcb_serializado);
 			free(mensaje);
@@ -236,7 +236,7 @@ int main(int argc, char *argv[])
 			pcb_serializado  = serializarPCB_CPUKer(pcb,&size);
 			mensaje = mensaje_pcb("P12",pcb_serializado,size);
 
-			enviar(sockKerCPU,mensaje,&controlador,size);
+			enviar(sockKerCPU,mensaje,&controlador,size+13);
 
 			free(pcb_serializado);
 			free(mensaje);
@@ -249,7 +249,7 @@ int main(int argc, char *argv[])
 			pcb_serializado  = serializarPCB_CPUKer(pcb,&size);
 			mensaje = mensaje_pcb("P13",pcb_serializado,size);
 
-			enviar(sockKerCPU,mensaje,&controlador,size);
+			enviar(sockKerCPU,mensaje,&controlador,size+13);
 
 			free(pcb_serializado);
 			free(mensaje);
@@ -261,7 +261,7 @@ int main(int argc, char *argv[])
 			pcb_serializado  = serializarPCB_CPUKer(pcb,&size);
 			mensaje = mensaje_pcb("P16",pcb_serializado,size);
 
-			enviar(sockKerCPU,mensaje,&controlador,size);
+			enviar(sockKerCPU,mensaje,&controlador,size+13);
 
 			free(pcb_serializado);
 			free(mensaje);

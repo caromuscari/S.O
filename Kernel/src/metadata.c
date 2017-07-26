@@ -83,12 +83,12 @@ t_list* armarIndiceStack (char *codigoPrograma){
 	t_stack_element * inicial= malloc(sizeof(t_stack_element));
 	inicial->args = list_create();
 	inicial->vars = list_create();
-	/*inicial->pos = 0;
+	inicial->pos = 0;
 	inicial->retPos = 0;
 	inicial->retVar.ID = '\0';
 	inicial->retVar.offset = 0;
 	inicial->retVar.pag = 0;
-	inicial->retVar.size = 0;*/
+	inicial->retVar.size = 0;
 	list_add(lista,inicial);
 	return lista;
 }

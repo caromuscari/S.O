@@ -46,10 +46,8 @@ t_dictionary* armarDiccionarioEtiquetas(char* etiquetas_serializadas){
 	return dicc;
 
 }
-char* serializarPCB_CPUKer (t_PCB_CPU* pcb1,int * devolveme){
+char *serializarPCB_CPUKer (t_PCB_CPU* pcb1,int * devolveme){
 	char *retorno;
-	char *str_int;
-	char *aux_ceros;
 	//int sizeretorno = tamaño_PCB(pcb);
 	int size_retorno = sizeof(int)*5; //(int) PID,PC,CANT_PAGINAS,SP,EXIT_CODE
 	// TAMAÑO_SENTENCIAS_SERIALIZADAS + SENTENCIAS_SERIALIZADAS (c/sentencias : (int)inicio,(int)offset)
@@ -74,7 +72,8 @@ char* serializarPCB_CPUKer (t_PCB_CPU* pcb1,int * devolveme){
 		n++;
 	}
 	size_retorno += size_in_stack + 2 * sizeof(int);
-	retorno = malloc(size_retorno+1); bzero(retorno,size_retorno+1);
+	retorno = malloc(size_retorno+1);
+	bzero(retorno,size_retorno+1);
 	*devolveme = size_retorno+1;
 	int desplazamiento = 0;
 
@@ -133,7 +132,8 @@ char* serializarPCB_CPUKer (t_PCB_CPU* pcb1,int * devolveme){
 		memcpy(retorno+desplazamiento,&aux->retVar.size,sizeof(int));
 		desplazamiento += sizeof(int);
 		int n_args=0;int n_vars= 0;
-		n_args= list_size(aux->args);n_vars = list_size(aux->vars);
+		n_args= list_size(aux->args);
+		n_vars = list_size(aux->vars);
 		int c=0;
 		memcpy(retorno+desplazamiento,&n_args,sizeof(int));
 		desplazamiento += sizeof(int);

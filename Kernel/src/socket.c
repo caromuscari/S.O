@@ -173,12 +173,19 @@ char *recibir(int socket_receptor, int *controlador)
 		char *resto_mensaje = malloc(size);
 		if(size>0) recv(socket_receptor, resto_mensaje, size, 0);
 
-		char *buffer_aux= malloc(size+13);
+		char *buffer_aux= malloc(size+14);
 		memcpy(buffer_aux,buffer,13);
 		memcpy(buffer_aux+13,resto_mensaje,size);
+		buffer_aux[size+13] = '\0';
 
 		free(resto_mensaje);
-		escribir_log_compuesto("MENSAJE_RECIBIDO: ", buffer_aux);
+
+		if(strncmp(buffer,"P",1)==0){
+			escribir_log_compuesto("MENSAJE_RECIBIDO: ", buffer);
+		}else{
+			escribir_log_compuesto("MENSAJE_RECIBIDO: ", buffer_aux);
+		}
+
 	//}
 	//else
 	//{
