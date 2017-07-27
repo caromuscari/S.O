@@ -182,6 +182,7 @@ void sem_signal(t_program *prog, char *sema, int socket_, int free_all)//cuando 
 				queue_push(semf->procesos,(void *)pid);
 			}
 		}
+		queue_destroy(sems_aux);
 	}
 
 	if (free_all)
