@@ -191,11 +191,12 @@ void responder_peticion_prog(int socket, char *mensaje)
 		queue_push(cola_nuevos, nuevo_proc);
 		pthread_mutex_unlock(&mutex_cola_nuevos);
 
-		free(mensaje_conf);
-		free(ult_pid);
 		ultimo_pid ++;
 		sem_post(&sem_nuevos);
 	}
+	free(codigo_new);
+	free(mensaje_conf);
+	free(ult_pid);
 }
 
 int buscar_consola(int socket)
