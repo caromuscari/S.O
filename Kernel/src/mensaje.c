@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <commons/string.h>
+#include "mensaje.h"
 
 char *armar_mensaje(char *identificador, char *mensaje)
 {
@@ -85,11 +86,12 @@ char *get_mensaje_pcb(char *mensaje)
 	return pcb_serializado;
 }
 
-char *get_mensaje_escritura_info(char *mensaje)
+char *get_mensaje_escritura_info(char *mensaje,int *lar)
 {
 	char *payload = string_substring(mensaje, 3, 10);
 	int payload1 = atoi(payload);
 	free(payload);
+	*lar = payload1-4;
 	return string_substring(mensaje, 17, payload1-4);
 }
 

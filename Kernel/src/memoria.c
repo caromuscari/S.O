@@ -619,7 +619,6 @@ HeapMetadata *armar_metadata(char *metadata)
 		is_free = true;
 	else
 		is_free = false;
-	free(free_);
 
 	metadaHeap->isFree = is_free;
 	metadaHeap->size = cant;

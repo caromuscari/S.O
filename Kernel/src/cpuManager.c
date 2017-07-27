@@ -49,6 +49,7 @@ void pedir_pcb_error(t_program *prg, int exit_code);
 char *armar_valor(char *pid_, char *mensaje);
 void eliminar_cpu(int socket_);
 void recargar_quantumsleep();
+void procesar_cambio_configuracion(int socket_rec);
 
 void realizar_handShake_cpu(int nuevo_socket)
 {
@@ -171,33 +172,35 @@ void responder_solicitud_cpu(int socket_, char *mensaje)
 		free(fd_);
 		break;
 	case 5 : ;//pedido de escritura
-		char *info = get_mensaje_escritura_info(mensaje);
-		char *fd_fi = get_mensaje_escritura_fd(mensaje);
-		int fd_file = atoi(fd_fi);
-		char *path = get_path(fd_file);
-		char *header = get_header(mensaje);
-		t_TAP *arch = buscar_archivo_TAP(prog->TAP, fd_file);
+			int largo;
+			char *info = get_mensaje_escritura_info(mensaje,&largo);
+			char *fd_fi = get_mensaje_escritura_fd(mensaje);
+			int fd_file = atoi(fd_fi);
+			char *path = get_path(fd_file);
+			char *header = get_header(mensaje);
+			t_TAP *arch = buscar_archivo_TAP(prog->TAP, fd_file);
 
-		if (arch == NULL)
-		{
-			forzar_finalizacion(prog->PID, 0, 13, 1);
-		}else
-			escribir_archivo(0, info, arch->flag, path, socket_, prog);
+			if (arch == NULL)
+			{
+				forzar_finalizacion(prog->PID, 0, 2, 1);
+			}else
+				escribir_archivo(largo,0, info, arch->flag, path, socket_, prog);
 
-		free(info);
-		free(header);
-		//free(path);// todo: no estas liberando el puntero de la estructura t_TAP
-		free(fd_fi);
-		break;
-	case 4: ;//pedido de lectura
-		char *info2 = get_mensaje_escritura_info(mensaje);
-		int size4 = atoi(info2);
-		char *fd_fi2 = get_mensaje_escritura_fd(mensaje);
-		int fd_file2 = atoi(fd_fi2);
-		char *path2 = get_path(fd_file2);
+			free(info);
+			free(header);
+			//free(path);// todo: no estas liberando el puntero de la estructura t_TAP
+			free(fd_fi);
+			break;
+		case 4: ;//pedido de lectura
+			int lar;
+			char *info2 = get_mensaje_escritura_info(mensaje,&lar);
+			int size4 = atoi(info2);
+			char *fd_fi2 = get_mensaje_escritura_fd(mensaje);
+			int fd_file2 = atoi(fd_fi2);
+			char *path2 = get_path(fd_file2);
 
-		pedido_lectura(prog, fd_file2, 0, size4, path2, socket_);
-		break;
+			pedido_lectura(prog, fd_file2, 0, size4, path2, socket_);
+			break;
 	case 6:;
 		char *str_fd = get_mensaje(mensaje);
 		int fd2= atoi(str_fd);
@@ -405,9 +408,9 @@ void eliminar_cpu(int socket_)
 		free(cpu);
 	}
 }
-void procesar_cambio_configuracion(socket_rec){
+void procesar_cambio_configuracion(int socket_rec){
 
-	char buffer[BUF_LEN];
+	char *buffer = malloc(BUF_LEN);
 	int length = read(socket_rec, buffer, BUF_LEN);
 	if (length < 0) {
 		perror("read");
@@ -415,28 +418,35 @@ void procesar_cambio_configuracion(socket_rec){
 
 	int offset = 0;
 	while (offset < length) {
-		struct inotify_event* event = (struct inotify_event*) &buffer[offset];
+
+		struct inotify_event *event = (struct inotify_event *) &buffer[offset];
+
 		if (event->len) {
+
 			if (event->mask & IN_MODIFY) {
+
 				if (event->mask & IN_ISDIR) {
 					char *logi = string_from_format("Directorio %s modificado",ruta_config);
 					escribir_log(logi);
 					free(logi);
 				} else {
-					if (string_equals_ignore_case(event->name,
-							ruta_config)) {
+					char *fullpath = string_from_format("/home/utnso/%s",event->name);
+					if (string_equals_ignore_case(fullpath, ruta_config)) {
+
 						char *alogi = strdup("El archivo de configuracion fue modificado");
 						escribir_log(alogi);
 						free(alogi);
 						recargar_quantumsleep();
 					}
+					free(fullpath);
 				}
 			}
 		}
+
 		offset += sizeof(struct inotify_event) + event->len;
 
 	}
-
+	free(buffer);
 
 }
 

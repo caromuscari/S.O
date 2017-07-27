@@ -33,10 +33,10 @@ void cerrar_file(t_list *tap, int fd);
 char *get_path_msg(char *mensaje, int *payload1);
 char *get_info(char *mensaje, int payload1, int tam_info);
 void abrir_crear(char *mensaje, t_program *prog, int socket_cpu);
-void escribir_archivo(int offset, char *info, char *flags, char *path, int socket_cpu, t_program *pr);
+void escribir_archivo(int largo,int offset, char *info, char *flags, char *path, int socket_cpu, t_program *pr);
 int chequear_respuesta(int socket_cpu, char *path, char *flag, t_program *prog);
 void crear_archivo(int socket_cpu, char *path, char *flag, t_program *prog);
-char *armar_info_mensaje(char *info, char* path, char *o);
+char *armar_info_mensaje(int largo,char *info, char* path, char *o,int *l);
 
 void abrir_crear(char *mensaje, t_program *prog, int socket_cpu)
 {
@@ -146,18 +146,17 @@ void pedido_lectura(t_program *prog, int fd, int offs, int size, char *path, int
 		if(string_contains(ap->flag,"r"))
 		{
 			int controlador;
-		//	char *path = get_path(ap->FD);
 			char * info = info_lectura(path,offs,size);
 			char *mensaje = armar_mensaje("K14", info);
 			enviar(config->cliente_fs, mensaje, &controlador);
 			free(mensaje);
 
 			char *mensaje_recibido = recibir(config->cliente_fs, &controlador);
-			char *header = get_header(mensaje);
+			char *header = get_header(mensaje_recibido);
 
 			if(comparar_header(header,"F"))
 			{
-				char *codig = get_codigo(mensaje);
+				char *codig = get_codigo(mensaje_recibido);
 				int cod = atoi(codig);
 				if(cod == 4)
 				{
@@ -173,9 +172,9 @@ void pedido_lectura(t_program *prog, int fd, int offs, int size, char *path, int
 			free(info);
 
 		}else
-			forzar_finalizacion(prog->PID, 0, 7, 1);/* eliminar programa, pedido de lectura sin permiso*/;
+			forzar_finalizacion(prog->PID, 0, 3, 1);/* eliminar programa, pedido de lectura sin permiso*/;
 	}else
-		forzar_finalizacion(prog->PID, 0, 7, 1);//eliminar programa por querer leer un arch no abierto
+		forzar_finalizacion(prog->PID, 0, 2, 1);//eliminar programa por querer leer un arch no abierto
 }
 
 char *info_lectura(char *path,int offs,int s)
@@ -272,12 +271,12 @@ void mover_puntero(int socket_cpu, int offset, int fd, t_program *prog)
 				{
 					forzar_finalizacion(prog->PID, 0, 7, 1);
 				}else
-					escribir_archivo(offset, info, arch->flag, path, socket_cpu, prog);
+					//escribir_archivo(offset, info, arch->flag, path, socket_cpu, prog);
 				free(info);
 				break;
 			case 6: ;//pedido de lectura
 				int size = atoi(info);
-				pedido_lectura(prog, fd, offset, size, path, socket_cpu);
+				//pedido_lectura(prog, fd, offset, size, path, socket_cpu);
 				break;
 		}
 		free(cod);
@@ -288,14 +287,15 @@ void mover_puntero(int socket_cpu, int offset, int fd, t_program *prog)
 	free(header);
 }
 
-void escribir_archivo(int offset, char *info, char *flags, char *path, int socket_cpu, t_program *pr)
+void escribir_archivo(int largom,int offset, char *info, char *flags, char *path, int socket_cpu, t_program *pr)
 {
 	if (string_contains(flags, "w"))
 	{
 		int controlador;
 		char *o = string_itoa(offset);
-		char *mensaje = armar_info_mensaje(info, path, o);
-		char *mensaje_enviar = armar_mensaje("K15", mensaje);
+		int size_mensaje=0;
+		char *mensaje = armar_info_mensaje(largom,info, path, o,&size_mensaje);
+		char *mensaje_enviar = armar_mensaje_pcb("K15", mensaje,size_mensaje);
 		enviar(config->cliente_fs, mensaje_enviar, &controlador);
 		free(o);
 		char *mensaje_recibido = recibir(config->cliente_fs, &controlador);
@@ -320,7 +320,9 @@ void escribir_archivo(int offset, char *info, char *flags, char *path, int socke
 		free(mensaje_recibido);
 		free(mensaje);
 		free(mensaje_enviar);
-	}else ;
+	}else{
+		forzar_finalizacion(pr->PID, 0, 3, 1); //intento escribir en un archivo sin permisos;
+	}
 }
 
 bool existe_archivo(t_list *tap, int fd)
@@ -438,11 +440,11 @@ int chequear_respuesta(int socket_cpu, char *path, char *flag, t_program *prog)
 	return no_existe;
 }
 
-char *armar_info_mensaje(char *buffer, char* path, char *off)
+char *armar_info_mensaje(int largo,char *buffer, char* path, char *off,int *l)
 {
 	char *mensaje = strdup("");
 
-	char *size_buffer = string_itoa(string_length(buffer));
+	char *size_buffer = string_itoa(largo);
 	int size_payload = string_length(size_buffer);
 	char *sbuffer = string_repeat('0', 4 - size_payload);
 
@@ -463,7 +465,7 @@ char *armar_info_mensaje(char *buffer, char* path, char *off)
 	string_append(&mensaje, size_path);
 	string_append(&mensaje, path);
 
-	string_append(&mensaje, sbuffer);
+	string_append(&mensaje, soffset);
 	string_append(&mensaje, size_offset);
 	string_append(&mensaje, off);
 
@@ -473,8 +475,11 @@ char *armar_info_mensaje(char *buffer, char* path, char *off)
 
 	string_append(&mensaje, sbuffer);
 	string_append(&mensaje, size_buffer);
-	string_append(&mensaje, buffer);
-
+	//string_append(&mensaje, buffer);
+	*l = strlen(mensaje)+largo;
+	char *final = malloc(strlen(mensaje)+largo);
+	memcpy(final, mensaje, strlen(mensaje));
+	memcpy(final+strlen(mensaje),buffer,largo);
 
 	free(size_buffer);
 	free(sbuffer);
@@ -484,6 +489,7 @@ char *armar_info_mensaje(char *buffer, char* path, char *off)
 	free(soffset);
 	free(size_);
 	free(osize);
+	free(mensaje);
 
-	return mensaje;
+	return final;
 }
