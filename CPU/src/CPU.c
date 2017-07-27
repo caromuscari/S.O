@@ -190,16 +190,21 @@ int main(int argc, char *argv[])
 
 			break;
 		case 21:
+			if(con_PCB == 0){
 
-			escribir_log("CASE N°21: devolver cpu por error",1);
-			accion_siguiente = FINALIZAR_POR_ERROR;
+			}else{
 
-			char *cod_error= string_substring(buff,13,4);
-			int codigo_error= (-1)*(atoi(cod_error));
+				escribir_log("CASE N°21: devolver cpu por error",1);
+				accion_siguiente = FINALIZAR_POR_ERROR;
 
-			pcb->exit_code = codigo_error;
+				char *cod_error= string_substring(buff,13,4);
+				int codigo_error= (-1)*(atoi(cod_error));
 
-			free(cod_error);
+				pcb->exit_code = codigo_error;
+
+				free(cod_error);
+
+			}
 
 			break;
 
@@ -244,6 +249,7 @@ int main(int argc, char *argv[])
 			break;
 
 		case FINALIZAR_POR_ERROR :
+
 			escribir_log("FINALIZO PROGRAMA ERRONEAMENTE... devolviendo pcb ...",1);
 
 			pcb_serializado  = serializarPCB_CPUKer(pcb,&size);
