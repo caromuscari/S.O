@@ -188,6 +188,7 @@ int ubicar_bloque(t_pagina *pagina, int tam_sol, t_program *program, int so_cpu)
 
 		enviar(so_cpu, mens, &contr);
 		free(mens);
+		free(offs_);
 
 		if (tam_sol < sz)
 		{
@@ -202,12 +203,14 @@ int ubicar_bloque(t_pagina *pagina, int tam_sol, t_program *program, int so_cpu)
 
 			list_add_in_index(pagina->heaps, posicion_pagina, bl);
 			pagina->esp_libre = pagina->esp_libre - (tam_sol+5);
+			free(bl);
 		}
+		free(bloque);
 		return 1; //offset;
 	}
 	else
 	{
-		free(bloque);
+		//free(bloque);
 		return 0;
 	}
 }
