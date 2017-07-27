@@ -14,6 +14,7 @@
 #include "log.h"
 
 extern t_configuracion *config;
+extern int fd_inotify;
 fd_set master;
 fd_set read_fds;
 int fdmax;
@@ -21,6 +22,7 @@ int fdmax;
 void realizar_handShake_consola(int nuevo_socket);
 void realizar_handShake_cpu(int nuevo_socket);
 void direccionar(int socket_rec);
+void eliminar_conexion(int socket);
 
 void manejo_conexiones()
 {
@@ -34,6 +36,7 @@ void manejo_conexiones()
 	//Cargo el socket server
 	FD_SET(config->server_consola, &master);
 	FD_SET(config->server_cpu, &master);
+	FD_SET(fd_inotify,&master);
 
 	//Cargo el socket mas grande
 	fdmax = config->server_consola;
@@ -115,8 +118,11 @@ void direccionar(int socket_rec)
 	int controlador = 0;
 	//Es una conexion existente, respondo a lo que me pide
 	char *mensaje_recibido = recibir(socket_rec, &controlador);
+	if(socket_rec == fd_inotify){
 
-	if(controlador > 0)
+		procesar_cambio_configuracion(socket_rec);
+
+	}else if(controlador > 0)
 	{
 		escribir_log("Se eliminara una conexion");
 		eliminar_conexion(socket_rec);

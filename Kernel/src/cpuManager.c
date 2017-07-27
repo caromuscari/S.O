@@ -1,8 +1,11 @@
 #include <commons/string.h>
 #include <commons/log.h>
 #include <semaphore.h>
+#include <commons/config.h>
+#include <sys/inotify.h>
 #include <pthread.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <string.h>
 #include "semaforos_vglobales.h"
 #include "manejo_errores.h"
@@ -15,11 +18,16 @@
 #include "socket.h"
 #include "log.h"
 
+#define FILE_EVENT_SIZE ( sizeof (struct inotify_event) + 40 )
+#define BUF_LEN     ( 1024 * FILE_EVENT_SIZE )
+
 extern t_list *list_cpus;
 extern t_list *list_ejecutando;
 extern t_queue *cola_listos;
 extern sem_t sem_cpus;
 extern pthread_mutex_t mutex_lista_cpus;
+extern char *ruta_config;
+extern t_configuracion *config;
 
 fd_set master;
 fd_set read_fds;
@@ -40,6 +48,7 @@ char *get_numero(char *mensaje);
 void pedir_pcb_error(t_program *prg, int exit_code);
 char *armar_valor(char *pid_, char *mensaje);
 void eliminar_cpu(int socket_);
+void recargar_quantumsleep();
 
 void realizar_handShake_cpu(int nuevo_socket)
 {
@@ -393,3 +402,52 @@ void eliminar_cpu(int socket_)
 		free(cpu);
 	}
 }
+void procesar_cambio_configuracion(socket_rec){
+
+	char buffer[BUF_LEN];
+	int length = read(socket_rec, buffer, BUF_LEN);
+	if (length < 0) {
+		perror("read");
+	}
+
+	int offset = 0;
+	while (offset < length) {
+		struct inotify_event* event = (struct inotify_event*) &buffer[offset];
+		if (event->len) {
+			if (event->mask & IN_MODIFY) {
+				if (event->mask & IN_ISDIR) {
+					char *logi = string_from_format("Directorio %s modificado",ruta_config);
+					escribir_log(logi);
+					free(logi);
+				} else {
+					if (string_equals_ignore_case(event->name,
+							ruta_config)) {
+						char *alogi = strdup("El archivo de configuracion fue modificado");
+						escribir_log(alogi);
+						free(alogi);
+						recargar_quantumsleep();
+					}
+				}
+			}
+		}
+		offset += sizeof(struct inotify_event) + event->len;
+
+	}
+
+
+}
+
+void recargar_quantumsleep() {
+
+	t_config *nueva_config = config_create(ruta_config);
+
+	config->quantum_sleep = config_get_int_value(nueva_config, "QUANTUM_SLEEP");
+
+	char *logii= string_from_format("Nuevo quantum sleep : %d",config->quantum_sleep);
+	escribir_log(logii);
+	free(logii);
+
+	config_destroy(nueva_config);
+
+}
+

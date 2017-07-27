@@ -5,6 +5,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <semaphore.h>
+#include <sys/inotify.h>
 #include <unistd.h>
 #include <commons/config.h>
 #include <commons/string.h>
@@ -64,6 +65,7 @@ int tam_pagina = 0;
 int pag_cod = 0;
 int pag_stack = 0;
 int diferencia_multi = 0;
+int fd_inotify;
 
 #define PAGE_SIZE 4096
 #define STK_SIZE (10 * PAGE_SIZE)
@@ -76,6 +78,7 @@ void inicializar_semaforos();
 void programas_listos_A_ejecutar();
 void programas_nuevos_A_listos();
 void manejo_conexiones();
+void iniciar_monitoreo_configuracion(char *);
 
 int main(int argc, char*argv[])
 {
@@ -100,6 +103,8 @@ int main(int argc, char*argv[])
 
 	inicializar_sems();
 	inicializar_vglobales();
+
+	iniciar_monitoreo_configuracion(ruta_config);
 
 	crear_conexiones();
 	handshakearMemory();
@@ -203,4 +208,15 @@ void inicializar_semaforos()
 	{
 		escribir_log_error_con_numero("Error asignando el grado de multiprogramacion: ", config->grado_multiprog);
 	}
+}
+void iniciar_monitoreo_configuracion(char *path){
+
+	fd_inotify = inotify_init();
+	if (fd_inotify < 0) {
+		perror("inotify_init");
+	}
+
+	int watch_descriptor = inotify_add_watch(fd_inotify,
+			path, IN_MODIFY);
+
 }
