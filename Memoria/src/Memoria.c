@@ -545,7 +545,7 @@ void esperar_mensaje(void *i) {
 				enviar(cliente,mensaje,&controlador);
 				free(mensaje);
 
-				escribir_log_con_numero("\n FINALIZAR PROGRAMA REALIZADO POR PID  ",pid);
+				escribir_log_con_numero("FINALIZAR PROGRAMA REALIZADO POR PID: ",pid);
 			}
 			break;
 			case 24: //K24|PID|PAG
