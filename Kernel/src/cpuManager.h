@@ -16,5 +16,6 @@ void pedir_pcb_error(t_program *prg, int exit_code);
 void eliminar_cpu(int socket_);
 t_cpu *buscar_cpu(int socket_);
 void procesar_cambio_configuracion(int socket_rec);
+char *sacar_nombre_archivo(char *path);
 
 #endif /* CPUMANAGER_H_ */

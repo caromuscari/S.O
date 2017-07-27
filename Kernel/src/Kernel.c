@@ -80,7 +80,7 @@ void programas_listos_A_ejecutar();
 void programas_nuevos_A_listos();
 void manejo_conexiones();
 void iniciar_monitoreo_configuracion(char *);
-char *sacar_nombre_archivo(char *path);
+
 
 int main(int argc, char*argv[])
 {
@@ -222,29 +222,4 @@ void iniciar_monitoreo_configuracion(char *path){
 	watch_descriptor = inotify_add_watch(fd_inotify,directorio_config, IN_MODIFY);
 	free(directorio_config);
 }
-char *sacar_nombre_archivo(char *path){
 
-	char *path_aux = strdup(path);
-	char *path_final =strdup("");
-	char **split_path = string_split(path_aux,"/");
-	int i=0;
-	int j=0;
-
-	while(split_path[i] != NULL) i++;
-	i -= 2;
-	while(j <= i){
-		string_append(&path_final,"/");
-		string_append(&path_final,split_path[j]);
-		j++;
-	}
-
-	free(path_aux);
-	i=0;
-	while(split_path[i]!= NULL){
-		free(split_path[i]);
-		i++;
-	}
-	free(split_path);
-
-	return path_final;
-}

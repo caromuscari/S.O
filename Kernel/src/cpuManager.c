@@ -50,6 +50,7 @@ char *armar_valor(char *pid_, char *mensaje);
 void eliminar_cpu(int socket_);
 void recargar_quantumsleep();
 void procesar_cambio_configuracion(int socket_rec);
+char *sacar_nombre_archivo(char *path);
 
 void realizar_handShake_cpu(int nuevo_socket)
 {
@@ -430,7 +431,9 @@ void procesar_cambio_configuracion(int socket_rec){
 					escribir_log(logi);
 					free(logi);
 				} else {
-					char *fullpath = string_from_format("/home/utnso/%s",event->name);
+					char *path_sin_nombre = sacar_nombre_archivo(ruta_config);
+					char *fullpath = string_from_format("%s/%s",path_sin_nombre,event->name);
+
 					if (string_equals_ignore_case(fullpath, ruta_config)) {
 
 						char *alogi = strdup("El archivo de configuracion fue modificado");
@@ -438,6 +441,8 @@ void procesar_cambio_configuracion(int socket_rec){
 						free(alogi);
 						recargar_quantumsleep();
 					}
+
+					free(path_sin_nombre);
 					free(fullpath);
 				}
 			}
@@ -463,4 +468,29 @@ void recargar_quantumsleep() {
 	config_destroy(nueva_config);
 
 }
+char *sacar_nombre_archivo(char *path){
 
+	char *path_aux = strdup(path);
+	char *path_final =strdup("");
+	char **split_path = string_split(path_aux,"/");
+	int i=0;
+	int j=0;
+
+	while(split_path[i] != NULL) i++;
+	i -= 2;
+	while(j <= i){
+		string_append(&path_final,"/");
+		string_append(&path_final,split_path[j]);
+		j++;
+	}
+
+	free(path_aux);
+	i=0;
+	while(split_path[i]!= NULL){
+		free(split_path[i]);
+		i++;
+	}
+	free(split_path);
+
+	return path_final;
+}
