@@ -349,11 +349,11 @@ void esperar_mensaje(void *i) {
 				//PPPP: Pid
 				//XXXX: CantidadPaginasCodigo
 				//YYYY: CantidadPaginasSTACK
-				char *log_aux3 = string_from_format("K06-Inicializar Programa %d",cliente);
+				char *log_aux3 = string_from_format("K06 - Inicializar Programa : %d",cliente);
 				escribir_log(log_aux3);
 				free(log_aux3);
 
-				escribir_log_compuesto("\n MENSAJE RECIBIDO \n\n ",mensRec);
+				escribir_log_compuesto("Mensaje Recibido de Inicializar Programa: \n ",mensRec);
 
 				char *str_pid = string_substring(mensRec, 3, 4);
 				int procPid= atoi(str_pid);
@@ -362,9 +362,9 @@ void esperar_mensaje(void *i) {
 				char *paginasSTACK = string_substring(mensRec, 11, 4);
 				STACK_SIZE = atoi(paginasSTACK);
 
-				escribir_log_con_numero("\n PID RECIBIDO \n",procPid);
-				escribir_log_con_numero("\n TAMAÑO PAGINAS CODIGO \n",pagsCodigo);
-				escribir_log_con_numero("\n TAÑANO PAGINAS STACK \n ",STACK_SIZE);
+				escribir_log_con_numero("PID RECIBIDO:",procPid);
+				escribir_log_con_numero("TAMAÑO PAGINAS CODIGO:",pagsCodigo);
+				escribir_log_con_numero("TAÑANO PAGINAS STACK:",STACK_SIZE);
 
 				int libres = cantMarcosLibre();
 
@@ -381,7 +381,7 @@ void esperar_mensaje(void *i) {
 					enviar(cliente,r_OK, &controlador);
 					free(r_OK);
 
-					char *log_aux = string_from_format("Se puede guardar el CODIGO -: %d",cliente);
+					char *log_aux = string_from_format("K06: Se Inicializo el PROGRAMA CORRECTAMENTE | Pid: %d",procPid);
 					escribir_log(log_aux);
 					free(log_aux);
 
@@ -393,7 +393,7 @@ void esperar_mensaje(void *i) {
 					enviar(cliente,r_NOK, &controlador);
 					free(r_NOK);
 
-					char *log_aux = string_from_format("NO se puede guardar el CODIGO -: %d",cliente);
+					char *log_aux = string_from_format("K06: No se puede inicializar el proceso: %d",cliente);
 					escribir_log(log_aux);
 					free(log_aux);
 				}
@@ -403,7 +403,7 @@ void esperar_mensaje(void *i) {
 				escribir_log("Imprimiendo Tabla Paginas");
 				int it;
 				for(it=0;it<cantMarcos;it++){
-					char *aux_log = string_from_format("-%d- %d | %d | %d \n",it,tablaPaginas[it].estado,tablaPaginas[it].pid,tablaPaginas[it].pag);
+					char *aux_log = string_from_format("-%d- %d | %d | %d",it,tablaPaginas[it].estado,tablaPaginas[it].pid,tablaPaginas[it].pag);
 					escribir_log(aux_log);
 					free(aux_log);
 				}
@@ -477,8 +477,8 @@ void esperar_mensaje(void *i) {
 				char *paginasHEAP = string_substring(mensRec, 7, 4);
 				int pagsHEAP = atoi(paginasHEAP);
 
-				escribir_log_con_numero("\n PID RECIBIDO   \n",procPid);
-				escribir_log_con_numero("\n CANTIDAD PAGINAS CODIGO  \n",pagsHEAP);
+				escribir_log_con_numero("PID RECIBIDO: ",procPid);
+				escribir_log_con_numero("CANTIDAD PAGINAS CODIGO: ",pagsHEAP);
 
 				int libres = cantMarcosLibre();
 
@@ -512,7 +512,7 @@ void esperar_mensaje(void *i) {
 				escribir_log("Imprimiendo Tabla Paginas");
 				int it;
 				for(it=0;it<cantMarcos;it++){
-					char *aux_log = string_from_format("-%d- %d | %d | %d \n",it,tablaPaginas[it].estado,tablaPaginas[it].pid,tablaPaginas[it].pag);
+					char *aux_log = string_from_format("-%d- %d | %d | %d ",it,tablaPaginas[it].estado,tablaPaginas[it].pid,tablaPaginas[it].pag);
 					escribir_log(aux_log);
 					free(aux_log);
 				}
@@ -770,9 +770,14 @@ void esperar_mensaje(void *i) {
 			case 66:
 				chau =1;
 				break;
+			case 40:
+				chau=1;
+				escribir_log_con_numero("\n Se desconectó CPU: \n",cliente);
+				close(cliente);
+				break;
 			default:
 				chau=1;
-				escribir_log_con_numero("\n ELIMINANDO CPU - Por error : \n",chau);
+				escribir_log_con_numero("\n Se desconectó CPU: \n",cliente);
 				close(cliente);
 
 
@@ -987,7 +992,7 @@ bool f_mayor(int a, int b) {
 char * solicitarBytes(int pid, int pag, int offset, int tam)
 {
 	int frame_pos = posPaginaSolicitada(pid,pag);
-	escribir_log_con_numero("\n frame_pos: ",frame_pos);
+	escribir_log_con_numero("Posicion del Frame en Memoria: ",frame_pos);
 
 	if (frame_pos <= 0 ) { //No encontro la pagina.
 		char* rta = strdup("M030000000000");
@@ -998,8 +1003,8 @@ char * solicitarBytes(int pid, int pag, int offset, int tam)
 		int pEnCache = buscarPosCache(pid, pag);
 		if (pEnCache == -1) //La pagina no se encuentra en CACHE
 		{
-			escribir_log("Cache Miss - LA PAGINA SOLICITADA NO SE ENCUENTRA EN CACHE");
-			escribir_log("\n Accediendo a Memoria Principal ... \n");
+			escribir_log("--------- Cache Miss - LA PAGINA SOLICITADA NO SE ENCUENTRA EN CACHE ------- ");
+			escribir_log("---------  Accediendo a Memoria Principal ... -----------");
 			sleep(retardo/1000);
 			int pos = posFrameEnMemoria(frame_pos);
 			char * dataFrame = malloc (tam);
@@ -1047,7 +1052,7 @@ char * solicitarBytes(int pid, int pag, int offset, int tam)
 
 		}
 	}else{ //CACHE DESHABILITADA
-		escribir_log("\n Accediendo a Memoria Principal ... \n");
+		escribir_log(" -----------  Accediendo a Memoria Principal ... ------------ \n");
 		sleep(retardo/1000);
 		int pos = posFrameEnMemoria(frame_pos);
 		char *dataFrame = malloc (tam);
@@ -1088,7 +1093,7 @@ int cantPidEnCache(int pid){
 			a++;
 		}
 	}
-	escribir_log_con_numero("\n Cantidad de un Pids en CACHE:  \n", a);
+	escribir_log_con_numero(" Cantidad de un Pids en CACHE: ", a);
 	return a;
 }
 int sustituirLRU(int pid, int pag)
@@ -1190,8 +1195,8 @@ char * almacenarBytes(int pid, int pag, int offset, int tam, char * buf)
 
 			if (pEnCache == -1) //La pagina no se encuentra en CACHE
 			{
-				escribir_log("Cache Miss - LA PAGINA SOLICITADA NO SE ENCUENTRA EN CACHE");
-				escribir_log("\n Accediendo a Memoria Principal ... \n");
+				escribir_log("----------- Cache Miss - LA PAGINA SOLICITADA NO SE ENCUENTRA EN CACHE --------");
+				escribir_log("----------- Accediendo a Memoria Principal ... -------------- ");
 				sleep(retardo/1000);
 				int pos = posFrameEnMemoria(frame_pos);
 				memcpy(Memoria+pos+offset,buf,tam);
@@ -1202,7 +1207,7 @@ char * almacenarBytes(int pid, int pag, int offset, int tam, char * buf)
 			{
 				memcpy(Cache[pEnCache].dataFrame+offset, buf,tam);
 				int pos = posFrameEnMemoria(frame_pos);
-				escribir_log("\n Accediendo a Memoria Principal ... \n");
+				escribir_log("-----------------  Accediendo a Memoria Principal ... ------------ ");
 				sleep(retardo/1000);
 				memcpy(Memoria+pos+offset,buf,tam);
 				res=strdup("M020000000000");
@@ -1215,7 +1220,7 @@ char * almacenarBytes(int pid, int pag, int offset, int tam, char * buf)
 
 			}
 		}else{ // CACHE DESHABILITDA
-			escribir_log("\n Accediendo a Memoria Principal ... \n");
+			escribir_log(" ----------------  Accediendo a Memoria Principal ... -------------------");
 			sleep(retardo/1000);
 			int pos = posFrameEnMemoria(frame_pos);
 			memcpy(Memoria+pos+offset,buf,tam);
