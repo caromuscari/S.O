@@ -349,8 +349,11 @@ void pedir_pcb_error(t_program *prg, int exit_code)
 	char *mensaje = strdup("K21");
 	string_append(&mensaje, completar);
 	string_append(&mensaje, pid_aux);
-
+	
 	enviar(cpu->socket_cpu, mensaje, &controlador);
+	free(pid_aux);
+	free(completar);
+	free(mensaje);
 }
 
 char *armar_valor(char *pid_, char *mensaje)
