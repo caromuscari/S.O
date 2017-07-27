@@ -33,6 +33,7 @@ extern pthread_mutex_t mutex_cola_nuevos;
 extern pthread_mutex_t mutex_cola_listos;
 extern pthread_mutex_t mutex_actualizar_multip;
 extern pthread_mutex_t mutex_planificar;
+//extern pthread_mutex_t mutex_sincro;
 extern sem_t sem_grad_multi;
 extern sem_t sem_nuevos;
 extern sem_t sem_listos;
@@ -42,6 +43,7 @@ extern int tam_pagina;
 extern int pag_stack;
 extern int diferencia_multi;
 int controlador;
+
 
 void finalizar_proceso(int pid, int codigo_finalizacion);
 void desbloquear_proceso(int pid);
@@ -69,61 +71,72 @@ void programas_listos_A_ejecutar()
 	{
 		sem_wait(&sem_listos);
 		sem_wait(&sem_cpus);
+
+		//pthread_mutex_lock(&mutex_sincro);
 		continuar();
-
 		tam_prog = 0;
-
-		pthread_mutex_lock(&mutex_cola_listos);
-		t_program *program = queue_pop(cola_listos);
-		pthread_mutex_unlock(&mutex_cola_listos);
 
 		pthread_mutex_lock(&mutex_lista_cpus);
 		t_cpu *cpu_disponible = list_find(list_cpus, (void*)_cpuLibre);
 		pthread_mutex_unlock(&mutex_lista_cpus);
 
-		char *pcb_serializado = serializarPCB_KerCPU(program->pcb,config->algoritmo,config->quantum,config->quantum_sleep,&tam_prog);
-		char *mensaje_env = armar_mensaje_pcb("K07", pcb_serializado, tam_prog);
+		pthread_mutex_lock(&mutex_cola_listos);
+		t_program *program = queue_pop(cola_listos);
+		pthread_mutex_unlock(&mutex_cola_listos);
 
-		escribir_log(mensaje_env);
-
-		enviar_pcb(cpu_disponible->socket_cpu, mensaje_env, &controlador, tam_prog+13);
-		free(pcb_serializado);
-
-		//Fallo el envio de la pcb a la cpu, se debe eliminar la cpu
-		if(controlador>0)
+		if(program != NULL)
 		{
-			int i;
-			escribir_log_error_con_numero("Ha fallado el envio de una PCB con la CPU: ",cpu_disponible->cpu_id);
+			char *pcb_serializado = serializarPCB_KerCPU(program->pcb,config->algoritmo,config->quantum,config->quantum_sleep,&tam_prog);
+			char *mensaje_env = armar_mensaje_pcb("K07", pcb_serializado, tam_prog);
 
-			pthread_mutex_lock(&mutex_lista_cpus);
-			t_cpu *cpu_disponible_a_borrar = list_remove_by_condition(list_cpus, (void*)_cpuLibre);
-			pthread_mutex_unlock(&mutex_lista_cpus);
+			escribir_log(mensaje_env);
 
-			free(cpu_disponible_a_borrar);
+			enviar_pcb(cpu_disponible->socket_cpu, mensaje_env, &controlador, tam_prog+13);
+			free(pcb_serializado);
 
-			pthread_mutex_lock(&mutex_cola_listos);
-			int size = queue_size(cola_listos);
-			queue_push(cola_listos,program);
-			pthread_mutex_unlock(&mutex_cola_listos);
-
-			for(i=0;i<size;i++)
+			//Fallo el envio de la pcb a la cpu, se debe eliminar la cpu
+			if(controlador>0)
 			{
+				int i;
+				escribir_log_error_con_numero("Ha fallado el envio de una PCB con la CPU: ",cpu_disponible->cpu_id);
+
+				pthread_mutex_lock(&mutex_lista_cpus);
+				t_cpu *cpu_disponible_a_borrar = list_remove_by_condition(list_cpus, (void*)_cpuLibre);
+				pthread_mutex_unlock(&mutex_lista_cpus);
+
+				free(cpu_disponible_a_borrar);
+
 				pthread_mutex_lock(&mutex_cola_listos);
-				queue_push(cola_listos,queue_pop(cola_listos));
+				int size = queue_size(cola_listos);
+				queue_push(cola_listos,program);
 				pthread_mutex_unlock(&mutex_cola_listos);
+
+				for(i=0;i<size;i++)
+				{
+					pthread_mutex_lock(&mutex_cola_listos);
+					queue_push(cola_listos,queue_pop(cola_listos));
+					pthread_mutex_unlock(&mutex_cola_listos);
+				}
+				sem_post(&sem_listos);
 			}
-			sem_post(&sem_listos);
+			else
+			{
+				pthread_mutex_lock(&mutex_lista_ejecutando);
+				list_add(list_ejecutando, program);
+				pthread_mutex_unlock(&mutex_lista_ejecutando);
+
+				cpu_disponible->ejecutando = 1; //true
+				cpu_disponible->program = program;
+			}
+			free(mensaje_env);
 		}
 		else
 		{
-			pthread_mutex_lock(&mutex_lista_ejecutando);
-			list_add(list_ejecutando, program);
-			pthread_mutex_unlock(&mutex_lista_ejecutando);
-
-			cpu_disponible->ejecutando = 1; //true
-			cpu_disponible->program = program;
+			//sem_post(&sem_listos);
+			sem_post(&sem_cpus);
 		}
-		free(mensaje_env);
+
+		//pthread_mutex_unlock(&mutex_sincro);
 	}
 }
 
@@ -133,6 +146,9 @@ void programas_nuevos_A_listos()
 	{
 		sem_wait(&sem_nuevos);
 		sem_wait(&sem_grad_multi);
+
+		//pthread_mutex_lock(&mutex_sincro);
+
 		continuar();
 
 		pthread_mutex_lock(&mutex_cola_nuevos);
@@ -197,6 +213,8 @@ void programas_nuevos_A_listos()
 		free(mensaje_envio);
 		free(mensaje_recibido);
 		free(cod);
+
+		//pthread_mutex_unlock(&mutex_sincro);
 	}
 }
 
@@ -237,6 +255,10 @@ void agregar_nueva_prog(int id_consola, int pid, char *codigo, int socket_con)
 
 void bloquear_proceso(int pid, int socket_)
 {
+	//pthread_mutex_lock(&mutex_sincro);
+
+	continuar();
+
 	bool _buscar_proceso(t_program *un_proceso)
 	{
 		return (pid == un_proceso->PID);
@@ -255,10 +277,16 @@ void bloquear_proceso(int pid, int socket_)
 	t_cpu *cpu_activa = buscar_cpu(socket_);
 	cpu_activa->ejecutando = false;
 	sem_post(&sem_cpus);
+
+	//pthread_mutex_unlock(&mutex_sincro);
 }
 
 void desbloquear_proceso(int pid)
 {
+	//pthread_mutex_lock(&mutex_sincro);
+
+	continuar();
+
 	bool _buscar_proceso(t_program *un_proceso)
 	{
 		return (pid == un_proceso->PID);
@@ -275,10 +303,16 @@ void desbloquear_proceso(int pid)
 	pthread_mutex_unlock(&mutex_cola_listos);
 
 	sem_post(&sem_listos);
+
+	//pthread_mutex_unlock(&mutex_sincro);
 }
 
 void finalizar_proceso(int pid, int codigo_finalizacion)
 {
+	//pthread_mutex_lock(&mutex_sincro);
+
+	continuar();
+
 	bool _buscar_proceso(t_program *un_proceso)
 	{
 		return (pid == un_proceso->PID);
@@ -310,13 +344,19 @@ void finalizar_proceso(int pid, int codigo_finalizacion)
 
 	sem_post(&sem_cpus);
 	sem_post(&sem_grad_multi);
+
+	//pthread_mutex_unlock(&mutex_sincro);
 }
 
 void forzar_finalizacion(int pid, int cid, int codigo_finalizacion, int aviso)
 {
+	//pthread_mutex_lock(&mutex_sincro);
+
 	t_list *procesos = list_create();
 	t_list *procesos_ejecutando = list_create();
 	int i, contador = 0;
+
+	continuar();
 
 	bool _buscar_program(t_program *pr)
 	{
@@ -341,19 +381,20 @@ void forzar_finalizacion(int pid, int cid, int codigo_finalizacion, int aviso)
 
 	void _finalizar_proceso(t_program *pr)
 	{
+		/*
 		bool _encontrame_cpu(t_cpu *cpu)
 		{
 			return cpu->program->PID == pr->PID;
 		}
 
 		t_cpu *cpu = list_find(list_cpus, (void*)_encontrame_cpu);
-
+		*/
 		pr->pcb->exit_code = (-1)*codigo_finalizacion;
 		if(aviso) avisar_consola_proceso_murio(pr);
 
 		list_destroy_and_destroy_elements(pr->memoria_dinamica, (void *)liberar_pagina);
 
-		sem_signal(pr, "", cpu->socket_cpu, 1);
+		sem_signal(pr, "", 0, 1);
 		liberar_proceso_pagina(pr->PID);
 
 		pthread_mutex_lock(&mutex_lista_finalizados);
@@ -391,6 +432,7 @@ void forzar_finalizacion(int pid, int cid, int codigo_finalizacion, int aviso)
 		if(_buscar_nuevito(prog))
 		{
 			list_add(procesos,prog);
+			//sem_wait(&sem_nuevos);
 		}
 		else
 		{
@@ -410,6 +452,7 @@ void forzar_finalizacion(int pid, int cid, int codigo_finalizacion, int aviso)
 		if(_buscar_program(prog))
 		{
 			list_add(procesos,prog);
+			//sem_wait(&sem_listos);
 		}
 		else
 		{
@@ -425,6 +468,8 @@ void forzar_finalizacion(int pid, int cid, int codigo_finalizacion, int aviso)
 
 	list_destroy(procesos);
 	list_destroy(procesos_ejecutando);
+
+	//pthread_mutex_unlock(&mutex_sincro);
 }
 
 int calcular_pag(char *mensaje)
@@ -442,10 +487,14 @@ int calcular_pag(char *mensaje)
 
 void finalizar_quantum(int pid)
 {
-	bool _buscar_proceso(t_PCB *un_proceso)
+	//pthread_mutex_lock(&mutex_sincro);
+
+	bool _buscar_proceso(t_program *un_proceso)
 	{
 		return (pid == un_proceso->PID);
 	}
+
+	continuar();
 
 	pthread_mutex_lock(&mutex_lista_ejecutando);
 	t_program *programa = list_remove_by_condition(list_ejecutando, (void*)_buscar_proceso);
@@ -457,6 +506,8 @@ void finalizar_quantum(int pid)
 
 	sem_post(&sem_listos);
 	sem_post(&sem_cpus);
+
+	//pthread_mutex_unlock(&mutex_sincro);
 }
 
 void actualizar_grado_multiprogramacion()

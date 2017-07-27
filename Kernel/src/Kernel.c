@@ -53,6 +53,7 @@ pthread_mutex_t mutex_cola_listos;
 pthread_mutex_t mutex_actualizar_multip;
 pthread_mutex_t mutex_planificar;
 pthread_mutex_t mutex_socket;
+pthread_mutex_t mutex_sincro;
 sem_t sem_grad_multi;
 sem_t sem_nuevos;
 sem_t sem_listos;
@@ -83,7 +84,6 @@ int main(int argc, char*argv[])
 	pthread_t hiloNuevos;
 	pthread_t hiloListos;
 	pthread_t hiloConsolaKernel;
-
 
 	//Nuevo intento de que funque tod bien
 	pthread_attr_t attr;
@@ -194,6 +194,7 @@ void inicializar_semaforos()
 	pthread_mutex_init(&mutex_actualizar_multip,NULL);
 	pthread_mutex_init(&mutex_planificar,NULL);
 	pthread_mutex_init(&mutex_socket,NULL);
+	pthread_mutex_init(&mutex_sincro,NULL);
 
 	sem_init(&sem_nuevos,0,0);
 	sem_init(&sem_listos,0,0);

@@ -87,7 +87,7 @@ void inicializar_pagina_dinamica(t_program *prog, int size_sol)
 
 	t_bloque *bloque = malloc(sizeof(t_bloque));
 	bloque->metadata = heap;
-	bloque->data = malloc(heap->size);
+
 
 	list_add(pagina->heaps, bloque);
 	list_add(prog->memoria_dinamica, pagina);
