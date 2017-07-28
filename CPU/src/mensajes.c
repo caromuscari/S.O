@@ -6,7 +6,7 @@
  */
 
 #include "mensajes.h"
-
+#include <commons/string.h>
 char *mensaje_escibir_memoria(int fpid,t_puntero direccion_variable,int cant_pag,int valor,int *size){
 
 	char * mensaje;
