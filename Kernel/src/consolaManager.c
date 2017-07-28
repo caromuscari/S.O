@@ -194,7 +194,6 @@ void responder_peticion_prog(int socket, char *mensaje)
 		ultimo_pid ++;
 		sem_post(&sem_nuevos);
 	}
-	free(codigo_new);
 	free(mensaje_conf);
 	free(ult_pid);
 }

@@ -28,7 +28,6 @@ void inicializar_pagina_dinamica(t_program *prog, int size_sol);
 int ubicar_bloque(t_pagina *pagina, int tam_sol, t_program *program, int so_cpu);
 void _free_bloque(t_bloque *bloque);
 int pedir_pagina();
-void liberar_bloque(t_program *prog, char *offset);
 t_pagina *_buscar_pagina(t_list *mem, int num_pag);
 void destruir_heap(t_bloque *bl);
 void liberar_pagina(t_pagina *pagina);
@@ -40,6 +39,7 @@ char *pedir_bytes_memoria(int pid, int numpag, int offset);
 HeapMetadata *armar_metadata(char *metadata);
 void liberar_proceso_pagina(int pid);
 void compactar_contiguos(int pid, t_pagina *pagina);
+void liberar_bloque(t_program *prog, char *offset, int socket_);
 
 void handshakearMemory()
 {
@@ -259,7 +259,7 @@ int pedir_pagina(t_program *program)
 	return res;
 }
 
-void liberar_bloque(t_program *prog, char *offset)
+void liberar_bloque(t_program *prog, char *offset, int socket_)
 {
 	prog->syscall++;
 
@@ -269,14 +269,35 @@ void liberar_bloque(t_program *prog, char *offset)
 	if(page != NULL)
 	{
 		prog->frees++;
-		char *bytes = pedir_bytes_memoria(prog->PID, page->n_pagina, (atoi(offset)/tam_pagina)-5);
-		HeapMetadata *meta = armar_metadata(bytes);
+		int off_ = atoi(offset);
+		char *bytes = pedir_bytes_memoria(prog->PID, page->n_pagina, (off_-5)%tam_pagina);
+		char *men = get_mensaje(bytes);
+		HeapMetadata *meta = armar_metadata(men);
 		t_bloque *bloque = malloc(sizeof(t_bloque));//list_get(page->heaps, heap->bloque);
 		bloque->metadata = meta;
 		//free(bloque->data);
 		bloque->metadata->isFree = true;
-		page->esp_libre = page->esp_libre + bloque->metadata->size;
+		page->esp_libre = page->esp_libre + bloque->metadata->size + 5;
 
+		int controlador3;
+		char *mensaje = strdup("K24");
+		char *pid_aux = string_itoa(prog->PID);
+		int size_pid = string_length(pid_aux);
+		char *completar_pid = string_repeat('0', 4 - size_pid);
+		char *pagina = string_itoa(page->n_pagina);
+		int size_pagina = string_length(pagina);
+		char *completar = string_repeat('0', 4 - size_pagina);
+		string_append(&mensaje, completar_pid);
+		string_append(&mensaje, pid_aux);
+		string_append(&mensaje, completar);
+		string_append(&mensaje, pagina);
+
+
+		enviar(config->cliente_memoria, mensaje, &controlador3);
+
+		enviar(socket_, "OK0000hyt65rf", &controlador3);
+
+		free(men);
 		if(page->esp_libre == tam_pagina)
 		{
 			list_remove_and_destroy_element(prog->memoria_dinamica, (page->n_pagina - prog->pcb->cant_pag - pag_stack -1),(void *) liberar_pagina);
@@ -293,6 +314,7 @@ void liberar_bloque(t_program *prog, char *offset)
 			string_append(&mensaje, pid_aux);
 			string_append(&mensaje, completar);
 			string_append(&mensaje, pagina);
+
 
 			enviar(config->cliente_memoria, mensaje, &controlador);
 

@@ -10,6 +10,7 @@
 #include "semaforos_vglobales.h"
 #include "manejo_errores.h"
 #include "planificador.h"
+#include "manejo_conexiones.h"
 #include "estructuras.h"
 #include "fileSystem.h"
 #include "metadata.h"
@@ -51,6 +52,8 @@ void eliminar_cpu(int socket_);
 void recargar_quantumsleep();
 void procesar_cambio_configuracion(int socket_rec);
 char *sacar_nombre_archivo(char *path);
+char *get_offset2(char *mensaje);
+char *get_fd2(char *mensaje);
 
 void realizar_handShake_cpu(int nuevo_socket)
 {
@@ -164,9 +167,10 @@ void responder_solicitud_cpu(int socket_, char *mensaje)
 		break;
 	case 3: ;
 		escribir_log("Se recibio una peticion de CPU de mover puntero");
-		char *offset = get_offset(mensaje);
+		char * mm = get_mensaje(mensaje);
+		char *offset = get_offset2(mm);
 		int offset1 = atoi(offset);
-		char *fd_ = get_fd(mensaje);
+		char *fd_ = get_fd2(mm);
 		int fd = atoi(fd_);
 		mover_puntero(socket_, offset1, fd, prog);
 		free(offset);
@@ -189,7 +193,7 @@ void responder_solicitud_cpu(int socket_, char *mensaje)
 
 			free(info);
 			free(header);
-			//free(path);// todo: no estas liberando el puntero de la estructura t_TAP
+			//free(path);// no estas liberando el puntero de la estructura t_TAP
 			free(fd_fi);
 			break;
 		case 4: ;//pedido de lectura
@@ -201,6 +205,12 @@ void responder_solicitud_cpu(int socket_, char *mensaje)
 			char *path2 = get_path(fd_file2);
 
 			pedido_lectura(prog, fd_file2, 0, size4, path2, socket_);
+			break;
+		case 7:;
+			char *fdBorrar = get_mensaje(mensaje);
+			int fd_b = atoi(fdBorrar);
+			borrar_archivo(prog->TAP, fd_b,  socket_);
+			free(fdBorrar);
 			break;
 	case 6:;
 		char *str_fd = get_mensaje(mensaje);
@@ -280,19 +290,14 @@ void responder_solicitud_cpu(int socket_, char *mensaje)
 		break;
 	case 18:;//free
 		char *offset_bloque = get_mensaje(mensaje);
-		liberar_bloque(prog, offset_bloque);
+		liberar_bloque(prog, offset_bloque, socket_);
 		free(offset_bloque);
 		break;
 	case 19:;
-		eliminar_cpu(socket_);
+		eliminar_conexion(socket_);
 		break;
 	default: ;
-		//No se comprende el mensaje recibido por cpu
-		escribir_error_log("Se recibio una peticion de CPU desconocida");
-		char *msj_unknow = "K08";
-		enviar(socket_, msj_unknow, &controlador_cpu);
-		free(msj_unknow);
-		//if (controlador > 0) desconectar_consola(socket_);
+		eliminar_conexion(socket_);
 	}
 
 	free(cod);
@@ -306,9 +311,14 @@ char *get_fd(char *mensaje)
 	return string_substring(mensaje, 3, payload2);
 }
 
+char *get_fd2(char *mensaje)
+{
+	return string_substring(mensaje, 0, 1);
+}
+
 char *get_offset(char *mensaje)
 {
-	char *payload = string_substring(mensaje, 0, 2);
+	char *payload = string_substring(mensaje, 1, 3);
 	int payload2 = atoi(payload);
 	char *payload3 = string_substring(mensaje, 2 + payload2, 4);
 	int payload4 = atoi(payload3);
@@ -317,6 +327,11 @@ char *get_offset(char *mensaje)
 	free(payload3);
 
 	return string_substring(mensaje, (2 + payload2 + 4), payload4);
+}
+
+char *get_offset2(char *mensaje)
+{
+	return string_substring(mensaje, 1, 4);
 }
 
 char *get_variable(char *mensaje)
@@ -468,8 +483,8 @@ void recargar_quantumsleep() {
 	config_destroy(nueva_config);
 
 }
-char *sacar_nombre_archivo(char *path){
-
+char *sacar_nombre_archivo(char *path)
+{
 	char *path_aux = strdup(path);
 	char *path_final =strdup("");
 	char **split_path = string_split(path_aux,"/");

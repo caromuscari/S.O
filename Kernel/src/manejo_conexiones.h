@@ -9,5 +9,6 @@
 #define CPUMANAGER_H_
 
 void manejo_conexiones();
+void eliminar_conexion(int);
 
 #endif /* CPUMANAGER_H_ */

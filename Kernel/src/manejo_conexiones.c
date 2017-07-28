@@ -103,6 +103,10 @@ void manejo_conexiones()
 							fdmax = nuevo_socket;
 						}
 					}
+					else if(i == fd_inotify)
+					{
+						procesar_cambio_configuracion(i);
+					}
 					else
 					{
 						direccionar(i);
@@ -117,19 +121,15 @@ void direccionar(int socket_rec)
 {
 	int controlador = 0;
 	//Es una conexion existente, respondo a lo que me pide
+	char *mensaje_recibido = recibir(socket_rec, &controlador);
 
-	if(socket_rec == fd_inotify){
-
-		procesar_cambio_configuracion(socket_rec);
-
-	}else if(controlador > 0)
+	if(controlador > 0)
 	{
 		escribir_log("Se eliminara una conexion");
 		eliminar_conexion(socket_rec);
 	}
 	else
 	{
-		char *mensaje_recibido = recibir(socket_rec, &controlador);
 		char *header = get_header(mensaje_recibido);
 
 		if(comparar_header(header,"C"))
@@ -147,9 +147,8 @@ void direccionar(int socket_rec)
 			escribir_log("Se recibio un mensaje no reconocido");
 		}
 		free(header);
-		free(mensaje_recibido);
 	}
-
+	free(mensaje_recibido);
 }
 
 void eliminar_conexion(int socket)

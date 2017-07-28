@@ -211,8 +211,8 @@ void inicializar_semaforos()
 		escribir_log_error_con_numero("Error asignando el grado de multiprogramacion: ", config->grado_multiprog);
 	}
 }
-void iniciar_monitoreo_configuracion(char *path){
-
+void iniciar_monitoreo_configuracion(char *path)
+{
 	fd_inotify = inotify_init();
 	if (fd_inotify < 0) {
 		perror("inotify_init");

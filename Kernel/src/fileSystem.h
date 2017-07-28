@@ -24,5 +24,6 @@ void escribir_archivo(int lar,int offset, char *info, char *flags, char *path, i
 int chequear_respuesta(int socket_cpu, char *path, char *flag, t_program *prog);
 void crear_archivo(int socket_cpu, char *path, char *flag, t_program *prog);
 char *armar_info_mensaje(char *info, char* path);
+void borrar_archivo(t_list *tap, int fd, int socket_);
 
 #endif /* FILESYSTEM_H_ */

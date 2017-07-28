@@ -35,8 +35,9 @@ char *get_info(char *mensaje, int payload1, int tam_info);
 void abrir_crear(char *mensaje, t_program *prog, int socket_cpu);
 void escribir_archivo(int largo,int offset, char *info, char *flags, char *path, int socket_cpu, t_program *pr);
 int chequear_respuesta(int socket_cpu, char *path, char *flag, t_program *prog);
-void crear_archivo(int socket_cpu, char *path, char *flag, t_program *prog);
+int crear_archivo(int socket_cpu, char *path, char *flag, t_program *prog);
 char *armar_info_mensaje(int largo,char *info, char* path, char *o,int *l);
+void borrar_archivo(t_list *tap, int fd, int socket_);
 
 void abrir_crear(char *mensaje, t_program *prog, int socket_cpu)
 {
@@ -63,8 +64,20 @@ void abrir_crear(char *mensaje, t_program *prog, int socket_cpu)
 
 	if(string_contains(flag,"c") && no_existe == 1)
 	{
-		crear_archivo(socket_cpu, path, flag, prog);
-		abrir_archivo(path, flag, prog);
+		int chq = crear_archivo(socket_cpu, path, flag, prog);
+		if (chq == 0)
+		{
+			int fd = abrir_archivo(path, flag, prog);
+			char *fd_char = string_itoa(fd);
+			char *mensaje = armar_mensaje("K16", fd_char);
+			enviar(socket_cpu, mensaje, &controlador);
+			free(mensaje);
+			free(fd_char);
+		}
+		else
+		{
+			forzar_finalizacion(prog->PID, 0, 13, 1);
+		}
 	}
 	else if (no_existe == 0)
 	{
@@ -115,16 +128,16 @@ int abrir_archivo(char *path, char* flag, t_program *prog)
 
 t_TAG *buscar_archivo_TAG(char *path)
 {
-	bool _archivo_solicitado(t_TAG ag)
+	bool _archivo_solicitado(t_TAG *ag)
 	{
-		return strcmp(ag.path, path);
+		return strcmp(ag->path, path);
 	}
 
 	t_TAG *ag_encontrado = list_find(global_fd, (void *)_archivo_solicitado);
 	return ag_encontrado;
 }
 
-void crear_archivo(int socket_cpu, char *path, char *flag, t_program *prog)
+int crear_archivo(int socket_cpu, char *path, char *flag, t_program *prog)
 {
 	int controlador;
 	char *mensaje;
@@ -133,7 +146,7 @@ void crear_archivo(int socket_cpu, char *path, char *flag, t_program *prog)
 	enviar(config->cliente_fs, mensaje, &controlador);
 	free(mensaje);
 
-	chequear_respuesta(socket_cpu, path, flag, prog);
+	return chequear_respuesta(socket_cpu, path, flag, prog);
 }
 
 void pedido_lectura(t_program *prog, int fd, int offs, int size, char *path, int socket_cpu)
@@ -271,19 +284,31 @@ void mover_puntero(int socket_cpu, int offset, int fd, t_program *prog)
 				{
 					forzar_finalizacion(prog->PID, 0, 7, 1);
 				}else
-					//escribir_archivo(offset, info, arch->flag, path, socket_cpu, prog);
-				free(info);
+				{
+					int largo=0;
+					char *mensaje_esc = get_mensaje_escritura_info(mensaje,&largo);
+					escribir_archivo(largo,offset, mensaje_esc, arch->flag, path, socket_cpu, prog);
+					free(mensaje_esc);
+				}
+				//free(info);
 				break;
-			case 6: ;//pedido de lectura
+			case 4: ;//pedido de lectura
 				int size = atoi(info);
-				//pedido_lectura(prog, fd, offset, size, path, socket_cpu);
+				pedido_lectura(prog, fd, offset, size, path, socket_cpu);
 				break;
+			case 6:;
+				char *str_fd = get_mensaje(mensaje);
+				int fd2= atoi(str_fd);
+				cerrar_file(prog->TAP,fd2);
+				free(str_fd);
+				break;
+
 		}
 		free(cod);
 	}
 	free(mensaje);
 	free(info);
-	free(path);
+	//free(path);
 	free(header);
 }
 
@@ -368,9 +393,9 @@ void cerrar_file(t_list *tap, int fd)
 			list_remove_and_destroy_by_condition(global_fd, (void *)_archivo_fd, (void *)destruir_file_TAG);
 		}
 
-		bool _archivo_TAP(t_TAP ap)
+		bool _archivo_TAP(t_TAP *ap)
 		{
-			return (ap.FD == fd);
+			return (ap->FD == fd);
 		}
 		list_remove_and_destroy_by_condition(tap,(void *) _archivo_TAP, (void *) destruir_file);
 
@@ -415,7 +440,7 @@ int chequear_respuesta(int socket_cpu, char *path, char *flag, t_program *prog)
 		else if(!(strcmp(info,"no")))
 		{
 			no_existe = 1;
-		}else
+		}/*else
 		{
 			char *fd_char = string_itoa(-2);
 			char *mensaje = armar_mensaje("K16", fd_char);
@@ -423,7 +448,7 @@ int chequear_respuesta(int socket_cpu, char *path, char *flag, t_program *prog)
 			free(mensaje);
 			free(fd_char);
 			no_existe = 2;
-		}
+		}*/
 		free(info);
 	}
 	else
@@ -453,7 +478,7 @@ char *armar_info_mensaje(int largo,char *buffer, char* path, char *off,int *l)
 	char *spath = string_repeat('0', 4 - size_payload2);
 
 	char *size_offset = string_itoa(string_length(off));
-	int payload = string_length(off);
+	int payload = string_length(size_offset);
 	char *soffset = string_repeat('0', 4 - payload);
 
 	char *size_ = string_itoa(string_length(size_buffer));
@@ -492,4 +517,25 @@ char *armar_info_mensaje(int largo,char *buffer, char* path, char *off,int *l)
 	free(mensaje);
 
 	return final;
+}
+
+void borrar_archivo(t_list *tap, int fd, int socket_)
+{
+	t_TAP *tap_ = buscar_archivo_TAP(tap,  fd);
+	if (tap_ != NULL)
+	{
+		t_TAG *tag = buscar_archivo_TAG_fd(fd);
+
+		if(tag != NULL)
+		{
+			if (tag->open_ == 1)
+			{
+				int controlador = 0;
+				char *eliminar = armar_mensaje("K13", tag->path);
+				enviar(config->cliente_fs, eliminar, &controlador);
+				free(eliminar);
+			}
+		}
+
+	}
 }

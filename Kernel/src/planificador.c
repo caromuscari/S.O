@@ -250,6 +250,7 @@ void agregar_nueva_prog(int id_consola, int pid, char *codigo, int socket_con)
 	pthread_mutex_unlock(&mutex_cola_listos);
 
 	sem_post(&sem_listos);
+
 	free(codigo);
 }
 

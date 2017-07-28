@@ -17,7 +17,7 @@ void pedir_pagina_dinamica(t_program *prog);
 void compactar(t_pagina *pagina);
 void _free_bloque(t_bloque *bloque);
 int pedir_pagina();
-void liberar_bloque(t_program *prog, char *offset);
+void liberar_bloque(t_program *prog, char *offset_bloque, int socket_);
 void liberar_pagina(t_pagina *pagina);
 int almacenar_bytes(int pid, int numpag, int offset, int tam, char *buffer);
 void liberar_proceso_pagina(int pid);
