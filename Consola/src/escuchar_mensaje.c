@@ -188,7 +188,7 @@ void finalizar(char *pid, int socket_)
 {
 	if(dictionary_has_key(p_pid,pid))
 	{
-		char *pid2;
+		//char *pid2;
 		t_hilo *hilo = dictionary_get(p_pid,pid);
 		char *var = string_itoa(hilo->hilo);
 

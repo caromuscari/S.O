@@ -148,12 +148,12 @@ void handshake1()
 		}else{
 			cerrar_conexion(cliente);
 			printf("intruso no kernel eliminado \n");
-			escribir_log("Proceso no Kernel eliminado");
+			escribir_log("Proceso no Kernel eliminado\n");
 		}
 		free(handshake);
 	}
 	printf("KERNEL CONECTADO \n");
-	escribir_log("Se conecto el Kernel");
+	escribir_log("Se conecto el Kernel\n");
 }
 
 void reservar_memoria()

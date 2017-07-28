@@ -43,6 +43,7 @@ void armar_archivo(FILE * archivo)
 		//fwrite(tamanio,sizeof(char),string_length(tamanio),archivo);
 		//fwrite(bloques,sizeof(char),string_length(bloques),archivo);
 		free(var);
+		escribir_log(tamanio);
 		escribir_log(bloques);
 	}
 
@@ -55,7 +56,7 @@ char * armar_pathBloque(char *path,int bloqueSig,t_arch *archivo)
 	string_append(&path2,path);
 	string_append(&path2,archivo->bloques[bloqueSig]);
 	string_append(&path2,".bin");
-	escribir_log(path2);
+	escribir_log_compuesto("Path del bloque: ",path2);
 	return path2;
 }
 
@@ -66,7 +67,7 @@ char * armar_pathBloqueNuevo(char *path,int bloqueSig)
 	string_append(&path2,path);
 	string_append(&path2,var);
 	string_append(&path2,".bin");
-	escribir_log(path2);
+	escribir_log_compuesto("Path del bloque: ",path2);
 	free(var);
 	return path2;
 }
@@ -93,7 +94,7 @@ char * armar_path(char *mensaje)
 		string_append(&mensaje2,"/Archivos");
 	}
 	string_append(&mensaje2,mensaje);
-	escribir_log(mensaje2);
+	escribir_log_compuesto("Path del archivo: ",mensaje2);
 	return mensaje2;
 
 }
@@ -109,7 +110,7 @@ int verificar_bloque()
 		comprobar = bitarray_test_bit(bitmap,bit);
 
 	}
-	if(bit == cantBloques && comprobar == true){
+	if(bit == cantBloques && comprobar == false){
 		return prueba;
 	}
 	else {
@@ -140,6 +141,9 @@ void modificar_archivo(char* path, int tamanio, char* bloques)
 
 	config_set_value(archconf,"TAMANIO", tamanio2);
 	config_set_value(archconf,"BLOQUES", bloques);
+
+	escribir_log_con_numero("Tamanio: ", tamanio);
+	escribir_log_compuesto("Bloque: ", bloques);
 
 	config_save(archconf);
 
@@ -175,7 +179,7 @@ char * crear_string_bloques(char ** bloques, char * bloques_nuevos)
 		string_append(&bloque,"]");
 	}
 
-	escribir_log(bloque);
+	//escribir_log_compuesto("Bloques final: ",bloque);
 
 	return bloque;
 }
@@ -190,7 +194,7 @@ t_datos * recuperar_datos(char * codigo, char * mensaje)
 	var = string_substring(mensaje, 0, 4);
 	size = atoi(var);
 	estructura->path = string_substring(mensaje,4,size);
-	escribir_log(estructura->path);
+	escribir_log_compuesto("Path del archivo: ",estructura->path);
 	free(var);
 
 	start = 4+ size;
@@ -201,7 +205,7 @@ t_datos * recuperar_datos(char * codigo, char * mensaje)
 	free(var);
 	var = string_substring(mensaje,start,size);
 	estructura->offset = atoi(var);
-	escribir_log_con_numero("offset", estructura->offset);
+	escribir_log_con_numero("offset: ", estructura->offset);
 	free(var);
 
 	start += size;
@@ -212,7 +216,7 @@ t_datos * recuperar_datos(char * codigo, char * mensaje)
 	free(var);
 	var = string_substring(mensaje,start,size);
 	estructura->size = atoi(var);
-	escribir_log_con_numero("size", estructura->size);
+	escribir_log_con_numero("size: ", estructura->size);
 	free(var);
 
 	start += size;
@@ -224,7 +228,7 @@ t_datos * recuperar_datos(char * codigo, char * mensaje)
 		start +=4;
 		free(var);
 		estructura->buffer = string_substring(mensaje,start,size);
-		escribir_log(estructura->buffer);
+		escribir_log_compuesto("Buffer: ",estructura->buffer);
 	}
 
 	return estructura;
@@ -235,6 +239,7 @@ char * sacar_archivo(char * mensaje){
 	char ** split;
 	int i=0;
 	int j=0;
+	int k=0;
 	split = string_split(mensaje, "/");
 
 	while(split[i] != NULL/*'\0'*/) i++;
@@ -246,6 +251,11 @@ char * sacar_archivo(char * mensaje){
 	}
 
 	escribir_log(path);
+	while(split[k] != NULL){
+		free(split[k]);
+		k++;
+	}
+	free(split);
 
 	return path;
 }

@@ -40,12 +40,12 @@ void validar_archivo(char *mensaje)
 	if(archivo == NULL){
 		mensaje2 = armar_mensaje("F01","no");
 		enviar(cliente,mensaje2,&flagsocket);
-		escribir_log("El archivo no existe");
+		escribir_log("El archivo no existe\n");
 	}
 	else {
 		mensaje2 = armar_mensaje("F01","ok");
 		enviar(cliente,mensaje2,&flagsocket);
-		escribir_log("El archivo existe");
+		escribir_log("El archivo existe\n");
 	}
 
 	free(mensaje2);
@@ -75,13 +75,13 @@ void crear_archivo(char *mensaje)
 		if(archivo == NULL){
 				mensaje2 = armar_mensaje("F02","no");
 				enviar(cliente,mensaje2,&flagsocket);
-				escribir_log("El archivo no se creo");
+				escribir_log("El archivo no se creo\n");
 		}
 		else {
 			mensaje2 = armar_mensaje("F02","ok");
 			enviar(cliente,mensaje2,&flagsocket);
 			armar_archivo(archivo);
-			escribir_log("El archivo se creo");
+			escribir_log("El archivo se creo\n");
 
 		}
 
@@ -91,7 +91,7 @@ void crear_archivo(char *mensaje)
 	else{
 		mensaje2 = armar_mensaje("F02","no");
 		enviar(cliente,mensaje2,&flagsocket);
-		escribir_log("El archivo no se creo");
+		escribir_log("El archivo no se creo\n");
 	}
 
 	fclose(archivo);
@@ -119,7 +119,7 @@ void borrar_archivo(char *mensaje)
 
 	mensaje2 = armar_mensaje("F03","");
 	enviar(cliente,mensaje2,&flagsocket);
-	escribir_log("El archivo se elimino");
+	escribir_log("El archivo se elimino\n");
 
 	free(pathArmado);
 	free(mensaje2);
@@ -197,12 +197,13 @@ void obtener_datos(char *path, int offset, int size)
 	if(restoSize == size){
 		mensaje = armar_mensaje("F04",lectura);
 		enviar(cliente,mensaje,&flagsocket);
+		string_append(&lectura,"\n");
 		escribir_log_compuesto("Se realizo la lectura: ", lectura);
 	}
 	else {
 		mensaje = armar_mensaje("F06","");
 		enviar(cliente,mensaje,&flagsocket);
-		escribir_log("No se pudo realizar la lectura");
+		escribir_log("No se pudo realizar la lectura\n");
 	}
 
 
@@ -231,7 +232,7 @@ void guardar_datos(char *path, int offset, int size, char *buffer)
 	char * bloques_final;
 	int sizeAguardar = 0;
 	int flag=0;
-	int stop;
+	//int stop;
 	char * write;
 	int bit;
 	int i = 0;
@@ -263,7 +264,7 @@ void guardar_datos(char *path, int offset, int size, char *buffer)
 
 			if(flag == 0){
 				flag = 1;
-				stop = guardado;
+				//stop = guardado;
 			}
 
 		}
@@ -291,9 +292,11 @@ void guardar_datos(char *path, int offset, int size, char *buffer)
 				//fputs(write,bloques);
 				guardado = size;
 				fclose(bloques);
-				if(flag == 1){
+				flag=2;
+				free(write);
+				/*if(flag == 1){
 					sizeAguardar = guardado - stop;
-				}
+				}*/
 
 			}
 			else
@@ -310,9 +313,10 @@ void guardar_datos(char *path, int offset, int size, char *buffer)
 				if(archivo->bloques[bloqueSig+1] != NULL /*'\0'*/)
 				{
 					bloqueSig ++;
-					pathBloque = armar_pathBloqueNuevo(path2,bloqueSig);
+					pathBloque = armar_pathBloque(path2,bloqueSig,archivo);
 					bloques =fopen(pathBloque,"r+");
 					bloque.rem = 0;
+					flag=2;
 				}
 				else
 				{
@@ -335,21 +339,20 @@ void guardar_datos(char *path, int offset, int size, char *buffer)
 							string_append(&bloques_agregados,",");
 						}*/
 
-						if(flag == 0){
-							flag = 1;
-							stop = guardado;
-						}
+						flag = 2;
 
 					 }
 					 else
 					 {
-						 if(flag == 0){
+						 guardado = size + 1;
+
+						 /*if(flag == 0){
 							 guardado = size + 1;
 						 }
 						 else{
 							 sizeAguardar = guardado - stop;
 							 guardado = size + 1;
-						 }
+						 }*/
 					 }
 				}
 			}
@@ -365,10 +368,11 @@ void guardar_datos(char *path, int offset, int size, char *buffer)
 				write = string_substring(buffer,guardado,size - guardado);
 				//fwrite(write,sizeof(char),string_length(write),bloques);
 				fputs(write,bloques);
-				sizeAguardar += size - guardado;
+				//sizeAguardar += size - guardado;
 				guardado = size;
 				flag =1;
 				fclose(bloques);
+				free(write);
 
 			} // preguntar estructura de los bloques.bin
 			else
@@ -403,43 +407,44 @@ void guardar_datos(char *path, int offset, int size, char *buffer)
 
 					if(flag == 0){
 						flag = 1;
-						stop = guardado;
+						//stop = guardado;
 					}
 				}
 				else{
-					if(flag == 0){
-						guardado = size + 1;
-					}
-					else {
-						sizeAguardar = guardado - stop;
-						guardado = size + 1;
-					}
+					guardado = size + 1;
 				}
 			}
 		}
 	}
 
 	if(flag == 1){
-		archivo->tamanio += sizeAguardar;
+		archivo->tamanio += size;
 		bloques_final = crear_string_bloques(archivo->bloques, bloques_agregados);
 		modificar_archivo(pathArmado,archivo->tamanio,bloques_final);
 		free(bloques_final);
 	}
 
+	if(flag == 2){
+		archivo->tamanio = offset + size;
+		bloques_final = crear_string_bloques(archivo->bloques, bloques_agregados);
+		modificar_archivo(pathArmado,archivo->tamanio,bloques_final);
+		free(bloques_final);
+	}
+
+
 	if(guardado == size){
 		mensaje = armar_mensaje("F05","ok");
 		enviar(cliente,mensaje,&flagsocket);
-		escribir_log("Se realizaron cambios en el archivo");
+		escribir_log("Se realizaron cambios en el archivo\n");
 	}
 	else{
 		mensaje = armar_mensaje("F05","no");
 		enviar(cliente,mensaje,&flagsocket);
-		escribir_log("No se pudieron realizar cambios en el archivo");
+		escribir_log("No se pudieron realizar cambios en el archivo\n");
 	}
 
 
 	free(path2);
-	free(write);
 	free(mensaje);
 	free(pathBloque);
 	free(archivo);

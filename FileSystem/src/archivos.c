@@ -35,7 +35,7 @@ void archivoDeCofiguracion(char* argv)
 	puerto = config_get_int_value(configuracion, "PUERTO");
 	string_append(&montaje, config_get_string_value(configuracion, "PUNTO_MONTAJE"));
 	string_append(&ip, config_get_string_value(configuracion, "IP"));
-	escribir_log_compuesto("Valor IP para conexion con Kernel: ", ip);
+	escribir_log_compuesto("Valor IP: ", ip);
 	escribir_log_con_numero("Valor puerto para conexion del Kernel: ", puerto);
 	escribir_log_compuesto("Valor punto montaje FS: ",montaje);
 
@@ -59,22 +59,18 @@ int leer_metadata()
 	if(strcmp(magic_number, "SADICA"))
 	{
 		config_destroy(configuracion);
+		escribir_log("No es SADICA");
 		return -1;
 	}
 
 	escribir_log_con_numero("Tamanio de Bloques: ", tBloques);
 	escribir_log_con_numero("Cantidad de bloques: ", cantBloques);
+	string_append(&magic_number, "\n");
 	escribir_log_compuesto("Magic Number: ",magic_number);
 
 	config_destroy(configuracion);
+	return 0;
 
-	if(strcmp(magic_number, "SADICA")){
-		escribir_log("No es SADICA");
-		return -1;
-	}
-	else{
-		return 0;
-	}
 }
 
 int abrir_bitmap()
@@ -87,7 +83,7 @@ int abrir_bitmap()
 	int fdbitmap = open(ruta,O_RDWR);
 	free(ruta);
 	if(fdbitmap==0){
-		escribir_log("no abrio el bitmap");
+		escribir_log("no abrio el bitmap\n");
 		close(fdbitmap);
 		return -1;
 	}
@@ -96,7 +92,7 @@ int abrir_bitmap()
 
 	posicion = mmap(0,mystat.st_size,PROT_READ|PROT_WRITE,MAP_SHARED,fdbitmap,0);
 	if(posicion == MAP_FAILED){
-		escribir_log("error en mmap");
+		escribir_log("error en mmap\n");
 		fprintf(stderr, "mmap failed: %s\n", strerror(errno));
 		close(fdbitmap);
 		return -1;
