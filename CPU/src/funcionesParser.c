@@ -655,7 +655,7 @@ void leer (t_descriptor_archivo descriptor_archivo, t_puntero informacion, t_val
 	enviar(sockKerCPU,mensaje,&controlador,size);
 	free(mensaje);
 
-	char * respuesta= malloc(13);
+	char *respuesta= malloc(13);
 	recibir(sockKerCPU,&controlador,respuesta,13);
 	if(strncmp(respuesta,"K21",3)==0){
 
@@ -682,10 +682,10 @@ void leer (t_descriptor_archivo descriptor_archivo, t_puntero informacion, t_val
 		//preguntar si lo escribo en memoria o lo asigno en una variable alocada dinamicamente
 		int sizet = 0;
 
-		char *mensaje = mensaje_escibir_noint_memoria(descriptor_archivo,informacion,pcb->cant_pag,size_mensaj,lectura,&sizet);
-		enviar(sockMemCPU,mensaje,&controlador,sizet);
+		char *mensaje2 = mensaje_escibir_noint_memoria(pcb->PID,informacion,pcb->cant_pag,size_mensaj,lectura,&sizet);
+		enviar(sockMemCPU,mensaje2,&controlador,sizet);
 
-		char * respuesta2 = malloc(13);
+		char *respuesta2 = malloc(13);
 		recibir(sockMemCPU,&controlador,respuesta2,13);
 
 			if (strncmp(respuesta2,"M02",3)==0){
@@ -709,7 +709,8 @@ void leer (t_descriptor_archivo descriptor_archivo, t_puntero informacion, t_val
 
 		free(size_mensaje);
 		free(lectura);
-		free(mensaje);
+		free(mensaje2);
+		free(respuesta2);
 	}
 
 	free(respuesta);

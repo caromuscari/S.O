@@ -502,6 +502,7 @@ char *mensaje_escibir_noint_memoria(int fpid,t_puntero direccion_variable,int ca
 
 		memcpy(mensaje+desplazamiento,valor,largo);
 		desplazamiento += largo;
+		*size = desplazamiento;
 
 		free(pid); free(pagina); free(offset); free(tam);
 		return mensaje;
