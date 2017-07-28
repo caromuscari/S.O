@@ -7,6 +7,7 @@
 #include <commons/collections/list.h>
 #include <commons/collections/queue.h>
 #include <commons/collections/dictionary.h>
+#include "semaforos_vglobales.h"
 #include "estructuras.h"
 #include "planificador.h"
 #include "log.h"

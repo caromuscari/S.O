@@ -4,6 +4,7 @@
 #include <commons/collections/list.h>
 #include <commons/config.h>
 #include <commons/string.h>
+#include "configuracion.h"
 #include "estructuras.h"
 #include "log.h"
 

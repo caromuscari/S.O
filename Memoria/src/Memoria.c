@@ -718,9 +718,10 @@ void esperar_mensaje(void *i) {
 					free(RTA_OK);
 				} else
 				{
-					char *RTA_OK = armar_mensaje("M08",buffer_aux);
+					char *RTA_OK = armar_mensaje_pcb("M08",buffer_aux,tam);
 					escribir_log_compuesto("\n BUFFER RETORNO SOLICITAR BYTES \n", RTA_OK);
-					enviar(cliente,RTA_OK, &controlador);
+					//enviar(cliente,RTA_OK, &controlador);
+					send(cliente,RTA_OK,tam+13, 0);
 					free(RTA_OK);
 				}
 				free(ppid);

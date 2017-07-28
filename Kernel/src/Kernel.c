@@ -217,7 +217,8 @@ void iniciar_monitoreo_configuracion(char *path)
 	if (fd_inotify < 0) {
 		perror("inotify_init");
 	}
-	char  *directorio_config = sacar_nombre_archivo(path);
+	char  *directorio_config;
+	directorio_config = sacar_nombre_archivo(path);
 	printf("\nPATH FINAL :%s\n",directorio_config);
 	watch_descriptor = inotify_add_watch(fd_inotify,directorio_config, IN_MODIFY);
 	free(directorio_config);

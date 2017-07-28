@@ -9,6 +9,7 @@
 #include <commons/collections/list.h>
 #include <commons/string.h>
 #include <pthread.h>
+#include "planificador.h"
 #include "semaforos_vglobales.h"
 #include "mensaje_consola.h"
 #include "estructuras.h"

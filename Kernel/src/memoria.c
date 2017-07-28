@@ -7,6 +7,7 @@
 #include <commons/log.h>
 #include <commons/collections/list.h>
 #include <commons/collections/dictionary.h>
+#include "memoria.h"
 #include "estructuras.h"
 #include "configuracion.h"
 #include "socket.h"

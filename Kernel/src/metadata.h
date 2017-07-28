@@ -7,6 +7,7 @@
 
 #ifndef METADATA_H_
 #define METADATA_H_
+#include "estructuras.h"
 
 t_sentencia* armarIndiceCodigo (char *codigoPrograma);
 char* armarIndiceEtiquetas(char *codigoPrograma);

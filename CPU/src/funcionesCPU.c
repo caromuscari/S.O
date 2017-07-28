@@ -304,10 +304,10 @@ int handshakeKernel(int socketKP){
 }
 int handshakeMemoria(int socketMP){
 	char *handshake = malloc(13);
-	memset(handshake,'\0',7);
+	memset(handshake,'\0',13);
 	int control=0; int tamanopag=0;
-	memcpy(handshake,"P00",3);
-	enviar(socketMP,handshake,&control,3);
+	memcpy(handshake,"P000000000000",13);
+	enviar(socketMP,handshake,&control,13);
 
 	recibir(socketMP,&control,handshake,13);
 	if (control !=0 ){

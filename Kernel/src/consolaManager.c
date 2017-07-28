@@ -5,6 +5,7 @@
 #include <commons/log.h>
 #include <commons/string.h>
 #include <commons/collections/queue.h>
+#include "consolaManager.h"
 #include "mensaje.h"
 #include "planificador.h"
 #include "estructuras.h"
@@ -24,12 +25,6 @@ fd_set read_fds;
 int fdmax;
 int controlador = 0;
 
-int get_CID();
-void desconectar_consola(int socket);
-void responder_solicitud_consola(int socket, char *mensaje);
-void responder_peticion_prog(int socket, char *mensaje);
-int buscar_consola(int socket);
-void eliminar_consola(int consola_id);
 
 void realizar_handShake_consola(int nuevo_socket)
 {

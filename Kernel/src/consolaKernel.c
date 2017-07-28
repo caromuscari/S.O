@@ -9,6 +9,7 @@
 #include <commons/collections/list.h>
 #include <commons/collections/queue.h>
 #include <pthread.h>
+#include "consolaKernel.h"
 #include "estructuras.h"
 #include "planificador.h"
 #include "configuracion.h"
@@ -36,18 +37,6 @@ extern t_list *list_cpus;
 extern t_list *list_consolas;
 extern int diferencia_multi;
 
-void generar_listados(int lista);
-void leer_consola();
-void imprimir_menu();
-void mostrar_cola(t_queue *, char *);
-void mostrar_listas(t_list *, char *);
-void obtener_informacion(int pid);
-void imprimir_tabla_archivos();
-char *devolver_descripcion_error(int codigo);
-int existe_pid(int pid);
-void mostrar_cola_listos(t_queue *cola, char *procesos);
-
-void imprimir_info();
 
 void leer_consola()
 {

@@ -16,20 +16,23 @@ char *mensaje_escibir_memoria(int fpid,t_puntero direccion_variable,int cant_pag
 	pid = string_itoa(fpid);
 	pagina = string_itoa(calcular_pagina(direccion_variable,cant_pag));
 	offset = string_itoa(calcular_offset_respecto_pagina(direccion_variable));
-	char *str_valor = string_itoa(valor);
+	/*char *str_valor = string_itoa(valor);
 	if(strlen(str_valor)>4){
 		char *aux_2 = string_repeat('0',4-strlen(str_valor));
 		tam = string_from_format("%s%d",aux_2,strlen(str_valor));
 		free(aux_2);
 	}else{
 		tam = strdup("0004");
-	}
+	}*/
+	tam = strdup("0004");
 
-	if(strlen(str_valor)>4){
+	/*if(strlen(str_valor)>4){
 	mensaje = malloc(19+ strlen(str_valor));
 	}else{
 		mensaje = malloc(19+ 4);
 	}
+	*/
+	mensaje = malloc(19+4);
 	// COD
 	memcpy(mensaje+desplazamiento,"P08",3);
 	desplazamiento += 3;
@@ -58,7 +61,7 @@ char *mensaje_escibir_memoria(int fpid,t_puntero direccion_variable,int cant_pag
 	memcpy(mensaje+desplazamiento,tam,4);
 	desplazamiento += 4;
 	// VALOR
-	if(strlen(str_valor)>4){
+	/*if(strlen(str_valor)>4){
 		memcpy(mensaje+desplazamiento,str_valor,strlen(str_valor));
 		desplazamiento += strlen(str_valor);
 	}else{
@@ -68,10 +71,12 @@ char *mensaje_escibir_memoria(int fpid,t_puntero direccion_variable,int cant_pag
 		desplazamiento += 4-strlen(str_valor);
 		memcpy(mensaje+desplazamiento,str_valor,strlen(str_valor));
 		desplazamiento += strlen(str_valor);
-	}
+	}*/
+	memcpy(mensaje+desplazamiento,&valor,4);
+	desplazamiento += 4;
 	*size = desplazamiento;
 
-	free(pid); free(pagina); free(offset); free(tam); free(str_valor);
+	free(pid); free(pagina); free(offset); free(tam); //free(str_valor);
 
 	return mensaje;
 }

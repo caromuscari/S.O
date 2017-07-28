@@ -299,9 +299,9 @@ int main(int argc, char *argv[])
 
 	}
 
-
-	fin:
 	free(buff);
+	fin:
+
 	free(programa);
 	free(ipK);
 	free(ipM);

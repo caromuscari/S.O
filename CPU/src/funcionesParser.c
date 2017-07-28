@@ -130,11 +130,12 @@ t_valor_variable dereferenciar(t_puntero direccion_variable) {
 		char *resto = malloc(tamint_resto);
 		recibir(sockMemCPU,&controlador,resto,tamint_resto);
 
-		char *resto_subs = string_substring(resto,0,tamint_resto);
-		valor = atoi(resto_subs);
+		//char *resto_subs = string_substring(resto,0,tamint_resto);
+		//valor = atoi(resto_subs);
+		memcpy(&valor,resto,tamint_resto);
 
 		free(resto);
-		free(resto_subs);
+		//free(resto_subs);
 
 		char * str_aux= string_from_format("Se ejecuto DEREFERENCIAR en posicion %d y retorno %d",direccion_variable,valor);
 		escribir_log(str_aux,1);

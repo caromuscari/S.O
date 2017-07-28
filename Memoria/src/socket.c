@@ -170,9 +170,9 @@ char *recibir(int socket_receptor, int *controlador)
 		error_sockets(controlador, "");
 	}
 
-	char *buffer_aux= strdup(buffer);
-	free(buffer);
-	return buffer_aux;
+	//char *buffer_aux= strdup(buffer);
+	//free(buffer);
+	return buffer;
 }
 
 void cerrar_conexion(int socket_)

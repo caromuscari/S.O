@@ -25,6 +25,23 @@ char *armar_mensaje(char *identificador, char *mensaje)
 	free(completar);
 	return resultado;
 }
+char *armar_mensaje_pcb(char *identificador, char *mensaje,int sizepcb)
+{
+	char *resultado = malloc(13+sizepcb);
+	char *payload_char = string_itoa(sizepcb);
+	int size_payload = string_length(payload_char);
+	char *completar = string_repeat('0', 10 - size_payload);
+
+
+	memcpy(resultado,identificador,3);
+	memcpy(resultado+3,completar,10 - size_payload);
+	memcpy(resultado+3+10-size_payload,payload_char,size_payload);
+	memcpy(resultado+13,mensaje,sizepcb);
+
+	free(payload_char);
+	free(completar);
+	return resultado;
+}
 
 //devuelve el header del mensaje
 char *get_header(char *mensaje)

@@ -20,10 +20,10 @@ void cerrar_file(t_list *tap, int fd);
 char *get_path_msg(char *mensaje, int *payload1);
 char *get_info(char *mensaje, int payload1, int tam_info);
 void abrir_crear(char *mensaje, t_program *prog, int socket_cpu);
-void escribir_archivo(int lar,int offset, char *info, char *flags, char *path, int socket_cpu, t_program *pr);
+void escribir_archivo(int largo,int offset, char *info, char *flags, char *path, int socket_cpu, t_program *pr);
 int chequear_respuesta(int socket_cpu, char *path, char *flag, t_program *prog);
-void crear_archivo(int socket_cpu, char *path, char *flag, t_program *prog);
-char *armar_info_mensaje(char *info, char* path);
+int crear_archivo(int socket_cpu, char *path, char *flag, t_program *prog);
+char *armar_info_mensaje(int largo,char *info, char* path, char *o,int *l);
 void borrar_archivo(t_list *tap, int fd, int socket_);
 
 #endif /* FILESYSTEM_H_ */

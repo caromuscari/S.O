@@ -10,7 +10,7 @@
 
 //Arma el texto de envio para mensajes
 char *armar_mensaje(char *identificador, char *mensaje);
-
+char *armar_mensaje_pcb(char *identificador, char *mensaje,int sizepcb);
 //Devuelve el header del mensaje
 char *get_header(char *mensaje);
 
