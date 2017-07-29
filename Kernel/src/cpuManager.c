@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include "cpuManager.h"
 #include "semaforos_vglobales.h"
 #include "manejo_errores.h"
 #include "planificador.h"
@@ -143,22 +144,22 @@ void responder_solicitud_cpu(int socket_, char *mensaje)
 	int codigo = atoi(cod);
 
 	switch (codigo)	{
-	case 2:
-		escribir_log("Se recibio una peticion de CPU de abrir crear");
-		abrir_crear(mensaje, prog, socket_);
-		break;
-	case 3: ;
-		escribir_log("Se recibio una peticion de CPU de mover puntero");
-		char * mm = get_mensaje(mensaje);
-		char *offset = get_offset2(mm);
-		int offset1 = atoi(offset);
-		char *fd_ = get_fd2(mm);
-		int fd = atoi(fd_);
-		mover_puntero(socket_, offset1, fd, prog);
-		free(offset);
-		free(fd_);
-		break;
-	case 5 : ;//pedido de escritura
+		case 2:
+			escribir_log("Se recibio una peticion de CPU de abrir crear");
+			abrir_crear(mensaje, prog, socket_);
+			break;
+		case 3: ;
+			escribir_log("Se recibio una peticion de CPU de mover puntero");
+			char * mm = get_mensaje(mensaje);
+			char *offset = get_offset2(mm);
+			int offset1 = atoi(offset);
+			char *fd_ = get_fd2(mm);
+			int fd = atoi(fd_);
+			mover_puntero(socket_, offset1, fd, prog);
+			free(offset);
+			free(fd_);
+			break;
+		case 5 : ;//pedido de escritura
 			int largo;
 			char *info = get_mensaje_escritura_info(mensaje,&largo);
 			char *fd_fi = get_mensaje_escritura_fd(mensaje);
@@ -191,95 +192,95 @@ void responder_solicitud_cpu(int socket_, char *mensaje)
 		case 7:;
 			char *fdBorrar = get_mensaje(mensaje);
 			int fd_b = atoi(fdBorrar);
-			borrar_archivo(prog->TAP, fd_b,  socket_);
+			borrar_archivo(prog->PID, prog->TAP, fd_b,  socket_);
 			free(fdBorrar);
 			break;
-	case 6:;
-		char *str_fd = get_mensaje(mensaje);
-		int fd2= atoi(str_fd);
-		cerrar_file(prog->TAP,fd2);
-		free(str_fd);
-		break;
-	case 9:	;
-		escribir_log("Se recibió una petición de CPU para obtener valor de variable compartida");
-		char *vglobal = get_mensaje(mensaje);
-		get_vglobal(vglobal,prog, socket_);
+		case 6:;
+			char *str_fd = get_mensaje(mensaje);
+			int fd2= atoi(str_fd);
+			cerrar_file(prog->PID, prog->TAP, fd2, socket_);
+			free(str_fd);
+			break;
+		case 9:	;
+			escribir_log("Se recibió una petición de CPU para obtener valor de variable compartida");
+			char *vglobal = get_mensaje(mensaje);
+			get_vglobal(vglobal,prog, socket_);
 
-		free(vglobal);
-		break;
-	case 10: ;
-		escribir_log("Se recibió una petición de CPU para setear valor de variable compartida");
-		char *variable = get_variable(mensaje);
-		char *numero = get_numero(mensaje);
-		int num = atoi(numero);
-		set_vglobal(variable, num, prog, socket_);
-		free(variable);
-		free(numero);
-		break;
-	case 11: ;
-		int controlador;
-		char *mensaje_recibido = get_mensaje(mensaje);
-		char *pid_ = string_itoa(prog->PID);
-		char *mensaje_armado = armar_valor(pid_,mensaje_recibido);
-		char *mensaje_enviar = armar_mensaje("K09", mensaje_armado);
-		enviar(prog->socket_consola, mensaje_enviar, &controlador);
-		enviar(socket_, "OK000000000000000", &controlador);
-		free(mensaje_recibido);
-		free(mensaje_enviar);
-		free(mensaje_armado);
-		free(pid_);
-		break;
-	case 12 : ;
-		char *mensaje_r = get_mensaje_pcb(mensaje);
-		t_PCB *pcb_actualizado =deserializarPCB_CPUKer(mensaje_r);
-		actualizar_pcb(prog, pcb_actualizado);
-		finalizar_quantum(pcb_actualizado->PID);
+			free(vglobal);
+			break;
+		case 10: ;
+			escribir_log("Se recibió una petición de CPU para setear valor de variable compartida");
+			char *variable = get_variable(mensaje);
+			char *numero = get_numero(mensaje);
+			int num = atoi(numero);
+			set_vglobal(variable, num, prog, socket_);
+			free(variable);
+			free(numero);
+			break;
+		case 11: ;
+			int controlador;
+			char *mensaje_recibido = get_mensaje(mensaje);
+			char *pid_ = string_itoa(prog->PID);
+			char *mensaje_armado = armar_valor(pid_,mensaje_recibido);
+			char *mensaje_enviar = armar_mensaje("K09", mensaje_armado);
+			enviar(prog->socket_consola, mensaje_enviar, &controlador);
+			enviar(socket_, "OK000000000000000", &controlador);
+			free(mensaje_recibido);
+			free(mensaje_enviar);
+			free(mensaje_armado);
+			free(pid_);
+			break;
+		case 12 : ;
+			char *mensaje_r = get_mensaje_pcb(mensaje);
+			t_PCB *pcb_actualizado =deserializarPCB_CPUKer(mensaje_r);
+			actualizar_pcb(prog, pcb_actualizado);
+			finalizar_quantum(pcb_actualizado->PID);
 
-		//free(cpu_ejecutando->program);
-		//cpu_ejecutando->program = malloc(sizeof(t_program));
-		cpu_ejecutando->ejecutando = 0;
-		free(mensaje_r);
-		break;
-	case 13: ;
-		char *mensaje_r2 = get_mensaje_pcb(mensaje);
-		//char *mensaje_r2 = get_mensaje(mensaje);
-		escribir_log(mensaje_r2);
-		t_PCB *pcb_actualizado2 = deserializarPCB_CPUKer(mensaje_r2);
-		actualizar_pcb(prog, pcb_actualizado2);
-		finalizar_proceso(pcb_actualizado2->PID, pcb_actualizado2->exit_code);
+			//free(cpu_ejecutando->program);
+			//cpu_ejecutando->program = malloc(sizeof(t_program));
+			cpu_ejecutando->ejecutando = 0;
+			free(mensaje_r);
+			break;
+		case 13: ;
+			char *mensaje_r2 = get_mensaje_pcb(mensaje);
+			//char *mensaje_r2 = get_mensaje(mensaje);
+			escribir_log(mensaje_r2);
+			t_PCB *pcb_actualizado2 = deserializarPCB_CPUKer(mensaje_r2);
+			actualizar_pcb(prog, pcb_actualizado2);
+			finalizar_proceso(pcb_actualizado2->PID, pcb_actualizado2->exit_code);
 
-		//free(cpu_ejecutando->program);
-		//cpu_ejecutando->program = malloc(sizeof(t_program));
-		cpu_ejecutando->ejecutando = 0;
-		free(mensaje_r2);
-		break;
-	case 14: ;//wait
-		char *mensaje2 = get_mensaje(mensaje);
-		sem_wait_(prog, mensaje2, socket_);
-		free(mensaje2);
-		break;
-	case 15:;//post
-		char *mensaje3 = get_mensaje(mensaje);
-		sem_signal(prog, mensaje3, socket_, 0);
-		free(mensaje3);
-		break;
-	case 17: ;//alloc
-		char *mensaje4 = get_mensaje(mensaje);
-		int size2 = atoi(mensaje4);
-		if(size2>0)	reservar_memoria_din(prog, size2, socket_);
+			//free(cpu_ejecutando->program);
+			//cpu_ejecutando->program = malloc(sizeof(t_program));
+			cpu_ejecutando->ejecutando = 0;
+			free(mensaje_r2);
+			break;
+		case 14: ;//wait
+			char *mensaje2 = get_mensaje(mensaje);
+			sem_wait_(prog, mensaje2, socket_);
+			free(mensaje2);
+			break;
+		case 15:;//post
+			char *mensaje3 = get_mensaje(mensaje);
+			sem_signal(prog, mensaje3, socket_, 0);
+			free(mensaje3);
+			break;
+		case 17: ;//alloc
+			char *mensaje4 = get_mensaje(mensaje);
+			int size2 = atoi(mensaje4);
+			if(size2>0)	reservar_memoria_din(prog, size2, socket_);
 
-		free(mensaje4);
-		break;
-	case 18:;//free
-		char *offset_bloque = get_mensaje(mensaje);
-		liberar_bloque(prog, offset_bloque, socket_);
-		free(offset_bloque);
-		break;
-	case 19:;
-		eliminar_conexion(socket_);
-		break;
-	default: ;
-		eliminar_conexion(socket_);
+			free(mensaje4);
+			break;
+		case 18:;//free
+			char *offset_bloque = get_mensaje(mensaje);
+			liberar_bloque(prog, offset_bloque, socket_);
+			free(offset_bloque);
+			break;
+		case 19:;
+			eliminar_conexion(socket_);
+			break;
+		default: ;
+			eliminar_conexion(socket_);
 	}
 
 	free(cod);

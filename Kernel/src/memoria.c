@@ -89,7 +89,6 @@ void inicializar_pagina_dinamica(t_program *prog, int size_sol)
 	t_bloque *bloque = malloc(sizeof(t_bloque));
 	bloque->metadata = heap;
 
-
 	list_add(pagina->heaps, bloque);
 	list_add(prog->memoria_dinamica, pagina);
 
@@ -164,6 +163,8 @@ int ubicar_bloque(t_pagina *pagina, int tam_sol, t_program *program, int so_cpu)
 	if (bloque != NULL)
 	{
 		program->allocs++;
+		program->allocs_size = program->allocs_size + tam_sol;
+
 		int sz = bloque->metadata->size;
 		bloque->metadata->isFree = 0;
 		bloque->metadata->size = tam_sol;
@@ -277,6 +278,7 @@ void liberar_bloque(t_program *prog, char *offset, int socket_)
 		t_bloque *bloque = malloc(sizeof(t_bloque));//list_get(page->heaps, heap->bloque);
 		bloque->metadata = meta;
 		//free(bloque->data);
+		prog->frees_size = prog->frees_size + bloque->metadata->size;
 		bloque->metadata->isFree = true;
 		page->esp_libre = page->esp_libre + bloque->metadata->size + 5;
 
@@ -380,8 +382,9 @@ void compactar_contiguos(int pid, t_pagina *pagina)
 
 void liberar_pagina(t_pagina *pagina)
 {
-	//comeme el k25 usar este para enviar liberar pagina a Memoria
-	list_destroy_and_destroy_elements(pagina->heaps, (void *)destruir_heap);
+	if(list_size(pagina->heaps) != 0)
+		list_destroy_and_destroy_elements(pagina->heaps, (void *)destruir_heap);
+
 	free(pagina);
 }
 

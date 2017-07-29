@@ -14,6 +14,7 @@
 #include "log.h"
 #include "mensaje.h"
 #include "planificador.h"
+#include "manejo_conexiones.h"
 
 extern t_list *global_fd;
 extern t_configuracion *config;
@@ -99,7 +100,7 @@ int abrir_archivo(char *path, char* flag, t_program *prog)
 	t_TAP *ar_p = malloc(sizeof(t_TAP)); //armar para la función para los free :)
 	ar_p->flag = strdup(flag);
 	ar_p->GFD = ag->FD;
-	//ar_p->FD = list_size(prog->TAP) + 3;
+	ar_p->FD = list_size(prog->TAP) + 3;
 	ar_p->FD = ag->FD;
 
 	list_add(prog->TAP, ar_p);
@@ -165,7 +166,7 @@ void pedido_lectura(t_program *prog, int fd, int offs, int size, char *path, int
 			free(info);
 
 		}else
-			forzar_finalizacion(prog->PID, 0, 3, 1);/* eliminar programa, pedido de lectura sin permiso*/;
+			forzar_finalizacion(prog->PID, 0, 3, 1);/* eliminar programa, pedido de lectura sin permiso*/
 	}else
 		forzar_finalizacion(prog->PID, 0, 2, 1);//eliminar programa por querer leer un arch no abierto
 }
@@ -247,49 +248,63 @@ void mover_puntero(int socket_cpu, int offset, int fd, t_program *prog)
 	int control;
 	char *mensaje = recibir(socket_cpu, &control);
 	char *info = get_mensaje(mensaje);
-	char *path = get_path(fd);
-	char *header = get_header(mensaje);
+	t_TAP *tap = buscar_archivo_TAP(prog->TAP, fd);
 
-	if (comparar_header("P",header))
+	if(tap != NULL)
 	{
-		char *cod = get_codigo(mensaje);
-		int codigo = atoi(cod);
-		switch (codigo)
-		{
-			case 5 : ;//pedido de escritura
-				/*char *info = strdup("");
-				info = get_mensaje(mensaje);*/
-				t_TAP *arch = buscar_archivo_TAP(prog->TAP, fd);
-				if (arch == NULL)
-				{
-					forzar_finalizacion(prog->PID, 0, 7, 1);
-				}else
-				{
-					int largo=0;
-					char *mensaje_esc = get_mensaje_escritura_info(mensaje,&largo);
-					escribir_archivo(largo,offset, mensaje_esc, arch->flag, path, socket_cpu, prog);
-					free(mensaje_esc);
-				}
-				//free(info);
-				break;
-			case 4: ;//pedido de lectura
-				int size = atoi(info);
-				pedido_lectura(prog, fd, offset, size, path, socket_cpu);
-				break;
-			case 6:;
-				char *str_fd = get_mensaje(mensaje);
-				int fd2= atoi(str_fd);
-				cerrar_file(prog->TAP,fd2);
-				free(str_fd);
-				break;
+		enviar(socket_cpu, "OK000000000000000", &control);
 
+		char *path = get_path(tap->GFD);
+		char *header = get_header(mensaje);
+
+		enviar(socket_cpu, "OK000000000000000", &control);
+
+		if (comparar_header("P",header))
+		{
+			char *cod = get_codigo(mensaje);
+			int codigo = atoi(cod);
+			switch (codigo)
+			{
+				case 5 : ;//pedido de escritura
+					/*char *info = strdup("");
+					info = get_mensaje(mensaje);*/
+					t_TAP *arch = buscar_archivo_TAP(prog->TAP, fd);
+					if (arch == NULL)
+					{
+						forzar_finalizacion(prog->PID, 0, 7, 1);
+					}else
+					{
+						int largo=0;
+						char *mensaje_esc = get_mensaje_escritura_info(mensaje,&largo);
+						escribir_archivo(largo,offset, mensaje_esc, arch->flag, path, socket_cpu, prog);
+						free(mensaje_esc);
+					}
+					//free(info);
+					break;
+				case 4: ;//pedido de lectura
+					int size = atoi(info);
+					pedido_lectura(prog, fd, offset, size, path, socket_cpu);
+					break;
+				case 6:;
+					char *str_fd = get_mensaje(mensaje);
+					int fd2= atoi(str_fd);
+					cerrar_file(prog->PID, prog->TAP, fd2, socket_cpu);
+					free(str_fd);
+					break;
+				default:
+					eliminar_conexion(socket_cpu);
+			}
+			free(cod);
 		}
-		free(cod);
+		else
+		{
+			forzar_finalizacion(prog->PID, 0, 17, 1);
+		}
+		free(header);
 	}
 	free(mensaje);
 	free(info);
 	//free(path);
-	free(header);
 }
 
 void escribir_archivo(int largom,int offset, char *info, char *flags, char *path, int socket_cpu, t_program *pr)
@@ -351,9 +366,10 @@ void destruir_file_TAG(t_TAG *tg)
 	free(tg);
 }
 
-void cerrar_file(t_list *tap, int fd)
+void cerrar_file(int pid, t_list *tap, int fd, int socket_)
 {
 	bool ex_f = existe_archivo(tap, fd);
+	int controlador = 0;
 
 	if(ex_f)
 	{
@@ -378,8 +394,9 @@ void cerrar_file(t_list *tap, int fd)
 			return (ap->FD == fd);
 		}
 		list_remove_and_destroy_by_condition(tap,(void *) _archivo_TAP, (void *) destruir_file);
+		enviar(socket_, "OK000000000000000", &controlador);
 
-	}//else avisar a cpu que hay error
+	}else forzar_finalizacion(pid, 0, 16, 1);
 }
 
 char *get_path_msg(char *mensaje, int *payload1)
@@ -499,9 +516,10 @@ char *armar_info_mensaje(int largo,char *buffer, char* path, char *off,int *l)
 	return final;
 }
 
-void borrar_archivo(t_list *tap, int fd, int socket_)
+void borrar_archivo(int pid, t_list *tap, int fd, int socket_)
 {
 	t_TAP *tap_ = buscar_archivo_TAP(tap,  fd);
+	int controlador = 0;
 	if (tap_ != NULL)
 	{
 		t_TAG *tag = buscar_archivo_TAG_fd(fd);
@@ -510,12 +528,16 @@ void borrar_archivo(t_list *tap, int fd, int socket_)
 		{
 			if (tag->open_ == 1)
 			{
-				int controlador = 0;
 				char *eliminar = armar_mensaje("K13", tag->path);
 				enviar(config->cliente_fs, eliminar, &controlador);
 				free(eliminar);
 			}
-		}
 
+			enviar(socket_, "OK000000000000000", &controlador);
+		}
+	}
+	else
+	{
+		forzar_finalizacion(pid, 0, 15, 1);
 	}
 }

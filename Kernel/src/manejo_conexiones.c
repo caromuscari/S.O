@@ -4,6 +4,7 @@
 #include <commons/log.h>
 #include <commons/string.h>
 #include <commons/collections/queue.h>
+#include "manejo_conexiones.h"
 #include "mensaje.h"
 #include "planificador.h"
 #include "estructuras.h"
