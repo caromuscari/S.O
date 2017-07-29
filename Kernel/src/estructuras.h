@@ -68,6 +68,8 @@ typedef struct
 	int syscall;
 	int allocs;
 	int frees;
+	int allocs_size;
+	int frees_size;
 	t_PCB *pcb;
 	t_list *semaforos;
 	t_list *TAP; //tabla de archivo por proceso

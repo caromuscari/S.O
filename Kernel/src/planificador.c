@@ -227,6 +227,8 @@ void agregar_nueva_prog(int id_consola, int pid, char *codigo, int socket_con)
 	programa->CID = id_consola;
 	programa->allocs = 0;
 	programa->frees = 0;
+	programa->allocs_size = 0;
+	programa->frees_size = 0;
 	programa->syscall = 0;
 	programa->memoria_dinamica = list_create();
 	programa->TAP = list_create();
@@ -352,8 +354,6 @@ void finalizar_proceso(int pid, int codigo_finalizacion)
 
 void forzar_finalizacion(int pid, int cid, int codigo_finalizacion, int aviso)
 {
-	//pthread_mutex_lock(&mutex_sincro);
-
 	t_list *procesos = list_create();
 	t_list *procesos_ejecutando = list_create();
 	int i, contador = 0;

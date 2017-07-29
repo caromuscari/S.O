@@ -9,10 +9,10 @@
 #include <commons/collections/list.h>
 #include <commons/collections/queue.h>
 #include <pthread.h>
-#include "consolaKernel.h"
-#include "estructuras.h"
-#include "planificador.h"
 #include "configuracion.h"
+#include "consolaKernel.h"
+#include "planificador.h"
+#include "estructuras.h"
 #include "socket.h"
 #include "log.h"
 
@@ -37,6 +37,7 @@ extern t_list *list_cpus;
 extern t_list *list_consolas;
 extern int diferencia_multi;
 
+void imprimir_archivos_proceso(t_program *pp);
 
 void leer_consola()
 {
@@ -45,7 +46,6 @@ void leer_consola()
 		imprimir_menu();
 
 		char *input, *input2;
-
 		scanf("%ms", &input);
 
 		switch (atoi(input))
@@ -67,11 +67,7 @@ void leer_consola()
 					generar_listados(number);
 				}
 				else
-				{
 					printf("No se ingreso un numero valido\n");
-				}
-
-				imprimir_info();
 
 				free(input);
 				free(input2);
@@ -80,7 +76,14 @@ void leer_consola()
 				printf("Indique el PID del proceso a consultar: ");
 				scanf("%ms", &input2);
 				int number = atoi(input2);
-				obtener_informacion(number);
+
+				if(existe_pid(number) == 1)
+				{
+					obtener_informacion(number);
+				}
+				else
+					printf("El proceso buscado no existe\n");
+
 				free(input);
 				free(input2);
 				break;
@@ -106,7 +109,7 @@ void leer_consola()
 				scanf("%ms", &input2);
 				int numberKill = atoi(input2);
 
-				if(existe_pid(numberKill))
+				if(existe_pid(numberKill) == 1)
 				{
 					forzar_finalizacion(numberKill, 0, 10, 1);
 					printf("El proceso ha sido eliminado\n");
@@ -141,6 +144,9 @@ void leer_consola()
 				break;
 			case 8 : ;
 				system("clear");
+				break;
+			case 9 :
+				imprimir_info();
 				break;
 			default :
 				printf("No se reconocio la opcion ingresada\n");
@@ -237,19 +243,24 @@ void mostrar_listas(t_list *lista, char *procesos)
 void obtener_informacion(int pid)
 {
 	char *lista;
-	int encontrado = 0;
 	int i, size;
-	t_program *found;
-	found->PID = 0;
-	t_nuevo *found_new;
-	found_new->pid = 0;
 
 	void _buscar_program(t_program *pr)
 	{
 		if(pr->PID == pid)
 		{
-			found = pr;
-			encontrado = 1;
+			char *desc = devolver_descripcion_error(pr->pcb->exit_code);
+			printf("Id Proceso: %i", pr->PID);
+			printf("		Id Consola: %i\n", pr->CID);
+			printf("Status de proceso: %s\n", lista);
+			printf("Cantidad de allocations: %i\n", pr->allocs);
+			printf("Cantidad de frees: %i\n", pr->frees);
+			printf("Cantidad de Syscalls: %i\n", pr->syscall);
+			printf("Cantidad de paginas: %i\n", pr->pcb->cant_pag);
+			imprimir_archivos_proceso(pr);
+			printf("Memory leaks: %i\n", pr->allocs_size - pr->frees_size);
+			printf("Exit code: %i  Descripcion: %s\n", pr->pcb->exit_code, desc);
+			free(desc);
 		}
 	}
 
@@ -257,32 +268,31 @@ void obtener_informacion(int pid)
 	{
 		if(newnew->pid == pid)
 		{
-			found_new = newnew;
-			encontrado = 1;
+			printf("Id Proceso: %i\n", newnew->pid);
+			printf("Id Consola: %i\n", newnew->consola);
+			printf("Status de proceso: %s\n", lista);
 		}
 	}
 
+	lista =	strdup("Ejecutando");
 	pthread_mutex_lock(&mutex_lista_ejecutando);
 	list_iterate(list_ejecutando, (void*)_buscar_program);
 	pthread_mutex_unlock(&mutex_lista_ejecutando);
+	free(lista);
 
-	if(encontrado)	lista =	strdup("Ejecutando");
-	encontrado = 0;
-
+	lista =	strdup("Bloqueado");
 	pthread_mutex_lock(&mutex_lista_bloqueados);
 	list_iterate(list_bloqueados, (void*)_buscar_program);
 	pthread_mutex_unlock(&mutex_lista_bloqueados);
+	free(lista);
 
-	if(encontrado)	lista =	strdup("Bloqueado");
-	encontrado = 0;
-
+	lista =	strdup("Finalizado");
 	pthread_mutex_lock(&mutex_lista_finalizados);
 	list_iterate(list_finalizados, (void*)_buscar_program);
 	pthread_mutex_unlock(&mutex_lista_finalizados);
+	free(lista);
 
-	if(encontrado)	lista =	strdup("Finalizado");
-	encontrado = 0;
-
+	lista =	strdup("Cola de nuevos");
 	pthread_mutex_lock(&mutex_cola_nuevos);
 	size = queue_size(cola_nuevos);
 	for(i=0;i<size;i++)
@@ -293,10 +303,9 @@ void obtener_informacion(int pid)
 	}
 	size = 0; i = 0;
 	pthread_mutex_unlock(&mutex_cola_nuevos);
+	free(lista);
 
-	if(encontrado)	lista =	strdup("Cola de nuevos");
-	encontrado = 0;
-
+	lista =	strdup("Cola de listos");
 	pthread_mutex_lock(&mutex_cola_listos);
 	size = queue_size(cola_listos);
 	for(i=0;i<size;i++)
@@ -307,33 +316,19 @@ void obtener_informacion(int pid)
 	}
 	size = 0; i = 0;
 	pthread_mutex_unlock(&mutex_cola_listos);
+	free(lista);
+}
 
-	if(encontrado)	lista =	strdup("Cola de listos");
-	encontrado = 0;
+void imprimir_archivos_proceso(t_program *pp)
+{
+	void _imprimir(t_TAP *tap)
+	{
+		printf("	File descriptor: %d\n", tap->FD);
+		printf("	File descriptor Global: %d\n", tap->GFD);
+		printf("	Flags asignados: %s\n", tap->flag);
+	}
 
-	if(found->PID != 0)
-	{
-		char *desc = devolver_descripcion_error(found->pcb->exit_code);
-		printf("Id Proceso: %i\n", found->PID);
-		printf("Id Consola: %i\n", found->CID);
-		printf("Status de proceso: %s\n", lista);
-		printf("Cantidad de allocations: %i\n", found->allocs);
-		printf("Cantidad de frees: %i\n", found->frees);
-		printf("Cantidad de Syscalls: %i\n", found->syscall);
-		printf("Cantidad de paginas: %i\n", found->pcb->cant_pag);
-		printf("Exit code: %i  Descripcion: %s\n", found->pcb->exit_code, desc);
-		free(lista);
-		free(desc);
-	}
-	else if(found_new->pid != 0)
-	{
-		printf("Id Proceso: %i\n", found_new->pid);
-		printf("Id Consola: %i\n", found_new->consola);
-		printf("Status de proceso: %s\n", lista);
-		free(lista);
-	}
-	else
-		printf("El proceso buscado no existe\n");
+	list_iterate(pp->TAP, (void*)_imprimir);
 }
 
 void imprimir_tabla_archivos()
@@ -342,6 +337,7 @@ void imprimir_tabla_archivos()
 	void _imprimir(t_TAG *tg)
 	{
 		printf("Archivo: %s\n", tg->path);
+		printf("File Descriptor: %d\n", tg->FD);
 		printf("Open: %i\n\n", tg->open_);
 	}
 
@@ -361,6 +357,7 @@ void imprimir_menu()
 	printf("	6 - Detener planificacion\n");
 	printf("	7 - Reanudar planificacion\n");
 	printf("	8 - Limpiar pantalla\n\n");
+	printf("	9 - Imprimir info de sistema");
 }
 
 int existe_pid(int pid)
@@ -371,6 +368,12 @@ int existe_pid(int pid)
 	void _buscar_program(t_program *pr)
 	{
 		if(pr->PID == pid)
+			encontrado = 1;
+	}
+
+	void _buscar_program_nuevo(t_nuevo *nv)
+	{
+		if(nv->pid == pid)
 			encontrado = 1;
 	}
 
@@ -390,8 +393,8 @@ int existe_pid(int pid)
 	size = queue_size(cola_nuevos);
 	for(i=0;i<size;i++)
 	{
-		t_program *pr = queue_pop(cola_nuevos);
-		_buscar_program(pr);
+		t_nuevo *pr = queue_pop(cola_nuevos);
+		_buscar_program_nuevo(pr);
 		queue_push(cola_nuevos,pr);
 	}
 	size = 0; i = 0;
@@ -413,13 +416,13 @@ int existe_pid(int pid)
 
 void imprimir_info()
 {
-	escribir_log("Lista de CPU's\n\n");
 	void _imprimir_cpu(t_cpu *cpu)
 	{
 		escribir_log_con_numero("Numero de CPU: ",cpu->cpu_id);
 		escribir_log_con_numero("Estado de ejecutando: ",cpu->ejecutando);
-		printf("\n");
 	}
+
+	escribir_log("Lista de CPU's\n");
 	list_iterate(list_cpus, (void*)_imprimir_cpu);
 
 	escribir_log("Lista de Consolas\n\n");
@@ -474,6 +477,15 @@ char *devolver_descripcion_error(int codigo)
 	case -12 :
 		descripcion = strdup("Se intento acceder a una variable inexistente");
 		break;
+	case -15 :
+		descripcion = strdup("Se intento borrar un archivo inexistente");
+		break;
+	case -16 :
+		descripcion = strdup("Se intento cerrar un archivo inexistente");
+		break;
+	case -17 :
+		descripcion = strdup("Se intento mover un puntero en un archivo no abierto");
+		break;
 	case -20 :
 		descripcion = strdup("Error sin definicion");
 		break;
@@ -481,7 +493,7 @@ char *devolver_descripcion_error(int codigo)
 		descripcion = strdup("El proceso aun no ha finalizado");
 		break;
 	default :
-		descripcion = strdup("");
+		descripcion = strdup("Sin descripcion");
 		break;
 	}
 

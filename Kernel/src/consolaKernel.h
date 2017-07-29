@@ -22,5 +22,4 @@ int existe_pid(int pid);
 void mostrar_cola_listos(t_queue *cola, char *procesos);
 void imprimir_info();
 
-
 #endif /* CONSOLAKERNEL_H_ */
