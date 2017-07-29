@@ -43,9 +43,9 @@ int cantidad_de_dump_frames;
 
 void hilo_consola_memoria(){
 
-	cantidad_de_dump_cache = 0;
-	cantidad_de_dump_estructuras = 0;
-	cantidad_de_dump_frames = 0;
+	cantidad_de_dump_cache = 1;
+	cantidad_de_dump_estructuras = 1;
+	cantidad_de_dump_frames = 1;
 	terminar_hilo = 0;
 
 	while(terminar_hilo == 0){
@@ -116,7 +116,7 @@ void hilo_consola_memoria(){
 		int pid;
 		printf("\n Ingrese el PID del que quiere saber el tamaño \n\n");
 		scanf("%d",&pid);
-		int cantpagspid = ultimoNumeroPagina(pid) + 1;
+		int cantpagspid = cantidadPaginas(pid);
 		int size_proceso = cantpagspid * tamanioMarco;
 		printf("\n El tamaño del PID %d es :%d bytes \n",pid,size_proceso);
 		printf("\n （＾－＾） Muchas Gracias, en unos instantes podras ver el menu principal nuevamente\n\n");
@@ -181,16 +181,16 @@ char *dump_cache(){
 	int i;
 	char *linea;
 	char *linea2;
-	log_info(logi,"IMPRIMIENDO CONTENIDO MEMORIA CACHÉ");
-	for(i=0; i<entradasCache ; i++){
-		linea = string_from_format("\n PID :%d \n PAG :%d \n DATA :%s \n",Cache[i].pid,Cache[i].pag,Cache[i].dataFrame);
-		linea2 = string_from_format("\n POSICIÓN Nro %d DE LA MEMORIA CACHÉ \n",i);
-		log_info(logi,linea2);
-		log_info(logi,linea);
 
+	log_info(logi,"IMPRIMIENDO CONTENIDO MEMORIA CACHÉ");
+	linea2 = string_from_format("CACHE POS - PID | PAG | DATA");
+	log_info(logi,linea2);
+	for(i=0; i<entradasCache ; i++){
+		linea = string_from_format(" %d  -  %d | %d | %s ",i, Cache[i].pid,Cache[i].pag,Cache[i].dataFrame);
+		log_info(logi,linea);
 		free(linea);
-		free(linea2);
 	}
+	free(linea2);
 	log_destroy(logi);
 	return path;
 }
@@ -204,15 +204,15 @@ char *dump_estructuras(){
 	char *linea;
 	char *aux;
 
+	aux = string_from_format("FRAME - ESTADO | PID | PAG");
+	log_info(logi,aux);
+	free(aux);
 	for(a=0;a<cantMarcos;a++){
-		aux = string_from_format("\n ENTRADA CORRESPONDIENTE AL MARCO %d \n",a);
-		log_info(logi,aux);
-		free(aux);
-
-		linea = string_from_format("(POS:%d)ESTADO: %d | PID: %d | PAG: %d ",a, tablaPaginas[a].estado,tablaPaginas[a].pid,tablaPaginas[a].pag);
+		linea = string_from_format("-%d-  %d | %d | %d",a, tablaPaginas[a].estado,tablaPaginas[a].pid,tablaPaginas[a].pag);
 		log_info(logi,linea);
 		free(linea);
 	}
+
 	log_info(logi,"IMPRIMIENDO PROCESOS ACTIVOS");
 	int c;
 	char *otra;
@@ -249,9 +249,25 @@ char *dump_datos(int pid){
 		log_info(logi,aux);
 		free(aux);
 
-		char *dats = info_marco_proceso(pid);
-		log_info(logi,dats);
-		free(dats);
+		int maxPagPid = ultimoNumeroPagina(pid);
+		printf("\n ----- MAX PAG DEL PID: %d -- PAG: %d", pid, maxPagPid);
+		int i;
+		for (i=0;i<=maxPagPid;i++){
+		int pos = posPaginaSolicitada(pid,i);
+		if ( pos != -1) {
+				//Imprimir pagina
+			int posframe = posFrameEnMemoria(pos);
+			char * dataFrame = malloc(tamanioMarco);
+			memset(dataFrame,' ',tamanioMarco);
+			memcpy(dataFrame,Memoria+posframe,tamanioMarco);
+			char * imp = string_from_format("|%s| - %d \n",dataFrame,i);
+			log_info(logi,imp);
+
+			free(imp);
+			free(dataFrame);
+		}
+
+		}
 
 	}
 	log_destroy(logi);

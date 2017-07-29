@@ -20,7 +20,7 @@ pthread_mutex_t mutex_log;
 void crear_archivo_log(char *file)
 {
 	log_ = log_create(file,"MEMORIA",true, LOG_LEVEL_INFO);
-	log_info(log_, "Se crea el archivo de log");
+	log_info(log_, "Se crea el archivo de log Memoria");
 	pthread_mutex_init(&mutex_log,NULL);
 }
 

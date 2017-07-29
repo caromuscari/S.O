@@ -20,5 +20,4 @@ int marcos_libres();
 int calcular_paginas_de_proceso(int pid);
 char *info_marco_proceso(int pid);
 
-
 #endif /* CONSOLA_MEMORIA_H_ */

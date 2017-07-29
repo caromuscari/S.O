@@ -27,7 +27,8 @@ char *armar_mensaje(char *identificador, char *mensaje)
 }
 char *armar_mensaje_pcb(char *identificador, char *mensaje,int sizepcb)
 {
-	char *resultado = malloc(13+sizepcb);
+	char *resultado = malloc(13+sizepcb+1);
+	memset(resultado,'/0',14+sizepcb);
 	char *payload_char = string_itoa(sizepcb);
 	int size_payload = string_length(payload_char);
 	char *completar = string_repeat('0', 10 - size_payload);
@@ -65,5 +66,6 @@ char * get_mensaje(char *mensaje)
 {
 	char *payload = string_substring(mensaje, 3, 10);
 	int payload1 = atoi(payload);
+	free(payload);
 	return string_substring(mensaje, 13, payload1);
 }

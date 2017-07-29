@@ -4,7 +4,7 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
-../src/Memoria2.c \
+../src/Memoria.c \
 ../src/consola_memoria.c \
 ../src/gestionar_procesos.c \
 ../src/hash.c \
@@ -14,7 +14,7 @@ C_SRCS += \
 ../src/socket.c 
 
 OBJS += \
-./src/Memoria2.o \
+./src/Memoria.o \
 ./src/consola_memoria.o \
 ./src/gestionar_procesos.o \
 ./src/hash.o \
@@ -24,7 +24,7 @@ OBJS += \
 ./src/socket.o 
 
 C_DEPS += \
-./src/Memoria2.d \
+./src/Memoria.d \
 ./src/consola_memoria.d \
 ./src/gestionar_procesos.d \
 ./src/hash.d \
