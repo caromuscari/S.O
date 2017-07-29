@@ -279,7 +279,7 @@ void bloquear_proceso(int pid, int socket_)
 	pthread_mutex_unlock(&mutex_lista_bloqueados);
 
 	t_cpu *cpu_activa = buscar_cpu(socket_);
-	cpu_activa->ejecutando = false;
+	cpu_activa->ejecutando = 0;
 	sem_post(&sem_cpus);
 
 	//pthread_mutex_unlock(&mutex_sincro);

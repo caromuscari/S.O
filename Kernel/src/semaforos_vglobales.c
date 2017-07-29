@@ -118,7 +118,7 @@ void sem_wait_(t_program *proceso, char *sema, int socket_)
 
 			bloquear_proceso(proceso->PID, socket_);
 
-			queue_push(sem->procesos, (void *)proceso->PID);
+			queue_push(sem->procesos, (int)proceso->PID);
 			sem->value --;
 
 			free(mensaje);

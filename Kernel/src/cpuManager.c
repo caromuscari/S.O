@@ -142,6 +142,8 @@ void responder_solicitud_cpu(int socket_, char *mensaje)
 	t_program *prog = cpu_ejecutando->program;
 	char *cod = get_codigo(mensaje);
 	int codigo = atoi(cod);
+	escribir_log_con_numero("Se recibio una peticion de la CPU: ", cpu_ejecutando->cpu_id);
+	escribir_log_con_numero("Peticion para el programa: ", prog->PID);
 
 	switch (codigo)	{
 		case 2:
@@ -160,6 +162,7 @@ void responder_solicitud_cpu(int socket_, char *mensaje)
 			free(fd_);
 			break;
 		case 5 : ;//pedido de escritura
+			escribir_log("Se recibio una peticion escritura de archivo");
 			int largo;
 			char *info = get_mensaje_escritura_info(mensaje,&largo);
 			char *fd_fi = get_mensaje_escritura_fd(mensaje);
@@ -167,7 +170,6 @@ void responder_solicitud_cpu(int socket_, char *mensaje)
 			t_TAP *arch = buscar_archivo_TAP(prog->TAP, fd_file);
 			char *path = get_path(arch->GFD);
 			char *header = get_header(mensaje);
-
 
 			if (arch == NULL)
 			{
@@ -181,6 +183,7 @@ void responder_solicitud_cpu(int socket_, char *mensaje)
 			free(fd_fi);
 			break;
 		case 4: ;//pedido de lectura
+			escribir_log("Se recibio una peticion de lectura de archivo");
 			int lar;
 			char *info2 = get_mensaje_escritura_info(mensaje,&lar);
 			int size4 = atoi(info2);
@@ -195,26 +198,28 @@ void responder_solicitud_cpu(int socket_, char *mensaje)
 			free(fd_fi2);
 			break;
 		case 7:;
+			escribir_log("Se recibio una peticion de borrado de archivo");
 			char *fdBorrar = get_mensaje(mensaje);
 			int fd_b = atoi(fdBorrar);
 			borrar_archivo(prog->PID, prog->TAP, fd_b,  socket_);
 			free(fdBorrar);
 			break;
 		case 6:;
+			escribir_log("Se recibio una peticion de cerrado de archivo");
 			char *str_fd = get_mensaje(mensaje);
 			int fd2= atoi(str_fd);
 			cerrar_file(prog->PID, prog->TAP, fd2, socket_);
 			free(str_fd);
 			break;
 		case 9:	;
-			escribir_log("Se recibió una petición de CPU para obtener valor de variable compartida");
+			escribir_log("Se recibio una peticion de CPU para obtener valor de variable compartida");
 			char *vglobal = get_mensaje(mensaje);
 			get_vglobal(vglobal,prog, socket_);
 
 			free(vglobal);
 			break;
 		case 10: ;
-			escribir_log("Se recibió una petición de CPU para setear valor de variable compartida");
+			escribir_log("Se recibio una peticion de CPU para setear valor de variable compartida");
 			char *variable = get_variable(mensaje);
 			char *numero = get_numero(mensaje);
 			int num = atoi(numero);
@@ -223,6 +228,7 @@ void responder_solicitud_cpu(int socket_, char *mensaje)
 			free(numero);
 			break;
 		case 11: ;
+			escribir_log("Se recibio una peticion de impresion para la consola");
 			int controlador;
 			char *mensaje_recibido = get_mensaje(mensaje);
 			char *pid_ = string_itoa(prog->PID);
@@ -236,17 +242,19 @@ void responder_solicitud_cpu(int socket_, char *mensaje)
 			free(pid_);
 			break;
 		case 12 : ;
+			escribir_log("La cpu finalizo el quantum y devolvio la pcb");
 			char *mensaje_r = get_mensaje_pcb(mensaje);
 			t_PCB *pcb_actualizado =deserializarPCB_CPUKer(mensaje_r);
 			actualizar_pcb(prog, pcb_actualizado);
+			cpu_ejecutando->ejecutando = 0;
 			finalizar_quantum(pcb_actualizado->PID);
 
 			//free(cpu_ejecutando->program);
 			//cpu_ejecutando->program = malloc(sizeof(t_program));
-			cpu_ejecutando->ejecutando = 0;
 			free(mensaje_r);
 			break;
 		case 13: ;
+			escribir_log("Se finalizo el programa");
 			char *mensaje_r2 = get_mensaje_pcb(mensaje);
 			//char *mensaje_r2 = get_mensaje(mensaje);
 			escribir_log(mensaje_r2);
@@ -260,16 +268,19 @@ void responder_solicitud_cpu(int socket_, char *mensaje)
 			free(mensaje_r2);
 			break;
 		case 14: ;//wait
+			escribir_log("Se recibio un wait de semaforo");
 			char *mensaje2 = get_mensaje(mensaje);
 			sem_wait_(prog, mensaje2, socket_);
 			free(mensaje2);
 			break;
 		case 15:;//post
+			escribir_log("Se recibio un post de semaforo");
 			char *mensaje3 = get_mensaje(mensaje);
 			sem_signal(prog, mensaje3, socket_, 0);
 			free(mensaje3);
 			break;
 		case 17: ;//alloc
+			escribir_log("Se recibio una pedido de memoria dinamica");
 			char *mensaje4 = get_mensaje(mensaje);
 			int size2 = atoi(mensaje4);
 			if(size2>0)	reservar_memoria_din(prog, size2, socket_);
@@ -277,11 +288,13 @@ void responder_solicitud_cpu(int socket_, char *mensaje)
 			free(mensaje4);
 			break;
 		case 18:;//free
+			escribir_log("Se recibio un free de memoria dinamica");
 			char *offset_bloque = get_mensaje(mensaje);
 			liberar_bloque(prog, offset_bloque, socket_);
 			free(offset_bloque);
 			break;
 		case 19:;
+			escribir_log("Se elimina CPU por desconexion");
 			eliminar_conexion(socket_);
 			break;
 		default: ;

@@ -12,7 +12,7 @@ pthread_mutex_t mutex_log;
 
 void crear_archivo_log(char *file)
 {
-	log_ = log_create(file,"Consola",true, LOG_LEVEL_INFO);
+	log_ = log_create(file,"Consola",false, LOG_LEVEL_INFO);
 	log_info(log_, "Se crea el archivo de log");
 	pthread_mutex_init(&mutex_log,NULL);
 }

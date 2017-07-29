@@ -321,6 +321,7 @@ void obtener_informacion(int pid)
 
 void imprimir_archivos_proceso(t_program *pp)
 {
+	printf("Tabla de archivos de proceso:\n");
 	void _imprimir(t_TAP *tap)
 	{
 		printf("	File descriptor: %d\n", tap->FD);
@@ -492,6 +493,9 @@ char *devolver_descripcion_error(int codigo)
 	case -12 :
 		descripcion = strdup("Se intento acceder a una variable inexistente");
 		break;
+	case -13 :
+		descripcion = strdup("No hay espacio suficiente para almacenar en archivo");
+		break;
 	case -15 :
 		descripcion = strdup("Se intento borrar un archivo inexistente");
 		break;
@@ -500,6 +504,9 @@ char *devolver_descripcion_error(int codigo)
 		break;
 	case -17 :
 		descripcion = strdup("Se intento mover un puntero en un archivo no abierto");
+		break;
+	case -18 :
+		descripcion = strdup("Se intento escribir un archivo no abierto");
 		break;
 	case -20 :
 		descripcion = strdup("Error sin definicion");

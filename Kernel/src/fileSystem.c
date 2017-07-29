@@ -247,18 +247,18 @@ t_TAG *buscar_archivo_TAG_fd(int fd)
 void mover_puntero(int socket_cpu, int offset, int fd, t_program *prog)
 {
 	int control;
-	char *mensaje = recibir(socket_cpu, &control);
-	char *info = get_mensaje(mensaje);
 	t_TAP *tap = buscar_archivo_TAP(prog->TAP, fd);
 
 	if(tap != NULL)
 	{
 		enviar(socket_cpu, "OK000000000000000", &control);
+		char *mensaje = recibir(socket_cpu, &control);
+		char *info = get_mensaje(mensaje);
 
 		char *path = get_path(tap->GFD);
 		char *header = get_header(mensaje);
 
-		enviar(socket_cpu, "OK000000000000000", &control);
+		//enviar(socket_cpu, "OK000000000000000", &control);
 
 		if (comparar_header("P",header))
 		{
@@ -272,7 +272,7 @@ void mover_puntero(int socket_cpu, int offset, int fd, t_program *prog)
 					t_TAP *arch = buscar_archivo_TAP(prog->TAP, fd);
 					if (arch == NULL)
 					{
-						forzar_finalizacion(prog->PID, 0, 7, 1);
+						forzar_finalizacion(prog->PID, 0, 18, 1);
 					}else
 					{
 						int largo=0;
@@ -302,9 +302,9 @@ void mover_puntero(int socket_cpu, int offset, int fd, t_program *prog)
 			forzar_finalizacion(prog->PID, 0, 17, 1);
 		}
 		free(header);
+		free(mensaje);
+		free(info);
 	}
-	free(mensaje);
-	free(info);
 	//free(path);
 }
 
@@ -531,7 +531,9 @@ void borrar_archivo(int pid, t_list *tap, int fd, int socket_)
 			{
 				char *eliminar = armar_mensaje("K13", tag->path);
 				enviar(config->cliente_fs, eliminar, &controlador);
+				char *rec = recibir(config->cliente_fs, &controlador);
 				free(eliminar);
+				free(rec);
 			}
 
 			enviar(socket_, "OK000000000000000", &controlador);

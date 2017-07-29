@@ -133,6 +133,19 @@ void reservar_memoria_din(t_program *program, int size_solicitado, int so_cpu)
 				}
 				else n++;
 			}
+			if(ubicado==0)
+			{
+				int pedido = pedir_pagina(program);
+
+				if(pedido == 1)
+				{
+					inicializar_pagina_dinamica(program, size_solicitado);
+					program->syscall --;
+					reservar_memoria_din(program,size_solicitado,so_cpu);
+				}
+				else
+					forzar_finalizacion(program->PID, 0, 5, 0);
+			}
 		}
 		else
 		{
