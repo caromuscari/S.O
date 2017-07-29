@@ -338,7 +338,8 @@ void finalizar_proceso(int pid, int codigo_finalizacion)
 	escribir_log_con_numero("Se ha finalizado el proceso: ", programa->PID);
 	avisar_consola_proceso_murio(programa);
 
-	list_destroy_and_destroy_elements(programa->memoria_dinamica, (void *)liberar_pagina);
+	/*if(!(list_is_empty(programa->memoria_dinamica)))
+		list_destroy_and_destroy_elements(programa->memoria_dinamica, (void *)liberar_pagina);*/
 	sem_signal(programa, "", cpu->socket_cpu, 1);
 	liberar_proceso_pagina(programa->PID);
 

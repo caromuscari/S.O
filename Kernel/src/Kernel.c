@@ -81,7 +81,6 @@ void programas_nuevos_A_listos();
 void manejo_conexiones();
 void iniciar_monitoreo_configuracion(char *);
 
-
 int main(int argc, char*argv[])
 {
 	pthread_t hiloConsolaConsola;
@@ -90,7 +89,6 @@ int main(int argc, char*argv[])
 	pthread_t hiloListos;
 	pthread_t hiloConsolaKernel;
 
-	//Nuevo intento de que funque tod bien
 	pthread_attr_t attr;
 
 	pthread_attr_init(&attr);
@@ -123,7 +121,6 @@ int main(int argc, char*argv[])
 	pthread_join(hiloListos, NULL);
 	pthread_join(hiloConsolaKernel, NULL);
 	pthread_join(update_multiprogramacion, NULL);
-
 
 	liberar_memoria();
 	return EXIT_SUCCESS;
@@ -219,7 +216,6 @@ void iniciar_monitoreo_configuracion(char *path)
 	}
 	char  *directorio_config;
 	directorio_config = sacar_nombre_archivo(path);
-	printf("\nPATH FINAL :%s\n",directorio_config);
 	watch_descriptor = inotify_add_watch(fd_inotify,directorio_config, IN_MODIFY);
 	free(directorio_config);
 }

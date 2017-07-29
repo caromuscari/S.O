@@ -77,8 +77,8 @@ void abrir_crear(char *mensaje, t_program *prog, int socket_cpu)
 		free(me);
 		free(fd_char);
 	}
-	free(path);
-	free(flag);
+	//free(path);
+	//free(flag);
 }
 
 int abrir_archivo(char *path, char* flag, t_program *prog)
@@ -160,6 +160,7 @@ void pedido_lectura(t_program *prog, int fd, int offs, int size, char *path, int
 					free(mensaje_leido);
 					free(m_envi);
 				}
+				free(codig);
 			}
 			free(header);
 			free(mensaje_recibido);

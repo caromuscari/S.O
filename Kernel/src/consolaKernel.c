@@ -251,7 +251,7 @@ void obtener_informacion(int pid)
 		{
 			char *desc = devolver_descripcion_error(pr->pcb->exit_code);
 			printf("Id Proceso: %i", pr->PID);
-			printf("		Id Consola: %i\n", pr->CID);
+			printf("	Id Consola: %i\n", pr->CID);
 			printf("Status de proceso: %s\n", lista);
 			printf("Cantidad de allocations: %i\n", pr->allocs);
 			printf("Cantidad de frees: %i\n", pr->frees);
@@ -356,8 +356,8 @@ void imprimir_menu()
 	printf("	5 - Finalizar proceso\n");
 	printf("	6 - Detener planificacion\n");
 	printf("	7 - Reanudar planificacion\n");
-	printf("	8 - Limpiar pantalla\n\n");
-	printf("	9 - Imprimir info de sistema");
+	printf("	8 - Limpiar pantalla\n");
+	printf("	9 - Imprimir info de sistema\n\n");
 }
 
 int existe_pid(int pid)
@@ -394,8 +394,11 @@ int existe_pid(int pid)
 	for(i=0;i<size;i++)
 	{
 		t_nuevo *pr = queue_pop(cola_nuevos);
-		_buscar_program_nuevo(pr);
-		queue_push(cola_nuevos,pr);
+		if(pr != NULL)
+		{
+			_buscar_program_nuevo(pr);
+			queue_push(cola_nuevos,pr);
+		}
 	}
 	size = 0; i = 0;
 	pthread_mutex_unlock(&mutex_cola_nuevos);
@@ -405,8 +408,11 @@ int existe_pid(int pid)
 	for(i=0;i<size;i++)
 	{
 		t_program *pr = queue_pop(cola_listos);
+		if (pr != NULL)
+		{
 		_buscar_program(pr);
 		queue_push(cola_listos,pr);
+		}
 	}
 	size = 0; i = 0;
 	pthread_mutex_unlock(&mutex_cola_listos);
@@ -416,22 +422,31 @@ int existe_pid(int pid)
 
 void imprimir_info()
 {
+	printf("Procesos en Nuevos: %d\n", queue_size(cola_nuevos));
+	printf("Procesos en Listos: %d\n", queue_size(cola_listos));
+	printf("Procesos en Ejecutando: %d\n", list_size(list_ejecutando));
+	printf("Procesos en Bloqueados: %d\n", list_size(list_bloqueados));
+	printf("Procesos en Finalizados: %d\n", list_size(list_finalizados));
+
 	void _imprimir_cpu(t_cpu *cpu)
 	{
-		escribir_log_con_numero("Numero de CPU: ",cpu->cpu_id);
-		escribir_log_con_numero("Estado de ejecutando: ",cpu->ejecutando);
+		printf("Numero de CPU: %d\n", cpu->cpu_id);
+		printf("Estado de ejecutando: %d\n", cpu->ejecutando);
+		if(cpu->program==NULL)
+			printf("La cpu no tiene procesos asignados\n");
+		else
+			printf("La cpu tiene asignado el proceso: %d\n", cpu->program->PID);
 	}
 
-	escribir_log("Lista de CPU's\n");
-	list_iterate(list_cpus, (void*)_imprimir_cpu);
-
-	escribir_log("Lista de Consolas\n\n");
 	void _imprimir_consola(t_consola *consola)
 	{
-		escribir_log_con_numero("Numero de Consola: ",consola->CID);
-		printf("\n");
+		printf("Numero de Consola: %d\n", consola->CID);
 	}
 
+	printf("\nLista de CPU's\n");
+	list_iterate(list_cpus, (void*)_imprimir_cpu);
+
+	printf("\nLista de Consolas\n");
 	list_iterate(list_consolas, (void*)_imprimir_consola);
 }
 

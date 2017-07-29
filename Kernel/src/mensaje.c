@@ -1,10 +1,3 @@
-/*
- * mensaje.c
-
- *
- *  Created on: 23/4/2017
- *      Author: utnso
- */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -35,7 +28,6 @@ char *armar_mensaje_pcb(char *identificador, char *mensaje,int sizepcb)
 	int size_payload = string_length(payload_char);
 	char *completar = string_repeat('0', 10 - size_payload);
 
-
 	memcpy(resultado,identificador,3);
 	memcpy(resultado+3,completar,10 - size_payload);
 	memcpy(resultado+3+10-size_payload,payload_char,size_payload);
@@ -64,7 +56,7 @@ char * get_codigo(char *mensaje)
 }
 
 //obtiene el mensaje
-char * get_mensaje(char *mensaje)
+char *get_mensaje(char *mensaje)
 {
 	char *payload = string_substring(mensaje, 3, 10);
 	int payload1 = atoi(payload);
@@ -86,7 +78,7 @@ char *get_mensaje_pcb(char *mensaje)
 	return pcb_serializado;
 }
 
-char *get_mensaje_escritura_info(char *mensaje,int *lar)
+char *get_mensaje_escritura_info(char *mensaje, int *lar)
 {
 	char *payload = string_substring(mensaje, 3, 10);
 	int payload1 = atoi(payload);

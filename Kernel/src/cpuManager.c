@@ -164,9 +164,10 @@ void responder_solicitud_cpu(int socket_, char *mensaje)
 			char *info = get_mensaje_escritura_info(mensaje,&largo);
 			char *fd_fi = get_mensaje_escritura_fd(mensaje);
 			int fd_file = atoi(fd_fi);
-			char *path = get_path(fd_file);
-			char *header = get_header(mensaje);
 			t_TAP *arch = buscar_archivo_TAP(prog->TAP, fd_file);
+			char *path = get_path(arch->GFD);
+			char *header = get_header(mensaje);
+
 
 			if (arch == NULL)
 			{
@@ -185,9 +186,13 @@ void responder_solicitud_cpu(int socket_, char *mensaje)
 			int size4 = atoi(info2);
 			char *fd_fi2 = get_mensaje_escritura_fd(mensaje);
 			int fd_file2 = atoi(fd_fi2);
-			char *path2 = get_path(fd_file2);
+			t_TAP *tap = buscar_archivo_TAP(prog->TAP, fd_file2);
+			char *path2 = get_path(tap->GFD);
 
 			pedido_lectura(prog, fd_file2, 0, size4, path2, socket_);
+
+			free(info2);
+			free(fd_fi2);
 			break;
 		case 7:;
 			char *fdBorrar = get_mensaje(mensaje);
@@ -247,11 +252,11 @@ void responder_solicitud_cpu(int socket_, char *mensaje)
 			escribir_log(mensaje_r2);
 			t_PCB *pcb_actualizado2 = deserializarPCB_CPUKer(mensaje_r2);
 			actualizar_pcb(prog, pcb_actualizado2);
+			cpu_ejecutando->ejecutando = 0;
 			finalizar_proceso(pcb_actualizado2->PID, pcb_actualizado2->exit_code);
 
 			//free(cpu_ejecutando->program);
 			//cpu_ejecutando->program = malloc(sizeof(t_program));
-			cpu_ejecutando->ejecutando = 0;
 			free(mensaje_r2);
 			break;
 		case 14: ;//wait
