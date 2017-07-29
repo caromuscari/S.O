@@ -1022,7 +1022,7 @@ char * solicitarBytes(int pid, int pag, int offset, int tam)
 				memcpy(frame,Memoria+pos,tamanioMarco);
 				Cache[posReemplazoCache].pid=pid;
 				Cache[posReemplazoCache].pag=pag;
-				Cache[posReemplazoCache].dataFrame = strdup(frame);
+				Cache[posReemplazoCache].dataFrame = frame;
 
 
 			} else
@@ -1033,7 +1033,7 @@ char * solicitarBytes(int pid, int pag, int offset, int tam)
 				memcpy(frame,Memoria+pos,tamanioMarco);
 				Cache[posReemplazoCache].pid=pid;
 				Cache[posReemplazoCache].pag=pag;
-				Cache[posReemplazoCache].dataFrame = strdup(frame);
+				Cache[posReemplazoCache].dataFrame = frame;
 
 			}
 
