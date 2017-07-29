@@ -605,35 +605,45 @@ t_descriptor_archivo abrir (t_direccion_archivo direccion, t_banderas flags){
 	int tam;int fd;
 
 	recibir(sockKerCPU,&controlador,respuesta,13);
-	str_tam = string_substring(respuesta,3,10);
-	tam = atoi(str_tam);
-	char *str_fd = malloc(tam+1);
-	recibir(sockKerCPU,&controlador,str_fd,tam);
-	char *str2_fd = string_substring(str_fd,0,tam);
-	fd = atoi(str2_fd);
 
-	if(fd >= 0){
+	if(strncmp(respuesta,"K16",3)==0){
+
+		str_tam = string_substring(respuesta,3,10);
+		tam = atoi(str_tam);
+		char *str_fd = malloc(tam+1);
+		recibir(sockKerCPU,&controlador,str_fd,tam);
+		char *str2_fd = string_substring(str_fd,0,tam);
+		fd = atoi(str2_fd);
 
 		char *aux_log = string_from_format("Ejecute ABRIR direccion %s y se le asoció el FD %d",direccion,fd);
 		escribir_log(aux_log,1);
 		free(aux_log);
 
-	}else {
+		free(str_tam);
+		free(str_fd);
+		free(str2_fd);
+
+	}else if(strncmp(respuesta,"K21",3)==0){
 		fifo = FINALIZAR_POR_ERROR;
 		accion_siguiente = FINALIZAR_POR_ERROR;
 
-		pcb->exit_code = fd;
+		char *str_exit = malloc(5);
+		recibir(sockKerCPU,&controlador,str_exit,4);
+		char *str_exit2 = string_substring(str_exit,0,4);
+		pcb->exit_code = (-1)*(atoi(str_exit2));
 
 		char *aux_log = string_from_format("ERROR ABRIENDO direccion %s",direccion);
 		escribir_log(aux_log,2);
 		free(aux_log);
 
+		free(str_exit);
+		free(str_exit2);
+		fd = 0;
 	}
 
+
 	free(respuesta);
-	free(str_tam);
-	free(str_fd);
-	free(str2_fd);
+
 	return fd;
 }
 

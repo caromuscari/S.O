@@ -383,7 +383,7 @@ void procesar(){
 
 			sleep(pcb->quantum_sleep/1000);
 		}
-		if(instrucciones_realizadas == pcb->quantum && accion_siguiente != FINALIZAR_PROGRAMA){
+		if((instrucciones_realizadas == pcb->quantum && accion_siguiente != FINALIZAR_PROGRAMA) || (instrucciones_realizadas == pcb->quantum && accion_siguiente != FINALIZAR_POR_ERROR)|| (instrucciones_realizadas == pcb->quantum && accion_siguiente != BLOQUEAR_PROCESO) ){
 			accion_siguiente = FINALIZAR_POR_QUANTUM;
 		}
 
