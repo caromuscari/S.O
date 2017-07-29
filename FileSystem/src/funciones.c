@@ -46,11 +46,11 @@ void validar_archivo(char *mensaje)
 		mensaje2 = armar_mensaje("F01","ok");
 		enviar(cliente,mensaje2,&flagsocket);
 		escribir_log("El archivo existe\n");
+		fclose(archivo);
 	}
 
 	free(mensaje2);
 	free(pathArmado);
-	//fclose(archivo);
 }
 
 void crear_archivo(char *mensaje)
@@ -83,6 +83,7 @@ void crear_archivo(char *mensaje)
 			enviar(cliente,mensaje2,&flagsocket);
 			armar_archivo(archivo);
 			escribir_log("El archivo se creo\n");
+			fclose(archivo);
 
 		}
 
@@ -95,7 +96,6 @@ void crear_archivo(char *mensaje)
 		escribir_log("El archivo no se creo\n");
 	}
 
-	fclose(archivo);
 	free(mensaje2);
 
 }
