@@ -30,8 +30,8 @@ extern char * montaje;
 
 void validar_archivo(char *mensaje)
 {
-	FILE * archivo;
-	char * mensaje2;
+	FILE *archivo;
+	char *mensaje2;
 	char *pathArmado;
 
 	pathArmado = armar_path(mensaje);
@@ -50,6 +50,7 @@ void validar_archivo(char *mensaje)
 
 	free(mensaje2);
 	free(pathArmado);
+	//fclose(archivo);
 }
 
 void crear_archivo(char *mensaje)
@@ -57,7 +58,7 @@ void crear_archivo(char *mensaje)
 	FILE *archivo;
 	char *mensaje2;
 	char *pathArmado;
-	char * pathsinarchivo;
+	char *pathsinarchivo;
 	int verificar;
 
 	verificar = verificar_bloque();
@@ -106,7 +107,7 @@ void borrar_archivo(char *mensaje)
 	int i = 0;
 
 	pathArmado = armar_path(mensaje);
-	t_arch * archivo;
+	t_arch *archivo;
 
 	archivo = leer_archivo(pathArmado);
 	while(archivo->bloques[i] != NULL)
@@ -123,6 +124,12 @@ void borrar_archivo(char *mensaje)
 
 	free(pathArmado);
 	free(mensaje2);
+	i=0;
+	while(archivo->bloques[i] != NULL){
+		free(archivo->bloques[i]);
+		i++;
+	}
+	free(archivo->bloques);
 	free(archivo);
 }
 
@@ -133,12 +140,12 @@ void obtener_datos(char *path, int offset, int size)
 	char *pathBloque;// para guardar los path hechos
 	FILE *bloques; //para abrir cada archivo de bloques
 	char *lectura=strdup(""); // para guardar lo que se lee
-	char * lectura2 = malloc(64);
+	char *lectura2 = malloc(64);
 	int restoSize; // lo que falta leer
 	t_arch *archivo; //guarda la info del archivo en gral
 	div_t bloque ; //guarda los datos de la division para sacar los bloques y el offset
 	int bloqueSig; // guarda el bloque al que hay que ir
-	char* pathArmado;
+	char *pathArmado;
 	char * read;
 
 
@@ -212,6 +219,12 @@ void obtener_datos(char *path, int offset, int size)
 	free(mensaje);
 	free(lectura);
 	free(lectura2);
+	int i=0;
+	while(archivo->bloques[i] != NULL){
+		free(archivo->bloques[i]);
+		i++;
+	}
+	free(archivo->bloques);
 	free(archivo);
 	free(pathArmado);
 
@@ -227,13 +240,13 @@ void guardar_datos(char *path, int offset, int size, char *buffer)
 	div_t bloque ; //guarda los datos de la division para sacar los bloques y el offset
 	int bloqueSig; // guarda el bloque al que hay que ir
 	int guardado = 0;
-	char * bloques_agregados = strdup("");
-	char * pathArmado;
-	char * bloques_final;
+	char *bloques_agregados = strdup("");
+	char *pathArmado;
+	char *bloques_final;
 	int sizeAguardar = 0;
 	int flag=0;
 	//int stop;
-	char * write;
+	char *write;
 	int bit;
 	int i = 0;
 
@@ -447,6 +460,12 @@ void guardar_datos(char *path, int offset, int size, char *buffer)
 	free(path2);
 	free(mensaje);
 	free(pathBloque);
+	i=0;
+	while(archivo->bloques[i] != NULL){
+		free(archivo->bloques[i]);
+		i++;
+	}
+	free(archivo->bloques);
 	free(archivo);
 	free(bloques_agregados);
 	free(pathArmado);

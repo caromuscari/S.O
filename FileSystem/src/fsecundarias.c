@@ -229,6 +229,8 @@ t_datos * recuperar_datos(char * codigo, char * mensaje)
 		free(var);
 		estructura->buffer = string_substring(mensaje,start,size);
 		escribir_log_compuesto("Buffer: ",estructura->buffer);
+	}else{
+		estructura->buffer = NULL;
 	}
 
 	return estructura;

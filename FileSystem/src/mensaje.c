@@ -53,6 +53,8 @@ char * get_mensaje(char *mensaje)
 {
 	char *payload = string_substring(mensaje, 3, 10);
 	int payload1 = atoi(payload);
+
+	free(payload);
 	return string_substring(mensaje, 13, payload1);
 }
 

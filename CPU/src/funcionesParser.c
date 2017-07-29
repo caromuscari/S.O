@@ -218,15 +218,15 @@ t_valor_variable obtenerValorCompartida(t_nombre_compartida variable) {
 		return -1;
 
 	}else{
-	char *str_var = string_substring(mensaje_r,3,10);
-	int valor_var = atoi(str_var);
-	char *aux= string_from_format("Ejecute OBTENER VALOR COMPARTIDA de %s y es %d",variable,valor_var);
-	escribir_log(aux,1);
-	free(aux);
-	free(cod);
-	free(str_var);
-	free(mensaje_r);
-	return valor_var;
+		char *str_var = string_substring(mensaje_r,3,10);
+		int valor_var = atoi(str_var);
+		char *aux= string_from_format("Ejecute OBTENER VALOR COMPARTIDA de %s y es %d",variable,valor_var);
+		escribir_log(aux,1);
+		free(aux);
+		free(cod);
+		free(str_var);
+		free(mensaje_r);
+		return valor_var;
 	}
 }
 
@@ -332,6 +332,7 @@ void llamarSinRetorno (t_nombre_etiqueta etiqueta){
 void finalizar(void) {
 
 	if(pcb->SP > 0){
+
 		escribir_log("Ejecute Finalizar de Funcion",1);
 
 	}else{
@@ -643,9 +644,33 @@ void moverCursor (t_descriptor_archivo descriptor_archivo, t_valor_variable posi
 	enviar(sockKerCPU,mensaje,&controlador,size);
 	free(mensaje);
 
-	char *aux_log = string_from_format("Ejecute MOVER CURSOR en FD %d a posicion %d",descriptor_archivo,posicion);
-	escribir_log(aux_log,1);
-	free(aux_log);
+	char *respuesta = malloc(17);
+	recibir(sockKerCPU,&controlador,respuesta,17);
+
+	if(strncmp(respuesta,"OK",2)== 0){
+
+		char *aux_log = string_from_format("Ejecute MOVER CURSOR de FD %d a posicion %d",descriptor_archivo,posicion);
+		escribir_log(aux_log,1);
+		free(aux_log);
+
+	}else if(strncmp(respuesta,"K21",3)==0){
+
+		fifo= FINALIZAR_POR_ERROR;
+		accion_siguiente = FINALIZAR_POR_ERROR;
+
+		char *exit = string_substring(respuesta,13,4);
+		int exit_code2 = (-1)*(atoi(exit));
+
+		pcb->exit_code = exit_code2;
+
+		char *aux_log = string_from_format("ERROR MOVIENDO CURSOR de FD %d a posicion %d",descriptor_archivo,posicion);
+		escribir_log(aux_log,2);
+		free(aux_log);
+		free(exit);
+
+	}
+
+	free(respuesta);
 }
 
 void leer (t_descriptor_archivo descriptor_archivo, t_puntero informacion, t_valor_variable tamanio){
@@ -689,20 +714,20 @@ void leer (t_descriptor_archivo descriptor_archivo, t_puntero informacion, t_val
 		char *respuesta2 = malloc(13);
 		recibir(sockMemCPU,&controlador,respuesta2,13);
 
-			if (strncmp(respuesta2,"M02",3)==0){
-				char * str_aux= string_from_format("Informacion de lectura asignada correctamente en memoria %s",lectura);
-				escribir_log(str_aux,1);
-				free(str_aux);
+		if (strncmp(respuesta2,"M02",3)==0){
+			char * str_aux= string_from_format("Informacion de lectura asignada correctamente en memoria %s",lectura);
+			escribir_log(str_aux,1);
+			free(str_aux);
 
-			} else if(strncmp(respuesta2,"M03",3)==0){
-				fifo= FINALIZAR_POR_ERROR;
-				accion_siguiente = FINALIZAR_POR_ERROR;
-				pcb->exit_code = -5;
+		} else if(strncmp(respuesta2,"M03",3)==0){
+			fifo= FINALIZAR_POR_ERROR;
+			accion_siguiente = FINALIZAR_POR_ERROR;
+			pcb->exit_code = -5;
 
-				char * str_aux= string_from_format("ERROR ASIGNANDO bytes de lectura en memoria");
-				escribir_log(str_aux,2);
-				free(str_aux);
-			}
+			char * str_aux= string_from_format("ERROR ASIGNANDO bytes de lectura en memoria");
+			escribir_log(str_aux,2);
+			free(str_aux);
+		}
 
 		char * logi = string_from_format("Ejecute LEER %d con file descriptor %d alojar en %d",tamanio,descriptor_archivo,informacion);
 		escribir_log(logi,1);
@@ -724,9 +749,32 @@ void cerrar (t_descriptor_archivo descriptor_archivo){
 	enviar(sockKerCPU,mensaje,&controlador,size);
 	free(mensaje);
 
-	char *aux_log = string_from_format("Ejecute CERRAR en FD %d",descriptor_archivo);
-	escribir_log(aux_log,1);
-	free(aux_log);
+	char *respuesta = malloc(17);
+	recibir(sockKerCPU,&controlador,respuesta,17);
+
+	if(strncmp(respuesta,"OK",2)== 0){
+
+		char *aux_log = string_from_format("Ejecute CERRAR en FD %d",descriptor_archivo);
+		escribir_log(aux_log,1);
+		free(aux_log);
+
+	}else if(strncmp(respuesta,"K21",3)==0){
+
+		fifo= FINALIZAR_POR_ERROR;
+		accion_siguiente = FINALIZAR_POR_ERROR;
+
+		char *exit = string_substring(respuesta,13,4);
+		int exit_code2 = (-1)*(atoi(exit));
+
+		pcb->exit_code = exit_code2;
+
+		char *aux_log = string_from_format("ERROR CERRANDO en FD %d",descriptor_archivo);
+		escribir_log(aux_log,2);
+		free(aux_log);
+		free(exit);
+
+	}
+	free(respuesta);
 }
 
 void borrar (t_descriptor_archivo descriptor_archivo){
@@ -736,9 +784,33 @@ void borrar (t_descriptor_archivo descriptor_archivo){
 	enviar(sockKerCPU,mensaje,&controlador,size);
 	free(mensaje);
 
-	char *aux_log = string_from_format("Ejecute CERRAR en FD %d",descriptor_archivo);
-	escribir_log(aux_log,1);
-	free(aux_log);
+	char *respuesta = malloc(17);
+	recibir(sockKerCPU,&controlador,respuesta,17);
+
+	if(strncmp(respuesta,"OK",2)== 0){
+
+		char *aux_log = string_from_format("Ejecute BORRAR en FD %d",descriptor_archivo);
+		escribir_log(aux_log,1);
+		free(aux_log);
+
+	}else if(strncmp(respuesta,"K21",3)==0){
+
+		fifo= FINALIZAR_POR_ERROR;
+		accion_siguiente = FINALIZAR_POR_ERROR;
+
+		char *exit = string_substring(respuesta,13,4);
+		int exit_code2 = (-1)*(atoi(exit));
+
+		pcb->exit_code = exit_code2;
+
+		char *aux_log = string_from_format("ERROR BORRANDO en FD %d",descriptor_archivo);
+		escribir_log(aux_log,2);
+		free(aux_log);
+		free(exit);
+
+	}
+
+	free(respuesta);
 }
 
 AnSISOP_funciones funcionesTodaviaSirve = {

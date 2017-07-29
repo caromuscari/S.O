@@ -183,12 +183,12 @@ char *mensaje_escribir_kernel(int fd,void *informacion,int tamanio,int *size){
 		cod=strdup("P11");
 		//str_valor = string_itoa(strlen(informacion));
 		str_valor = string_itoa(tamanio);
-		tam_alloc = 13+tamanio;
+		tam_alloc = 13+tamanio+1;
 	}else{
 		cod=strdup("P05");
 		//str_valor = string_itoa(strlen(informacion)+4);
 		str_valor = string_itoa(tamanio+4);
-		tam_alloc = 13+4+tamanio;
+		tam_alloc = 13+4+tamanio+1;
 	};
 	mensaje = malloc(tam_alloc);
 	memset(mensaje,'\0',tam_alloc);

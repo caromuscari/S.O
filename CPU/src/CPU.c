@@ -17,21 +17,25 @@
 #include "estructuras.h"
 
 
-
-
-int puertoK,puertoM,accion_siguiente;
 char *ipK;
 char *ipM;
+
+int puertoK;
+int puertoM;
+int accion_siguiente;
 int sockKerCPU;
 int sockMemCPU;
 int tam_pagina_memoria;
-t_PCB_CPU* pcb;
-char* programa;
 int fifo;
 int salto_linea;
 int ABORTAR;
 int con_PCB;
 
+t_PCB_CPU *pcb;
+//char* programa;
+
+
+/*
 static const char* prueba_ansisop =
 		"#!/usr/bin/ansisop\n"
 		"begin\n"
@@ -96,7 +100,7 @@ static const char* con_funcion_ansisop =
 		"end\n"
 		"\n";
 
-
+*/
 
 void procesar();
 //void iniciar_pcb_falsa();
@@ -106,7 +110,7 @@ int conexion_Memoria(int puertoM,char* ipM);
 char * pedir_linea_memoria();
 void finalizar_por_senial(int);
 void liberar_pcb();
-char *pedir_linea_memoria2();
+//char *pedir_linea_memoria2();
 
 int main(int argc, char *argv[])
 {
@@ -114,7 +118,7 @@ int main(int argc, char *argv[])
 	//char *programa =strdup(facil_ansisop);
 	//char *programa =strdup(otro_ansisop);
 	//programa =strdup(con_funcion_ansisop);
-	programa = strdup(prueba_ansisop);
+	//programa = strdup(prueba_ansisop);
 	char *ruta_log = strdup("/home/utnso/CPUlog");
 	crear_archivo_log(ruta_log);
 	leerArchivoConfiguracion(argv[1]);
@@ -123,10 +127,14 @@ int main(int argc, char *argv[])
 	signal(SIGINT,finalizar_por_senial);
 
 	con_PCB = 0;
-	int res;int chau = 0;
 	salto_linea = 0;
 	accion_siguiente = CONTINUAR;
 	ABORTAR = 0;
+
+	int res;
+	int chau = 0;
+
+
 	res = conexion_Kernel(puertoK, ipK);
 	if(res != 0){
 		cerrar_conexion(sockKerCPU);
@@ -153,7 +161,7 @@ int main(int argc, char *argv[])
 		memset(buff,'\0',13);
 
 		int largomensaje  = 0;
-		escribir_log("Esperando mensajes del Kernel para ponerme a trabajar...",1);
+		escribir_log("Esperando mensajes Kernel para ponerme a trabajar... ",1);
 
 		recibir(sockKerCPU,&controlador,buff,13);
 
@@ -165,24 +173,22 @@ int main(int argc, char *argv[])
 
 		idmensaje = string_substring(buff,1,2);
 
-		char *logeo = string_from_format("mensaje recibido %s",buff);
-		escribir_log(logeo,1);
-		free(logeo);
-
 		switch (atoi(idmensaje)){
 		case 07:
 			con_PCB = 1;
-			escribir_log("CASE N° 7: iniciar procesamiento de PCB",1);
+
 			sizemensaje = string_substring(buff,3,10);
 			largomensaje = atoi(sizemensaje);
 
-			char *logeo1 = string_from_format("size del resto del mensaje%d",largomensaje);
-			escribir_log(logeo1,1);
-			free(logeo1);
 
 			char *mensajeEntero = malloc(largomensaje);
 			recibir(sockKerCPU,&controlador,mensajeEntero,largomensaje);
 			pcb = deserializarPCB_KerCPU(mensajeEntero);
+
+			char *logeo1 = string_from_format("CASO N° 7: iniciar procesamiento de PCB-PID: %d",pcb->PID);
+			escribir_log(logeo1,1);
+			free(logeo1);
+
 			procesar();
 
 			free(mensajeEntero);
@@ -302,7 +308,7 @@ int main(int argc, char *argv[])
 	free(buff);
 	fin:
 
-	free(programa);
+	//free(programa);
 	free(ipK);
 	free(ipM);
 	liberar_log();
@@ -335,6 +341,10 @@ void leerArchivoConfiguracion(char* argv)
 void procesar(){
 	if(strncmp(pcb->algoritmo,"RR",2) == 0){
 		//PROCESAR SEGUN QUANTUM/QUANTUM_SLEEP EL PCB
+		char *alogge= string_from_format("Se procesa ROUND-ROBIN - Quantum:%d",pcb->quantum);
+		escribir_log(alogge,1);
+		free(alogge);
+
 		int instrucciones_realizadas=0;
 		accion_siguiente = CONTINUAR;
 		while(instrucciones_realizadas < pcb->quantum && accion_siguiente != FINALIZAR_POR_ERROR && accion_siguiente != FINALIZAR_PROGRAMA && accion_siguiente != BLOQUEAR_PROCESO ){
@@ -378,7 +388,7 @@ void procesar(){
 		}
 
 	}else if(strncmp(pcb->algoritmo,"FF",2) == 0){
-
+		escribir_log("Se procesa FIFO",1);
 		// PROCESAR SEGUN FIFO
 		fifo = CONTINUAR;
 		while(fifo != FINALIZAR_PROGRAMA && fifo != FINALIZAR_POR_ERROR && fifo != BLOQUEAR_PROCESO){
@@ -510,7 +520,7 @@ char* pedir_linea_memoria(){
 		free(respuesta);
 	}
 
-	char * aux = string_from_format("offset inicio:%d-offset fin:%d",pcb->in_cod[pcb->PC].offset_inicio,pcb->in_cod[pcb->PC].offset_fin);
+	char * aux = string_from_format("Linea de offset :%d - longitud: %d",pcb->in_cod[pcb->PC].offset_inicio,pcb->in_cod[pcb->PC].offset_fin);
 	escribir_log(aux,1);
 	free(aux);
 
@@ -521,9 +531,9 @@ void finalizar_por_senial(int sig){
 
 	signal(sig, SIG_IGN);
 	if(con_PCB == 0){
-		escribir_log("Señal recibida, pero no estaba ejecutando nada, me voy de todos modos",1);
-		escribir_log("         ¯_(ツ)_/¯   ",1);
-		free(programa);
+		escribir_log("Señal recibida, pero no estaba ejecutando  , me voy de todos modos",1);
+		escribir_log("      ¯_(ツ)_/¯   ",1);
+
 		free(ipK);
 		free(ipM);
 		liberar_log();
@@ -538,7 +548,7 @@ void finalizar_por_senial(int sig){
 
 void liberar_pcb(){
 
-	escribir_log("LIBERAR PCB",1);
+	escribir_log("LIBERANDO PCB",1);
 	free(pcb->algoritmo);
 	free(pcb->in_et);
 	free(pcb->in_cod);
@@ -550,10 +560,11 @@ void liberar_pcb(){
 
 	con_PCB = 0;
 }
+/*
 char *pedir_linea_memoria2(){
 	char *linea = string_substring(programa,pcb->in_cod[pcb->PC].offset_inicio,pcb->in_cod[pcb->PC].offset_fin);
 	return linea;
-}
+}*/
 /*
 void iniciar_pcb_falsa(){
 

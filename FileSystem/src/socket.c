@@ -160,15 +160,15 @@ char *recibir(int socket_receptor, int *controlador)
 		if (ret == 0)
 		{
 			*controlador = 8;
-			error_sockets(controlador, string_itoa(socket_receptor));
+			char *nr_error = string_itoa(socket_receptor);
+			error_sockets(controlador, nr_error);
+			free(nr_error);
 		}
 		*controlador = 1;
 		error_sockets(controlador, "");
 	}
 
-	char *buffer_aux= strdup(buffer);
-	free(buffer);
-	return buffer_aux;
+	return buffer;
 }
 
 void cerrar_conexion(int socket_)

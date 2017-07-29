@@ -47,6 +47,7 @@ int verificarHS(char *handshake);
 void handshake1();
 void reservar_memoria();
 void liberar_memoria();
+void actualizar_bitmap();
 
 
 int main(int argc, char *argv[])
@@ -60,10 +61,13 @@ int main(int argc, char *argv[])
 	metadata = leer_metadata();
 	if (metadata == -1) goto finalizar;
 
+
+
 	bitm = abrir_bitmap();
 	if(bitm == -1) goto finalizar;
 
 	posicion = malloc(cantBloques);
+
 	flagsocket=0;
 	socketfs =iniciar_socket_server(ip,puerto,&flagsocket);
 
@@ -72,8 +76,8 @@ int main(int argc, char *argv[])
 	while(flag == 0)
 	{
 		char *mensaje;
-		char * codigo;
-		char * mensaje2;
+		char *codigo;
+		char *mensaje2;
 
 		mensaje = recibir(cliente,&flagsocket);
 		codigo = get_codigo(mensaje);
@@ -100,6 +104,8 @@ int main(int argc, char *argv[])
 				mensaje2 = get_mensaje(mensaje);
 				est =recuperar_datos(codigo,mensaje2);
 				obtener_datos(est->path,est->offset,est->size);
+				free(est->buffer);
+				free(est->path);
 				free(est);
 				free(mensaje2);
 				break;
@@ -109,6 +115,8 @@ int main(int argc, char *argv[])
 				estruct = recuperar_datos(codigo,mensaje2);
 				guardar_datos(estruct->path,estruct->offset,estruct->size,estruct->buffer);
 				free(mensaje2);
+				free(estruct->buffer);
+				free(estruct->path);
 				free(estruct);
 				break;
 			default:
@@ -118,7 +126,9 @@ int main(int argc, char *argv[])
 
 		}
 		free(mensaje);
+		free(codigo);
 
+		actualizar_bitmap();
 	}
 
 	if(metadata == -1 || bitm == -1){
@@ -175,13 +185,13 @@ void liberar_memoria()
 		munmap(posicion,mystat.st_size);
 		bitarray_destroy(bitmap);
 	}
+	free(posicion);
 	liberar_log();
 }
 
 int verificarHS(char *handshake)
 {
-	char *header = strdup("");
-	header = get_header(handshake);
+	char *header = get_header(handshake);
 	if(!strcmp(header,"K"))
 	{
 		free(header);
@@ -193,4 +203,9 @@ int verificarHS(char *handshake)
 	}
 
 }
+void actualizar_bitmap(){
 
+	memcpy(posicion,bitmap,mystat.st_size);
+	msync(posicion,mystat.st_size,MS_SYNC);
+
+}

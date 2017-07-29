@@ -60,6 +60,7 @@ int leer_metadata()
 	{
 		config_destroy(configuracion);
 		escribir_log("No es SADICA");
+		free(ruta);
 		return -1;
 	}
 
@@ -68,6 +69,7 @@ int leer_metadata()
 	string_append(&magic_number, "\n");
 	escribir_log_compuesto("Magic Number: ",magic_number);
 
+	free(ruta);
 	config_destroy(configuracion);
 	return 0;
 
