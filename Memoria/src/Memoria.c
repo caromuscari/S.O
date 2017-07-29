@@ -790,7 +790,7 @@ void esperar_mensaje(void *i) {
 
 		chau:
 		free(mensRec);
-		printf("Ejecutada \n");
+		//printf("Ejecutada \n");
 	}
 
 }
