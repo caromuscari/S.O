@@ -21,7 +21,7 @@ extern t_configuracion *config;
 extern int tam_pagina;
 extern int pag_stack;
 int posicion_pagina;
-int inicio_bloque;
+//int inicio_bloque;
 
 void handshakearMemory();
 void reservar_memoria_din(t_program *program, int size_solicitado, int so_cpu);
@@ -35,7 +35,7 @@ void liberar_pagina(t_pagina *pagina);
 int chequear_pagina(t_pagina *page);
 int almacenar_bytes(int pid, int numpag, int offset, int tam, char *buffer);
 char *buffer_bloque(int size, int booleano);
-void *pedir_bloque_libre(t_pagina *pagina, int pid, int tam_sol);
+void *pedir_bloque_libre(t_pagina *pagina, int pid, int tam_sol, int *inicio_bloque);
 char *pedir_bytes_memoria(int pid, int numpag, int offset);
 HeapMetadata *armar_metadata(char *metadata);
 void liberar_proceso_pagina(int pid);
@@ -141,6 +141,7 @@ void reservar_memoria_din(t_program *program, int size_solicitado, int so_cpu)
 			if(pedido == 1)
 			{
 				inicializar_pagina_dinamica(program, size_solicitado);
+				program->syscall --;
 				reservar_memoria_din(program,size_solicitado,so_cpu);
 			}
 			else
@@ -156,9 +157,8 @@ void reservar_memoria_din(t_program *program, int size_solicitado, int so_cpu)
 
 int ubicar_bloque(t_pagina *pagina, int tam_sol, t_program *program, int so_cpu)
 {
-	t_bloque *bloque;
-
-	bloque = pedir_bloque_libre(pagina, program->PID, tam_sol);
+	int inicio_bloque;
+	t_bloque *bloque = pedir_bloque_libre(pagina, program->PID, tam_sol, &inicio_bloque);
 
 	if (bloque != NULL)
 	{
@@ -197,13 +197,13 @@ int ubicar_bloque(t_pagina *pagina, int tam_sol, t_program *program, int so_cpu)
 			t_bloque *bl = malloc(sizeof(t_bloque));
 			bl->metadata = malloc(sizeof(HeapMetadata));
 			bl->metadata->isFree = 1;
-			bl->metadata->size = sz - tam_sol;
+			bl->metadata->size = sz - tam_sol - 5;
 
 			char *buffer = buffer_bloque(bl->metadata->size, 1);
 			almacenar_bytes(program->PID, pagina->n_pagina, (inicio_bloque + tam_sol + 5), 5, buffer);
 			free(buffer);
 
-			list_add_in_index(pagina->heaps, posicion_pagina, bl);
+			//list_add_in_index(pagina->heaps, posicion_pagina, bl);
 			pagina->esp_libre = pagina->esp_libre - (tam_sol+5);
 			free(bl);
 		}
@@ -283,27 +283,21 @@ void liberar_bloque(t_program *prog, char *offset, int socket_)
 		page->esp_libre = page->esp_libre + bloque->metadata->size + 5;
 
 		int controlador3;
-		char *mensaje = strdup("K24");
-		char *pid_aux = string_itoa(prog->PID);
-		int size_pid = string_length(pid_aux);
-		char *completar_pid = string_repeat('0', 4 - size_pid);
-		char *pagina = string_itoa(page->n_pagina);
-		int size_pagina = string_length(pagina);
-		char *completar = string_repeat('0', 4 - size_pagina);
-		string_append(&mensaje, completar_pid);
-		string_append(&mensaje, pid_aux);
-		string_append(&mensaje, completar);
-		string_append(&mensaje, pagina);
 
+		char *buffer = buffer_bloque(bloque->metadata->size, 1);
+		int almacenar = almacenar_bytes(prog->PID, page->n_pagina, (off_-5)%tam_pagina, 5, buffer);
 
-		enviar(config->cliente_memoria, mensaje, &controlador3);
-
-		enviar(socket_, "OK0000hyt65rf", &controlador3);
-
-		free(men);
-		if(page->esp_libre == tam_pagina)
+		if (almacenar == 2)
 		{
-			list_remove_and_destroy_element(prog->memoria_dinamica, (page->n_pagina - prog->pcb->cant_pag - pag_stack -1),(void *) liberar_pagina);
+			enviar(socket_, "OK00000000000", &controlador3);
+		}
+		else forzar_finalizacion(prog->PID, 0, 5, 1);
+
+		free(buffer);
+		free(men);
+		if(page->esp_libre == tam_pagina - 5)
+		{
+			//list_remove_and_destroy_element(prog->memoria_dinamica, (page->n_pagina - prog->pcb->cant_pag - pag_stack),(void *) liberar_pagina);
 
 			int controlador;
 			char *mensaje = strdup("K24");
@@ -318,15 +312,16 @@ void liberar_bloque(t_program *prog, char *offset, int socket_)
 			string_append(&mensaje, completar);
 			string_append(&mensaje, pagina);
 
-
 			enviar(config->cliente_memoria, mensaje, &controlador);
+
+			char *reccv = recibir(config->cliente_memoria, &controlador);
+			free(reccv);
 
 			free(completar_pid);
 			free(pid_aux);
 			free(completar);
 			free(pagina);
 			free(mensaje);
-
 		}
 	}
 	else
@@ -337,15 +332,17 @@ void liberar_bloque(t_program *prog, char *offset, int socket_)
 
 void compactar_contiguos(int pid, t_pagina *pagina)
 {
+	int size_anterior, bolean_anterior;
 	int fin_raiz = 1;
 	int offset = 0;
-	HeapMetadata *h_anterior;
+	int offset_in = 0;
 
 	while(fin_raiz)
 	{
+		size_anterior = 0;
+		bolean_anterior = 0;
 		fin_raiz = 0;
 		offset = 0;
-		h_anterior = NULL;
 
 		while(offset < tam_pagina)
 		{
@@ -353,11 +350,11 @@ void compactar_contiguos(int pid, t_pagina *pagina)
 			char *metadata = get_mensaje(info_bloque);
 			HeapMetadata *heapMeta = armar_metadata(metadata);
 
-			if((heapMeta->isFree)&&((h_anterior != NULL)))
+			if((heapMeta->isFree)&&(bolean_anterior))
 			{
-				int size = heapMeta->size + h_anterior->size + 5;
+				int size = heapMeta->size + size_anterior + 5;
 				char *buffer = buffer_bloque(size, 1);
-				almacenar_bytes(pid, pagina->n_pagina, offset, 5, buffer);
+				almacenar_bytes(pid, pagina->n_pagina, offset_in, 5, buffer);
 
 				fin_raiz = 1;
 				free(buffer);
@@ -365,11 +362,13 @@ void compactar_contiguos(int pid, t_pagina *pagina)
 			}
 			else if(heapMeta->isFree)
 			{
-				h_anterior = heapMeta;
+				size_anterior = heapMeta->size;
+				bolean_anterior = heapMeta->isFree;
+				offset_in = offset;
 			}
 			else//porque es false
 			{
-				h_anterior = NULL;
+				bolean_anterior = 0;
 			}
 
 			offset = offset + heapMeta->size + 5;
@@ -402,16 +401,24 @@ void liberar_proceso_pagina(int pid)
 
 	enviar(config->cliente_memoria, men_env, &contr);
 
+	char *rec = recibir(config->cliente_memoria, &contr);
+	free(rec);
+
 	free(men_env);
 	free(pid_);
 	free(completar);
-
 }
 
 void destruir_heap(t_bloque *bl)
 {
-	free(bl->metadata);
-	free(bl);
+	if(bl != NULL)
+	{
+		if (bl->metadata != NULL)
+		{
+			free(bl->metadata);
+		}
+		free(bl);
+	}
 }
 
 t_pagina *_buscar_pagina(t_list *mem, int num_pag)
@@ -593,14 +600,15 @@ char *buffer_bloque(int size, int booleano)
 	return buffer;
 }
 
-void *pedir_bloque_libre(t_pagina *pagina, int pid, int tam_sol)
+void *pedir_bloque_libre(t_pagina *pagina, int pid, int tam_sol, int *inicio_bloque)
 {
-	inicio_bloque = 0;
+	*inicio_bloque = 0;
 	int encontrado = 0;
 	int fin = 0;
 	int offset = 0;
 	t_bloque *bloque;
 	//char *pedir_bytes_memoria(int pid, int numpag, int offset)
+
 	while(encontrado == 0 && fin == 0)
 	{
 		char *info_bloque = pedir_bytes_memoria(pid, pagina->n_pagina, offset);
@@ -616,7 +624,7 @@ void *pedir_bloque_libre(t_pagina *pagina, int pid, int tam_sol)
 		else
 		{
 			offset = offset + (5 + heapMeta->size);
-			inicio_bloque = offset;
+			*inicio_bloque = offset;
 			if(offset > tam_pagina)
 				fin = 1;
 			free(heapMeta);

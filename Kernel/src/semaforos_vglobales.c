@@ -31,19 +31,6 @@ void get_vglobal(char *vglobal, t_program *prog, int socket_);
 
 void inicializar_sems()
 {
-	/*sems = dictionary_create();
-	t_sem *sem = malloc (sizeof(t_sem));
-	sem->value = 1;
-	sem->procesos = queue_create();
-	dictionary_put(sems, "SEM1",sem);
-
-	t_vglobal *vg = malloc (sizeof(t_vglobal));
-	vglobales = dictionary_create();
-	vg->mutex_ = 1;
-	vg->value = 0;
-	vg->procesos = queue_create();
-	dictionary_put(vglobales, "!Global", vg);*/
-
 	sems = dictionary_create();
 	char **ids = config->sem_ids;
 	char **ins = config->sem_init;
@@ -55,7 +42,6 @@ void inicializar_sems()
 		sem->value = atoi(ins[n]);
 		sem->procesos = queue_create();
 		dictionary_put(sems, ids[n],sem);
-		printf("%s \n", ids[n]);
 		n++;
 	}
 	n = 0;
@@ -83,7 +69,6 @@ void inicializar_vglobales()
 		vg->value = 0;
 		vg->procesos = queue_create();
 		dictionary_put(vglobales ,ids[n] ,vg);
-		printf("%s\n", ids[n]);
 		n++;
 	}
 	n = 0;
@@ -205,7 +190,7 @@ void sem_signal(t_program *prog, char *sema, int socket_, int free_all)//cuando 
 				desbloquear_proceso(proc);
 			}
 			int controlador;
-			enviar(socket_, "OK000000000000000", &controlador);
+			if(socket_>0) enviar(socket_, "OK000000000000000", &controlador);
 		}else
 			//eliminar el proceso, signal a semaforo invalido
 			forzar_finalizacion(prog->PID, 0, 11, 1);

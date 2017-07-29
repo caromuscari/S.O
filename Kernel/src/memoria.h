@@ -23,5 +23,6 @@ void liberar_bloque(t_program *prog, char *offset_bloque, int socket_);
 void liberar_pagina(t_pagina *pagina);
 int almacenar_bytes(int pid, int numpag, int offset, int tam, char *buffer);
 void liberar_proceso_pagina(int pid);
+void *pedir_bloque_libre(t_pagina *pagina, int pid, int tam_sol, int *inicio_bloque);
 
 #endif /* MEMORIA_H_ */
